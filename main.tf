@@ -13,3 +13,26 @@ provider "proxmox" {
   pm_api_token_secret = var.proxmox_api_token_secret
   pm_tls_insecure     = true
 }
+
+resource "proxmox_lxc" "basic-test" {
+  target_node         = "pve"
+  hostname            = "lxc-basic"
+  ostemplate          = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
+  password            = var.test_password
+  unprivileged        = true
+  cores               = 1
+  memory              = 512
+
+  rootfs {
+    storage = "local-lvm"
+    size    = "8G"
+  }
+
+
+  network {
+    name             = "eth0"
+    bridge           = "vmbr0"
+    ip               = var.test_ip_adresse
+    gw               = var.gateway
+  }
+}

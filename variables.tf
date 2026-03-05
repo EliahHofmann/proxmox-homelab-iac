@@ -13,3 +13,20 @@ variable "proxmox_api_token_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "test_password" {
+  description = "Das Passwort vom test-lxc"
+  type        = string
+  sensitive   = true
+
+}
+
+variable "test_ip_adresse" {
+  description = "Die IP-Adresse des test-lxc"
+  type        = string
+}
+
+variable "gateway" {
+  description = "Die IP-Adresse des Gateways des Netzwerks"
+  type        = string
+}
