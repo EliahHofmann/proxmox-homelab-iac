@@ -30,3 +30,11 @@ variable "gateway" {
   description = "Die IP-Adresse des Gateways des Netzwerks"
   type        = string
 }
+
+// variable fuer den Vaultwarden-lxc
+
+variable "ssh_public_key_vaultwarden" {
+  description = "oeffentlicher SSH-Schluessel von vaultwarden"
+  type        = string
+  sensitive   = true
+}

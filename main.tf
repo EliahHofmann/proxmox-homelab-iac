@@ -14,18 +14,18 @@ provider "proxmox" {
   pm_tls_insecure     = true
 }
 
-resource "proxmox_lxc" "basic-test" {
+resource "proxmox_lxc" "vaultwarden" {
   target_node         = "pve"
-  hostname            = "lxc-basic"
+  hostname            = "vaultwarden-server"
   ostemplate          = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
-  password            = var.test_password
+  ssh_public_keys     = var.ssh_public_key_vaultwarden
   unprivileged        = true
   cores               = 1
   memory              = 512
 
   rootfs {
     storage = "local-lvm"
-    size    = "8G"
+    size    = "15G"
   }
 
 
@@ -34,5 +34,6 @@ resource "proxmox_lxc" "basic-test" {
     bridge           = "vmbr0"
     ip               = var.test_ip_adresse
     gw               = var.gateway
+    firewall         = true
   }
 }
