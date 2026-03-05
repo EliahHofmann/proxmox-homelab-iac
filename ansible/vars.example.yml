@@ -1,0 +1,4 @@
+domain_name: "deinedomain.de"
+vault_subdomain: "subdomain"
+vault_internal_ip: "XXX.XXX.XXX.XXX"
+vault_internal_port: "8080"
