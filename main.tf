@@ -28,6 +28,7 @@ resource "proxmox_lxc" "vaultwarden" {
     size    = "15G"
   }
 
+  nameserver = "1.1.1.1"
 
   network {
     name             = "eth0"
@@ -36,4 +37,10 @@ resource "proxmox_lxc" "vaultwarden" {
     gw               = var.gateway
     firewall         = true
   }
+
+  features {
+    nesting = true
+    keyctl  = true
+  }
+
 }
