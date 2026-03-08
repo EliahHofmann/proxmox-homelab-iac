@@ -1,0 +1,24 @@
+---
+- name: Basis-Konfiguration für alle Server
+  hosts: all
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - common
+
+- name: Setup Vaultwarden Dienst
+  hosts: vaultwarden
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - vaultwarden
+
+- name: Setup Traefik Config Dienst
+  hosts: traefik
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - traefik

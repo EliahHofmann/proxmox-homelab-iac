@@ -1,0 +1,19 @@
+---
+# dieses Playhook beinhaltet plays die auf allen nodes laufen wird.
+
+  - name: System-Update und Upgrade
+    apt:
+      update_cache: yes
+      upgrade: yes
+      autoremove: yes
+
+  - name: Basis installieren
+    apt:
+      name:
+        - curl
+      state: present
+
+  - name: Zeitzone auf Europa/Berlin
+    timezone:
+      name: Europe/Berlin
+
