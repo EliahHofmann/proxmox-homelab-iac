@@ -1,0 +1,13 @@
+#!/bin/bash
+TIMESTAMP=$(date +%Y-%m-%d)
+BACKUP_FILE="/tmp/vaultwarden_backup.zip"
+
+cd {{ vault_install_path }} && docker compose stop
+
+zip -r -P {{ backup_zip_password }} $BACKUP_FILE "{{ vault_install_path }}/vw-data"
+
+docker compose start
+
+mpack -s "Vaultwarden Backup $TIMESTAMP" $BACKUP_FILE {{ mail_to }}
+
+rm $BACKUP_FILE

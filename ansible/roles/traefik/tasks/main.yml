@@ -1,24 +1,6 @@
 ---
   - name: Erstelle Traefik Dynamic Config
-    copy:
+    template:
+      src: vaultwarden.yml.j2
       dest: /opt/traefik/config/vaultwarden.yml
-      content: |
-        http:
-          routers:
-            vaultwarden-router:
-              rule: "Host(`{{ vault_subdomain }}.{{ domain_name }}`)"
-              entryPoints: ["websecure"]
-              service: vaultwarden-service
-              priority: 10
-              tls:
-                certResolver: cloudflare
-                domains:
-                  - main: "{{ domain_name }}"
-                    sans:
-                      - "*.{{ domain_name }}"
-
-          services:
-            vaultwarden-service:
-              loadBalancer:
-                servers:
-                  - url: "http://{{ vault_internal_ip }}:{{ vault_internal_port }}"
+        
