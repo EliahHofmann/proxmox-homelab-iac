@@ -40,7 +40,7 @@ proxmox-homelab-iac/
     └── .gitignore
 ```
 
-** Setup und Verwendung **
+## Setup und Verwendung 
 
 Bevor die Skripte ausgeführt werden können, müssen die lokalen Variablen gesetzt werden.
 
@@ -59,7 +59,7 @@ tofu plan
 tofu apply
 ```
 
-** Server konfigurieren (Ansible) **
+### Server konfigurieren (Ansible) 
 
 Sobald die Maschinen laufen, übernimmt Ansible die Installation und Konfiguration der Dienste:
 
@@ -68,7 +68,7 @@ cd ../ansible
 ansible-playbook -i inventory.ini site.yml
 ```
 
-** Projektziele und Learnings **
+## Projektziele und Learnings 
 
 Dieses Projekt dient mir als praktische Umgebung, um tiefere Erfahrungen im Bereich DevOps und Systemadministration zu sammeln. Schwerpunkte waren dabei der Umgang mit der Proxmox API über Terraform-Provider, das Schreiben idempotenter Ansible Playbooks, das Templating mit Jinja2 sowie die Absicherung der Dienste durch Traefik und Split-DNS.
 
