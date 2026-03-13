@@ -52,12 +52,12 @@ Infrastruktur ausrollen (OpenTofu)
 
 Wechsel in das Terraform-Verzeichnis, um die Container und VMs auf dem Proxmox-Server zu erstellen:
 
-bash
+```text
 cd terraform
 tofu init
 tofu plan
 tofu apply
-
+```
 
 ** Server konfigurieren (Ansible) **
 
