@@ -1,4 +1,19 @@
 ---
+#Vaultwarden
 vault_subdomain: "subdomain"
 vault_internal_ip: "XXX.XXX.XXX.XXX"
 vault_internal_port: "8080"
+
+#Affine
+affine_subdomain: "subdomain"
+affine_internal_ip: "XXX.XXX.XXX.XXX"
+affine_internal_port: "3010"
+
+#Nextcloud
+nextcloud_subdomain: "subdomain"
+nextcloud_internal_ip: "XXX.XXX.XXX.XXX"
+
+#Office-Nextcloud
+office_subdomain: "subdomain"
+office_internal_ip: "XXX.XXX.XXX.XXX"
+office_internal_port: "9980"

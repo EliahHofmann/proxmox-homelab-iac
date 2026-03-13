@@ -1,0 +1,25 @@
+http:
+  routers:
+    nextcloud-router:
+      rule: "Host(`{{ nextcloud_subdomain }}.{{ domain_name }}`)"
+      service: "nextcloud-service"
+      entryPoints: ["websecure"]
+      priority: 10
+
+      tls:
+        certResolver: cloudflare
+        domains:
+            - main: "{{ domain_name }}"
+            sans:
+                - "*.{{ domain_name }}"
+
+  services:
+    nextcloud-service:
+      loadBalancer:
+        servers:
+           - url: "http://{{ nextcloud_internal_ip }}"
+        serversTransport: "nextcloud-transport"
+
+  serversTransports:
+    nextcloud-transport:
+      insecureSkipVerify: true
