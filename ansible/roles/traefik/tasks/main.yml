@@ -1,16 +1,18 @@
 ---
-  - name: Erstelle Traefik Dynamic Config
-    template:
-      src: vaultwarden.yml.j2
-      dest: "{{ config_dest }}/vaultwarden.yml"
+- name: Erstelle Traefik Dynamic Configs
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ config_dest }}/{{ item.dest }}"
+  loop:
+    - { src: 'vaultwarden.yml.j2', dest: 'vaultwarden.yml' }
+    - { src: 'nextcloud.yml.j2', dest: 'nextcloud.yml' }
+    - { src: 'office-nextcloud.yml.j2', dest: 'office.yml' }
+    - { src: 'affine.yml.j2', dest: 'affine.yml' }
 
-      src: nextcloud.yml.j2
-      dest: "{{ config_dest }}/nextcloud.yml"
-
-      src: office-nextcloud.yml.j2
-      dest: "{{ config_dest }}/office.yml"
-      
-      src: affine.yml.j2
-      dest: "{{ config_dest }}/affine.yml"
-
-        
+- name: Traefik Haupt-Konfigurationen erstellen
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ docker_dest }}/{{ item.dest }}"
+  loop:
+    - { src: 'docker_compose.yml.j2', dest: 'docker-compose.yml' }
+    - { src: 'traefik.yml.j2', dest: 'traefik.yml' }   

@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:v3.0
+    restart: always
+    container_name: traefik
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CF_DNS_API_TOKEN={{ CF_DNS_API_TOKEN }}
+    volumes:
+      - {{ docker_dest }}/traefik.yml:/etc/traefik/traefik.yml
+      - {{ config_dest }}:/etc/traefik/config
+      - {{ docker_dest }}/acme.json:/acme.json
+
+
+  ddns-updater:
+    image: favonia/cloudflare-ddns:latest
+    container_name: ddns-updater
+    restart: unless-stopped
+    environment:
+      - CF_API_TOKEN={{ CF_API_TOKEN }}
+      - DOMAINS={{ subdomain }}.{{ domain_name }}
+      - PROXIED=false
+      - IP6_PROVIDER=none

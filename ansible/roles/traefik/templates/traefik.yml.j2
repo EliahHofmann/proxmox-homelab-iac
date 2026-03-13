@@ -1,0 +1,33 @@
+entryPoints:
+  web:
+    address: ":80"
+    # Alles von web ins websecure schieben
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+
+  websecure:
+    address: ":443"
+
+providers:
+  file:
+    directory: "{{ config_dest }}/"
+    watch: true # lädt neue Regeln automatisch
+
+api:
+  dashboard: true
+  insecure: true
+
+certificatesResolvers:
+  cloudflare:
+    acme:
+      email: "{{ email_letsEncrypt }}"
+      storage: acme.json
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"

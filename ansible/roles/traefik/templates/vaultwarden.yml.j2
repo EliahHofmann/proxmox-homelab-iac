@@ -1,19 +1,20 @@
 http:
-    routers:
-        vaultwarden-router:
-            rule: "Host(`{{ vault_subdomain }}.{{ domain_name }}`)"
-            entryPoints: ["websecure"]
-            service: vaultwarden-service
-            priority: 10
-            tls:
-            certResolver: cloudflare
-            domains:
-                - main: "{{ domain_name }}"
-                sans:
-                    - "*.{{ domain_name }}"
+  routers:
+    vaultwarden-router:
+      rule: "Host(`{{ vault_subdomain }}.{{ domain_name }}`)"
+      service: "vaultwarden-service"
+      entryPoints: ["websecure"]
+      priority: 10
 
-    services:
-        vaultwarden-service:
-            loadBalancer:
-            servers:
-                - url: "http://{{ vault_internal_ip }}:{{ vault_internal_port }}"
+      tls:
+        certResolver: cloudflare
+        domains:
+          - main: "{{ domain_name }}"
+            sans:
+                - "*.{{ domain_name }}"
+
+  services:
+    vaultwarden-service:
+      loadBalancer:
+        servers:
+          - url: "http://{{ vault_internal_ip }}:{{ vault_internal_port }}"

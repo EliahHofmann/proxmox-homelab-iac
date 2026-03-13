@@ -1,4 +1,13 @@
 ---
+#Docker-Compose
+CF_DNS_API_TOKEN: "XXXXXXX"
+CF_API_TOKEN: "XXXXXXX"
+subdomain: "XXXXXX"
+docker_dest: "/opt/traefik"
+
+#Let's Encrypt Email
+email_letsEncrypt: "XXXX@XXX"
+
 #Config destination
 config_dest: "/opt/traefik/config"
 
