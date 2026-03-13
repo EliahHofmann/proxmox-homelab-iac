@@ -2,5 +2,15 @@
   - name: Erstelle Traefik Dynamic Config
     template:
       src: vaultwarden.yml.j2
-      dest: /opt/traefik/config/vaultwarden.yml
+      dest: "{{ config_dest }}/vaultwarden.yml"
+
+      src: nextcloud.yml.j2
+      dest: "{{ config_dest }}/nextcloud.yml"
+
+      src: office-nextcloud.yml.j2
+      dest: "{{ config_dest }}/office.yml"
+      
+      src: affine.yml.j2
+      dest: "{{ config_dest }}/affine.yml"
+
         

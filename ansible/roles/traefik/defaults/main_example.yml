@@ -1,4 +1,7 @@
 ---
+#Config destination
+config_dest: "/opt/traefik/config"
+
 #Vaultwarden
 vault_subdomain: "subdomain"
 vault_internal_ip: "XXX.XXX.XXX.XXX"
