@@ -14,33 +14,98 @@ provider "proxmox" {
   pm_tls_insecure     = true
 }
 
-resource "proxmox_lxc" "vaultwarden" {
-  target_node         = "pve"
-  hostname            = "vaultwarden-server"
-  ostemplate          = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
-  ssh_public_keys     = var.ssh_public_key_vaultwarden
-  unprivileged        = true
-  cores               = 1
-  memory              = 512
 
-  rootfs {
-    storage = "local-lvm"
-    size    = "15G"
+resource "proxmox_vm_qemu" "vms" {
+  for_each = var.vm_configs
+
+  name        = each.value.name
+  target_node = "pve"
+  vmid        = each.value.vmid
+  clone       = each.value.clone
+
+  agent   = 1
+  os_type = "cloud-init"
+  memory  = each.value.memory
+  scsihw  = "virtio-scsi-pci"
+
+  cpu {
+    cores   = each.value.cores
+    sockets = 1
+    type    = "host"
   }
 
-  nameserver = "1.1.1.1"
+  disk {
+    slot    = "scsi0"
+    size    = each.value.disk_size
+    type    = "disk"
+    storage = each.value.storage
+    discard = "1"
+  }
+
+  disk {
+    slot    = "ide2"
+    type    = "cloudinit"
+    storage = each.value.storage
+  }
 
   network {
-    name             = "eth0"
-    bridge           = "vmbr0"
-    ip               = var.test_ip_adresse
-    gw               = var.gateway
-    firewall         = true
+    id     = 0
+    model  = "virtio"
+    bridge = "vmbr0"
+  }
+
+  serial {
+    id   = 0
+    type = "socket"
+  }
+
+  vga {
+    type = "serial0"
+  }
+
+  timeouts {
+    create = "5m"
+  }
+
+  boot = "order=scsi0"
+  ipconfig0 = "ip=${each.value.ip},gw=${each.value.gw}"
+  ciuser    = "root"
+  sshkeys   = var.ssh_public_key
+}
+
+
+resource "proxmox_lxc" "containers" {
+  for_each = var.lxc_configs
+
+  target_node = "pve"
+  vmid        = each.value.vmid
+  hostname    = each.value.hostname
+  ostemplate  = each.value.template
+  
+  ssh_public_keys = var.ssh_public_key
+  unprivileged    = true
+  start           = true
+  onboot          = true
+
+  cores  = each.value.cpu
+  memory = each.value.memory
+
+  rootfs {
+    storage = each.value.storage
+    size    = each.value.size
+  }
+
+  nameserver = each.value.nameserver
+
+  network {
+    name     = "eth0"
+    bridge   = "vmbr0"
+    ip       = each.value.ip
+    gw       = each.value.gw
+    firewall = true
   }
 
   features {
     nesting = true
-    keyctl  = true
   }
-
 }

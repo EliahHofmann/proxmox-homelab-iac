@@ -14,27 +14,40 @@ variable "proxmox_api_token_secret" {
   sensitive   = true
 }
 
-variable "test_password" {
-  description = "Das Passwort vom test-lxc"
+
+variable "ssh_public_key" {
+  description = "Standard SSH-Key für alle Container"
   type        = string
   sensitive   = true
-
 }
 
-variable "test_ip_adresse" {
-  description = "Die IP-Adresse des test-lxc"
-  type        = string
+variable "lxc_configs" {
+  description = "Map für alle LXC-Konfigurationen"
+  type = map(object({
+    vmid       = number
+    hostname   = string
+    template   = string
+    ip         = string
+    cpu        = number
+    memory     = number
+    gw         = string
+    storage    = string
+    size       = string
+    nameserver = string
+  }))
 }
 
-variable "gateway" {
-  description = "Die IP-Adresse des Gateways des Netzwerks"
-  type        = string
-}
-
-// variable fuer den Vaultwarden-lxc
-
-variable "ssh_public_key_vaultwarden" {
-  description = "oeffentlicher SSH-Schluessel von vaultwarden"
-  type        = string
-  sensitive   = true
+variable "vm_configs" {
+  description = "Konfiguration für die virtuelle Maschine"
+  type = map(object({
+    vmid      = number
+    name      = string
+    clone     = string
+    ip        = string
+    gw        = string
+    cores     = number
+    memory    = number
+    disk_size = string
+    storage   = string
+  }))
 }
