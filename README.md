@@ -34,10 +34,10 @@ proxmox-homelab-iac/
 │   ├── inventory.example.ini   # Beispiel für das Host-Inventory
 │   ├── site.yml                # Haupt-Playbook
 │   └── vars_example.yml        # Globale Variablen
-└── terraform/
-    ├── main.tf                 # Definition der Proxmox Ressourcen (LXC/VMs)
-    ├── variables.tf            # Terraform Variablen
-    └── .gitignore
+├── terraform/
+│   ├── main.tf                 # Definition der Proxmox Ressourcen (LXC/VMs)
+│   ├── variables.tf            # Terraform Variablen
+└── .gitignore
 ```
 
 ## Setup und Verwendung 
