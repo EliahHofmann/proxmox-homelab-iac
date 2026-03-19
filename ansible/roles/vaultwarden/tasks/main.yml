@@ -1,20 +1,4 @@
 ---
-  - name: Verzeichnis für Keys erstellen
-    file:
-      path: /etc/apt/keyrings
-      state: directory
-      mode: '0755'
-
-  - name: Docker GPG Key laden
-    get_url:
-      url: https://download.docker.com/linux/debian/gpg
-      dest: /etc/apt/keyrings/docker.asc
-
-  - name: Docker Repo hinzufügen
-    apt_repository:
-      repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
-      state: present
-
   - name: Installation von den Paketen
     apt:
       name:

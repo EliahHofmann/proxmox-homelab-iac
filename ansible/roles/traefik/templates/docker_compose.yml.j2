@@ -12,7 +12,7 @@ services:
       - CF_DNS_API_TOKEN={{ CF_DNS_API_TOKEN }}
     volumes:
       - {{ docker_dest }}/traefik.yml:/etc/traefik/traefik.yml
-      - {{ config_dest }}:/etc/traefik/config
+      - {{ config_dest }}:{{ config_dest }}
       - {{ docker_dest }}/acme.json:/acme.json
 
 

@@ -1,0 +1,7 @@
+---
+nextcloud_subdomain: "subdomain"
+nextcloud_install_path: "/XXX/XXXX"
+MYSQL_ROOT_PASSWORD: "XXXXX"
+MYSQL_PASSWORD: "XXXXX"
+MYSQL_DATABASE: "User"
+MYSQL_USER: "User"

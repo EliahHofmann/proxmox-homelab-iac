@@ -1,0 +1,31 @@
+services:
+  db:
+    image: mariadb:10.11
+    restart: always
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    volumes:
+      - ./db-data:/var/lib/mysql
+    environment:  
+      - MYSQL_ROOT_PASSWORD={{ MYSQL_ROOT_PASSWORD }}
+      - MYSQL_PASSWORD={{ MYSQL_PASSWORD }}
+      - MYSQL_DATABASE={{ MYSQL_DATABASE }}
+      - MYSQL_USER={{ MYSQL_USER }}
+  app:
+    image: nextcloud:latest
+    restart: always
+    ports:
+      - 8080:80
+    depends_on:
+      - db
+    volumes:
+      - ./app-data:/var/www/html
+    environment:
+      - MYSQL_PASSWORD={{ MYSQL_PASSWORD }}
+      - MYSQL_DATABASE={{ MYSQL_DATABASE }}
+      - MYSQL_USER={{ MYSQL_USER }}
+      - MYSQL_HOST=db
+      - TRUSTED_PROXIES={{ traefik_ip }}
+      - OVERWRITEPROTOCOL=https
+      - OVERWRITEHOST={{ domain_name }}
+      - OVERWRITECLIURL=https://{{ domain_name }}
+      - NEXTCLOUD_TRUSTED_DOMAINS={{ nextcloud_subdomain }}.{{ domain_name }}

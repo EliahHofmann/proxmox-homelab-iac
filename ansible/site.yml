@@ -22,3 +22,11 @@
     - vars.yml
   roles:
     - traefik
+
+- name: Setup Nextcloud Dienst
+  hosts: nextcloud
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - nextcloud

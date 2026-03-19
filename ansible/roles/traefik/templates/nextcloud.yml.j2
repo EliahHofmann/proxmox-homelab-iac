@@ -17,9 +17,4 @@ http:
     nextcloud-service:
       loadBalancer:
         servers:
-           - url: "https://{{ nextcloud_internal_ip }}"
-        serversTransport: "nextcloud-transport"
-
-  serversTransports:
-    nextcloud-transport:
-      insecureSkipVerify: true
+           - url: "http://{{ nextcloud_internal_ip }}:8080"

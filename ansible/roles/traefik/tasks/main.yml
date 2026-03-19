@@ -1,4 +1,22 @@
 ---
+- name: Hauptordner für traefik
+  file:
+    path: '{{ docker_dest }}'
+    state: directory
+    mode: '0755'
+
+- name: Hauptordner für traefik-config
+  file:
+    path: '{{ config_dest }}'
+    state: directory
+    mode: '0755'
+    
+- name: Erstelle leere acme.json mit richtigen Rechten (600)
+  file:
+    path: '{{ docker_dest }}/acme.json'
+    state: touch
+    mode: '0600'
+
 - name: Erstelle Traefik Dynamic Configs
   template:
     src: "{{ item.src }}"
@@ -15,4 +33,9 @@
     dest: "{{ docker_dest }}/{{ item.dest }}"
   loop:
     - { src: 'docker_compose.yml.j2', dest: 'docker-compose.yml' }
-    - { src: 'traefik.yml.j2', dest: 'traefik.yml' }   
+    - { src: 'traefik.yml.j2', dest: 'traefik.yml' } 
+
+- name: Container starten
+  command: docker compose up -d
+  args:
+    chdir: '{{ docker_dest }}'
