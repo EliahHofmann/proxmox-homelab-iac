@@ -1,4 +1,5 @@
 ---
+collabora_subdomain: "subdomain"
 nextcloud_subdomain: "subdomain"
 nextcloud_install_path: "/XXX/XXXX"
 MYSQL_ROOT_PASSWORD: "XXXXX"
