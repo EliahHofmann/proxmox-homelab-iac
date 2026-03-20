@@ -10,22 +10,33 @@ services:
       - MYSQL_PASSWORD={{ MYSQL_PASSWORD }}
       - MYSQL_DATABASE={{ MYSQL_DATABASE }}
       - MYSQL_USER={{ MYSQL_USER }}
+  redis:
+      image: redis:alpine
+      container_name: nextcloud-redis
+      restart: unless-stopped
+  
   app:
     image: nextcloud:latest
+    container_name: nextcloud-app
     restart: always
     ports:
       - 8080:80
     depends_on:
       - db
+      - redis
     volumes:
       - ./app-data:/var/www/html
     environment:
+      - REDIS_HOST=redis
       - MYSQL_PASSWORD={{ MYSQL_PASSWORD }}
       - MYSQL_DATABASE={{ MYSQL_DATABASE }}
       - MYSQL_USER={{ MYSQL_USER }}
       - MYSQL_HOST=db
       - TRUSTED_PROXIES={{ traefik_ip }}
       - OVERWRITEPROTOCOL=https
-      - OVERWRITEHOST={{ domain_name }}
-      - OVERWRITECLIURL=https://{{ domain_name }}
+      - OVERWRITEHOST={{ nextcloud_subdomain }}.{{ domain_name }}
+      - OVERWRITECLIURL=https://{{ nextcloud_subdomain }}.{{ domain_name }}
       - NEXTCLOUD_TRUSTED_DOMAINS={{ nextcloud_subdomain }}.{{ domain_name }}
+    extra_hosts:
+          - "{{ collabora_subdomain }}.{{ domain_name }}:{{ traefik_ip }}"
+          - "{{ nextcloud_subdomain }}.{{ domain_name }}:{{ traefik_ip }}"

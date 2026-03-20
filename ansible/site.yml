@@ -30,3 +30,35 @@
     - vars.yml
   roles:
     - nextcloud
+
+- name: Setup Collabora Dienst
+  hosts: collabora
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - collabora
+
+- name: Setup Affine Dienst
+  hosts: affine
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - affine
+
+- name: Setup Adguard Dienst
+  hosts: adguard
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - adguard
+
+- name: Setup Cloudflared Dienst
+  hosts: cloudflared
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - cloudflared

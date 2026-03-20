@@ -1,0 +1,21 @@
+services:
+  collabora:
+    image: collabora/code:latest
+    container_name: collabora_app
+    restart: always
+    ports:
+      - "9980:9980"
+    environment:
+      - domain={{ domain }}
+      - username={{ USERNAME }}
+      - password={{ USERNAME_PASSWORD }}
+      - "extra_params=--o:ssl.enable=false --o:ssl.termination=true"
+      - aliasgroup1=https://{{ nextcloud_subdomain }}.{{ domain_name }}:443
+
+    extra_hosts:
+      - "{{ nextcloud_subdomain }}.{{ domain_name }}:{{ traefik_ip }}"
+      - "{{ collabora_subdomain }}.{{ domain_name }}:{{ traefik_ip }}"
+
+    cap_add:
+      - MKNOD
+      - SYS_ADMIN

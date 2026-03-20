@@ -1,0 +1,16 @@
+---
+- name: Cloudflared Verzeichnis erstellen
+  file:
+    path: "{{ cloudflared_install_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Cloudflared docker-compose.yml erstellen
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ cloudflared_install_path }}/docker-compose.yml"
+
+- name: Cloudflare Tunnel starten
+  command: docker compose up -d
+  args:
+    chdir: "{{ cloudflared_install_path }}"
