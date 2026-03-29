@@ -17,9 +17,8 @@ provider "proxmox" {
 
 resource "proxmox_vm_qemu" "vms" {
   for_each = var.vm_configs
-
   name        = each.value.name
-  target_node = "pve"
+  target_node = each.value.target_node
   vmid        = each.value.vmid
   clone       = each.value.clone
 
@@ -77,7 +76,7 @@ resource "proxmox_vm_qemu" "vms" {
 resource "proxmox_lxc" "containers" {
   for_each = var.lxc_configs
 
-  target_node = "pve"
+  target_node = each.value.target_node
   vmid        = each.value.vmid
   hostname    = each.value.hostname
   ostemplate  = each.value.template

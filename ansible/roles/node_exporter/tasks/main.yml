@@ -1,0 +1,24 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install prometheus-node-exporter
+  ansible.builtin.apt:
+    name: prometheus-node-exporter
+    state: present
+
+- name: Ensure prometheus-node-exporter is enabled and started
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Allow node-exporter port in ufw (if ufw is active)
+  ansible.builtin.ufw:
+    rule: allow
+    port: "9100"
+    proto: tcp
+  when: ansible_facts.services["ufw.service"] is defined

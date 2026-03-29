@@ -83,6 +83,35 @@
     state: present
     update_cache: yes
 
+- name: Prüfen, ob das Loki Docker Plugin bereits installiert ist
+  command: docker plugin ls
+  register: docker_plugins
+  changed_when: false
+
+- name: Loki Docker Plugin installieren
+  command: docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+  when: "'loki' not in docker_plugins.stdout"
+
+- name: Docker daemon.json für globales Loki-Logging erstellen
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "loki",
+        "log-opts": {
+          "loki-url": "http://192.168.178.60:3100/loki/api/v1/push",
+          "loki-retries": "5",
+          "loki-batch-size": "400"
+        }
+      }
+  register: docker_daemon_config
+
+- name: Docker Dienst neu starten
+  service:
+    name: docker
+    state: restarted
+  when: docker_daemon_config.changed
+
 - name: System-Update und Upgrade
   apt:
     update_cache: yes

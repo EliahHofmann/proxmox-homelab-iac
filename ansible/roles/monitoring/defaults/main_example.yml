@@ -1,0 +1,6 @@
+---
+monitoring_install_path: '/opt/monitoring'
+grafana_admin_password: 'XXXXXXX'
+grafana_port: '3000'
+loki_port: '3100'
+prometheus_port: '9090'

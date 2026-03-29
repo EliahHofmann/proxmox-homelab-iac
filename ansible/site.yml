@@ -23,14 +23,6 @@
   roles:
     - traefik
 
-- name: Setup Nextcloud Dienst
-  hosts: nextcloud
-  become: yes
-  vars_files:
-    - vars.yml
-  roles:
-    - nextcloud
-
 - name: Setup Collabora Dienst
   hosts: collabora
   become: yes
@@ -62,3 +54,19 @@
     - vars.yml
   roles:
     - cloudflared
+
+- name: Setup Monitoring Dienst
+  hosts: monitoring
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - monitoring
+
+- name: Deploy node-exporter to all guest VMs
+  hosts: debian_guests
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - node_exporter

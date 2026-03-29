@@ -25,6 +25,7 @@ variable "lxc_configs" {
   description = "Map für alle LXC-Konfigurationen"
   type = map(object({
     vmid       = number
+    target_node = string
     hostname   = string
     template   = string
     ip         = string
@@ -41,6 +42,7 @@ variable "vm_configs" {
   description = "Konfiguration für die virtuelle Maschine"
   type = map(object({
     vmid      = number
+    target_node = string
     name      = string
     clone     = string
     ip        = string

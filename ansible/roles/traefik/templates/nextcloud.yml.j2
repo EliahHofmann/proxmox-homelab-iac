@@ -16,5 +16,10 @@ http:
   services:
     nextcloud-service:
       loadBalancer:
+        serversTransport: "ignore-backend-cert"
         servers:
-           - url: "http://{{ nextcloud_internal_ip }}:8080"
+           - url: "https://{{ nextcloud_internal_ip }}"
+
+  serversTransports:
+    ignore-backend-cert:
+      insecureSkipVerify: true

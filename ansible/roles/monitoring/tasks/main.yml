@@ -1,0 +1,38 @@
+---
+- name: Monitoring Hauptordner erstellen
+  file:
+    path: "{{ monitoring_install_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Daten-Ordner mit korrekten Rechten für Container-Nutzer erstellen
+  file:
+    path: "{{ monitoring_install_path }}/{{ item.dir }}"
+    state: directory
+    owner: "{{ item.uid }}"
+    group: "{{ item.uid }}"
+    mode: '0755'
+  loop:
+    - { dir: 'grafana-data', uid: '472' }
+    - { dir: 'loki-data', uid: '10001' }
+    - { dir: 'prometheus-data', uid: '65534' }
+
+- name: Prometheus Konfiguration generieren
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ monitoring_install_path }}/prometheus.yml"
+
+- name: Proxmox Exporter Konfiguration (API Token) generieren
+  template:
+    src: pve.yml.j2
+    dest: "{{ monitoring_install_path }}/pve.yml"
+
+- name: Monitoring docker-compose.yml generieren
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ monitoring_install_path }}/docker-compose.yml"
+
+- name: Monitoring Stack (Grafana, Loki, Prometheus, Node-Exporter) starten
+  command: docker compose up -d
+  args:
+    chdir: "{{ monitoring_install_path }}"

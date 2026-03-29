@@ -1,0 +1,80 @@
+networks:
+  monitoring:
+    driver: bridge
+
+services:
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "{{ loki_port }}:3100"
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - '{{ monitoring_install_path }}/loki-data:/loki'
+    networks:
+      - monitoring          
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "{{ prometheus_port }}:9090"
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - '{{ monitoring_install_path }}/prometheus.yml:/etc/prometheus/prometheus.yml'
+      - '{{ monitoring_install_path }}/prometheus-data:/prometheus'
+    networks:
+      - monitoring                  
+    depends_on:
+      - pve-exporter              
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - monitoring               
+
+
+  pve-exporter:
+    image: prompve/prometheus-pve-exporter:latest 
+    container_name: pve-exporter
+    restart: unless-stopped
+    ports:
+      - "9221:9221"
+    volumes:
+      - '{{ monitoring_install_path }}/pve.yml:/etc/prometheus/pve.yml:ro'
+    networks:
+      - monitoring                
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "{{ grafana_port }}:3000"
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD={{ grafana_admin_password }}
+    volumes:
+      - '{{ monitoring_install_path }}/grafana-data:/var/lib/grafana'
+    networks:
+      - monitoring                   
+    depends_on:
+      - loki
+      - prometheus
