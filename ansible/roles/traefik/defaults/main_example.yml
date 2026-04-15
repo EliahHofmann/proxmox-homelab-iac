@@ -29,3 +29,8 @@ nextcloud_internal_ip: "XXX.XXX.XXX.XXX"
 office_subdomain: "subdomain"
 office_internal_ip: "XXX.XXX.XXX.XXX"
 office_internal_port: "9980"
+
+#Immich
+immich_subdomain: "subdomain"
+immich_internal_ip: "XXX.XXX.XXX.XXX"
+immich_internal_port: "2283"

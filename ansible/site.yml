@@ -63,6 +63,15 @@
   roles:
     - monitoring
 
+- name: Setup Immich Dienst
+  hosts: immich
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - immich
+
+
 - name: Deploy node-exporter to all guest VMs
   hosts: debian_guests
   become: yes

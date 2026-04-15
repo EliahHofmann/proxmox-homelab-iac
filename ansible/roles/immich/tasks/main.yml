@@ -1,0 +1,19 @@
+---
+- name: Immich Unterordner für Volumes erstellen
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ immich_install_path }}"
+    - "{{ immich_upload_dir}}"
+
+- name: Immich docker-compose.yml erstellen
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ immich_install_path }}/docker-compose.yml"
+
+- name: Immich Container starten
+  command: docker compose up -d
+  args:
+    chdir: "{{ immich_install_path }}"

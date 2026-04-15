@@ -1,0 +1,33 @@
+http:
+  routers:
+    immich-router:
+      rule: "Host(`{{ immich_subdomain }}.{{ domain_name }}`)"
+      service: "immich-service"
+      entryPoints: ["websecure"]
+      middlewares:
+        - "immich-timeout"
+      priority: 10
+
+      tls:
+        certResolver: cloudflare
+        domains:
+          - main: "{{ domain_name }}"
+            sans:
+                - "*.{{ domain_name }}"
+
+  middlewares:
+    immich-timeout:
+      forwardingTimeouts:
+        dialTimeout: "30s"
+        responseHeaderTimeout: "0s"
+        idleTimeout: "120s"
+
+  services:
+    immich-service:
+      loadBalancer:
+        servers:
+          - url: "http://{{ immich_internal_ip }}:{{ immich_internal_port }}"
+        
+        transport:
+          respondingTimeouts:
+            readTimeout: "0s"
