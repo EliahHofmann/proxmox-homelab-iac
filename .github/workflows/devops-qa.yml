@@ -1,0 +1,52 @@
+name: DevOps QA Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # --- TERRAFORM CHECKS ---
+      # Gitleaks kommt vor dem Terraform scan,
+      # da er nichts installieren und builden muss
+      - name: gitleaks Check
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init & Validate
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Terraform Security Scan (tfsec)
+        uses: aquasecurity/tfsec-action@v1.0.0
+
+      # --- ANSIBLE CHECKS ---
+      - name: Install Ansible-Lint
+        run: pip install ansible-lint
+
+      - name: Ansible Lint
+        run: ansible-lint .
+
+      # --- TRIVY SCAN ---
+      - name: Trivy FS Scan (Security)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
