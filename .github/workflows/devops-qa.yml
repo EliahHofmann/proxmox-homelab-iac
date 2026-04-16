@@ -51,9 +51,9 @@ jobs:
           VAULT_TOKEN=$(curl -s --request POST --data "{\"role_id\": \"$VAULT_ROLE_ID\", \"secret_id\": \"$VAULT_SECRET_ID\"}" $VAULT_ADDR/v1/auth/approle/login | jq -r .auth.client_token)
           
           PM_SECRETS=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/proxmox)
-          echo "TF_VAR_proxmox_api_url=$(echo $PM_SECRETS | jq -r .data.data.PM_API_URL)" >> $GITHUB_ENV
-          echo "TF_VAR_proxmox_api_token_id=$(echo $PM_SECRETS | jq -r .data.data.PM_API_TOKEN_ID)" >> $GITHUB_ENV
-          echo "TF_VAR_proxmox_api_token_secret=$(echo $PM_SECRETS | jq -r .data.data.PM_API_TOKEN_SECRET)" >> $GITHUB_ENV
+          echo "TF_VAR_proxmox_api_url=$(echo $PM_SECRETS | jq -r .data.data.proxmox_api_url)" >> $GITHUB_ENV
+          echo "TF_VAR_proxmox_api_token_id=$(echo $PM_SECRETS | jq -r .data.data.proxmox_api_token_id)" >> $GITHUB_ENV
+          echo "TF_VAR_proxmox_api_token_secret=$(echo $PM_SECRETS | jq -r .data.data.proxmox_api_token_secret)" >> $GITHUB_ENV
           echo "TF_VAR_ssh_public_key=$(echo $PM_SECRETS | jq -r .data.data.ssh_public_key)" >> $GITHUB_ENV
 
       - name: Terraform Setup
