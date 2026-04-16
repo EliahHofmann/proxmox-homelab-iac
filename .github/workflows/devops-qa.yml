@@ -39,12 +39,12 @@ jobs:
       - name: Install Ansible-Lint
         working-directory: ./ansible
         run: |
-          pip install ansible-lint
+          pipx install ansible-lint
           
       - name: Ansible Lint
         working-directory: ./ansible
         run: |
-          ansible-lint .
+          ~/.local/bin/ansible-lint .
         
 
       # --- TRIVY SCAN ---
