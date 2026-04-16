@@ -51,9 +51,9 @@ jobs:
           VAULT_TOKEN=$(curl -s --request POST --data "{\"role_id\": \"$VAULT_ROLE_ID\", \"secret_id\": \"$VAULT_SECRET_ID\"}" $VAULT_ADDR/v1/auth/approle/login | jq -r .auth.client_token)
           
           PM_SECRETS=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/proxmox)
-          echo "PM_API_URL=$(echo $PM_SECRETS | jq -r .data.data.PM_API_URL)" >> $GITHUB_ENV
-          echo "PM_API_TOKEN_ID=$(echo $PM_SECRETS | jq -r .data.data.PM_API_TOKEN_ID)" >> $GITHUB_ENV
-          echo "PM_API_TOKEN_SECRET=$(echo $PM_SECRETS | jq -r .data.data.PM_API_TOKEN_SECRET)" >> $GITHUB_ENV
+          echo "TF_VAR_proxmox_api_url=$(echo $PM_SECRETS | jq -r .data.data.PM_API_URL)" >> $GITHUB_ENV
+          echo "TF_VAR_proxmox_api_token_id=$(echo $PM_SECRETS | jq -r .data.data.PM_API_TOKEN_ID)" >> $GITHUB_ENV
+          echo "TF_VAR_proxmox_api_token_secret=$(echo $PM_SECRETS | jq -r .data.data.PM_API_TOKEN_SECRET)" >> $GITHUB_ENV
 
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v3
