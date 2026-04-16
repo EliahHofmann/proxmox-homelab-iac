@@ -1,0 +1,8 @@
+---
+domain: "{{ lookup('env', 'DOMAIN') }}"
+nextcloud_subdomain: "{{ lookup('env', 'NEXTCLOUD_SUBDOMAIN') }}"
+collabora_subdomain: "{{ lookup('env', 'COLLABORA_SUBDOMAIN') }}"
+collabora_install_path: "/opt/collabora"
+traefik_ip: "192.168.178.31"
+USERNAME_PASSWORD: "{{ lookup('env', 'USERNAME_PASSWORD') }}"
+USERNAME: "{{ lookup('env', 'USERNAME') }}"

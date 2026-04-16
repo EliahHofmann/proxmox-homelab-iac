@@ -1,3 +1,0 @@
----
-cloudflared_install_path: '/opt/cloudflared'
-cloudflare_tunnel_token: 'XXXXXXXXXXXXXXX'

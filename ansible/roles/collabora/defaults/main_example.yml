@@ -1,8 +1,0 @@
----
-domain: "subdomain\.domain\.de"
-nextcloud_subdomain: "subdomain"
-collabora_subdomain: "subdomain"
-collabora_install_path: "/opt/collabora"
-traefik_ip: "XXX.XXX.XXX.XXX"
-USERNAME_PASSWORD: "XXXXXXX"
-USERNAME: "XXXXX"

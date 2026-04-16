@@ -1,0 +1,7 @@
+---
+immich_version: "release"
+immich_install_path: "/opt/immich"
+immich_upload_dir: "/opt/immich/data"
+immich_db_password: "{{ lookup('env', 'IMMICH_DB_PASSWORD') }}"
+immich_port: 2283
+metrics_port: 8081

@@ -1,53 +1,34 @@
-name: DevOps QA Pipeline
+name: DevOps CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
     branches: [ main ]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-
 jobs:
-  lint-and-security:
-    runs-on: self-hosted
 
+  # STUFE 1: QA & SECURITY CHECKS
+  qa-checks:
+    runs-on: self-hosted
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # --- TERRAFORM CHECKS ---
-      - name: Terraform Setup
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init & Validate
-        working-directory: ./terraform
-        run: |
-          terraform init -backend=false
-          terraform validate
-
       - name: Terraform Security Scan (tfsec)
         uses: aquasecurity/tfsec-action@v1.0.0
         with:
           working_directory: ./terraform
 
-      # --- ANSIBLE CHECKS ---
-      - name: Install Ansible-Lint
+      - name: Install & Run Ansible Lint
         working-directory: ./ansible
         run: |
           pipx install ansible-lint
-          
-      - name: Ansible Lint
-        working-directory: ./ansible
-        run: |
           ~/.local/bin/ansible-lint .
-        
 
-      # --- TRIVY SCAN ---
       - name: Trivy FS Scan (Security)
         uses: aquasecurity/trivy-action@master
         with:
@@ -55,3 +36,64 @@ jobs:
           format: 'table'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
+
+  # STUFE 2: TERRAFORM DEPLOYMENT
+  terraform-deploy:
+    needs: qa-checks          
+    environment: Terraform-Approval 
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Fetch Proxmox Secrets from Vault
+        run: |
+          VAULT_TOKEN=$(curl -s --request POST --data "{\"role_id\": \"$VAULT_ROLE_ID\", \"secret_id\": \"$VAULT_SECRET_ID\"}" $VAULT_ADDR/v1/auth/approle/login | jq -r .auth.client_token)
+          
+          PM_SECRETS=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/proxmox)
+          echo "PM_API_URL=$(echo $PM_SECRETS | jq -r .data.data.PM_API_URL)" >> $GITHUB_ENV
+          echo "PM_API_TOKEN_ID=$(echo $PM_SECRETS | jq -r .data.data.PM_API_TOKEN_ID)" >> $GITHUB_ENV
+          echo "PM_API_TOKEN_SECRET=$(echo $PM_SECRETS | jq -r .data.data.PM_API_TOKEN_SECRET)" >> $GITHUB_ENV
+
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init & Apply
+        working-directory: ./terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+  # STUFE 3: ANSIBLE CONFIGURATION
+  ansible-deploy:
+    needs: terraform-deploy
+    environment: Ansible-Approval    
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Fetch Ansible Secrets from Vault
+        run: |
+          VAULT_TOKEN=$(curl -s --request POST --data "{\"role_id\": \"$VAULT_ROLE_ID\", \"secret_id\": \"$VAULT_SECRET_ID\"}" $VAULT_ADDR/v1/auth/approle/login | jq -r .auth.client_token)
+          
+          # SSH Key holen
+          SSH_SECRET=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/ssh)
+          echo "$(echo $SSH_SECRET | jq -r .data.data.private_key)" > /tmp/ansible_vault_key
+          chmod 600 /tmp/ansible_vault_key
+
+          # App Secrets holen (Beispiele)
+          CF_SECRET=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/cloudflared)
+          echo "CF_TUNNEL_TOKEN=$(echo $CF_SECRET | jq -r .data.data.cloudflare_tunnel_token)" >> $GITHUB_ENV
+
+          VW_SECRET=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/vaultwarden)
+          echo "ADMIN_TOKEN=$(echo $VW_SECRET | jq -r .data.data.ADMIN_TOKEN)" >> $GITHUB_ENV
+
+      - name: Run Ansible Playbook
+        working-directory: ./ansible
+        run: |
+          ansible-playbook -i inventory.ini site.yml --private-key /tmp/ansible_vault_key
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: rm -f /tmp/ansible_vault_key

@@ -1,0 +1,7 @@
+---
+monitoring_install_path: '/opt/monitoring'
+grafana_admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PASSWORD') }}"
+grafana_port: '3000'
+loki_port: '3100'
+prometheus_port: '9090'
+proxmox_api_token: "{{ lookup('env', 'PROXMOX_API_TOKEN') }}"

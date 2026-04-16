@@ -1,4 +1,0 @@
----
-adguard_install_path: '/opt/adguard'
-adguard_conf_dir: '{{ adguard_install_path }}/conf'
-adguard_work_dir: '{{ adguard_install_path }}/work'

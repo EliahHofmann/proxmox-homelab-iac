@@ -11,6 +11,6 @@ affine_config_location: '/opt/affine/config'
 affine_db_data_location: '/opt/affine/postgres'
 
 # Datenbank-Zugangsdaten
-affine_db_username: 'XXXXX'
-affine_db_password: 'XXXXXXXXXXX'
-affine_db_database: 'XXXXX'
+affine_db_username: "{{ lookup('env', 'affine_db_username') }}"
+affine_db_password: "{{ lookup('env', 'affine_db_password') }}"
+affine_db_database: "{{ lookup('env', 'affine_db_database') }}"

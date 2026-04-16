@@ -1,0 +1,3 @@
+---
+vault_install_path: "/opt/vaultwarden"
+ADMIN_TOKEN: "{{ lookup('env', 'ADMIN_TOKEN') }}"
