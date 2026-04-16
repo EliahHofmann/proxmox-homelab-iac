@@ -62,7 +62,7 @@ jobs:
       - name: Terraform Init & Apply
         working-directory: ./terraform
         run: |
-          terraform init
+          terraform init -upgrade
           terraform apply -auto-approve
 
   # STUFE 3: ANSIBLE CONFIGURATION
