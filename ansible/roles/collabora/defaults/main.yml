@@ -1,5 +1,6 @@
 ---
 domain: "{{ lookup('env', 'DOMAIN') }}"
+domain_name: "{{ lookup('env', 'DOMAIN_NAME') }}"
 nextcloud_subdomain: "{{ lookup('env', 'NEXTCLOUD_SUBDOMAIN') }}"
 collabora_subdomain: "{{ lookup('env', 'COLLABORA_SUBDOMAIN') }}"
 collabora_install_path: "/opt/collabora"
