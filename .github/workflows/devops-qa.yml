@@ -80,7 +80,7 @@ jobs:
           
           # SSH Key holen
           SSH_SECRET=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/ssh)
-          echo "$(echo $SSH_SECRET | jq -r .data.data.private_key)" > /tmp/ansible_vault_key
+          echo "$SSH_SECRET" | jq -r '.data.data.private_key' > /tmp/ansible_vault_key
           chmod 600 /tmp/ansible_vault_key
 
           # App Secrets holen (Beispiele)
