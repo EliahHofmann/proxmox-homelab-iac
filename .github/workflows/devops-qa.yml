@@ -78,12 +78,12 @@ jobs:
         run: |
           VAULT_TOKEN=$(curl -s --request POST --data "{\"role_id\": \"$VAULT_ROLE_ID\", \"secret_id\": \"$VAULT_SECRET_ID\"}" $VAULT_ADDR/v1/auth/approle/login | jq -r .auth.client_token)
           
-          # SSH Key holen
-          SSH_SECRET=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/ssh)
-          echo "$SSH_SECRET" | jq -r '.data.data.private_key' > /tmp/ansible_vault_key
+          curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/ssh > vault_ssh.json
+          jq -r '.data.data.private_key' vault_ssh.json | base64 -d > /tmp/ansible_vault_key
+          
           chmod 600 /tmp/ansible_vault_key
+          rm vault_ssh.json
 
-          # App Secrets holen (Beispiele)
           CF_SECRET=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/cloudflared)
           echo "CF_TUNNEL_TOKEN=$(echo $CF_SECRET | jq -r .data.data.cloudflare_tunnel_token)" >> $GITHUB_ENV
 
