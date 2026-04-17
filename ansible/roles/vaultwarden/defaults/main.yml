@@ -1,3 +1,9 @@
 ---
 vault_install_path: "/opt/vaultwarden"
 ADMIN_TOKEN: "{{ lookup('env', 'ADMIN_TOKEN') }}"
+smtp_host: "{{ lookup('env', 'SMTP_HOST') }}"
+smtp_port: "{{ lookup('env', 'SMTP_PORT') }}"
+smtp_user: "{{ lookup('env', 'SMTP_USER') }}"
+smtp_token: "{{ lookup('env', 'SMTP_TOKEN') }}"
+mail_to: "{{ lookup('env', 'MAIL_TO') }}"
+backup_zip_password: "{{ lookup('env', 'BACKUP_ZIP_PASSWORD') }}"

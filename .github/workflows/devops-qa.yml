@@ -84,11 +84,18 @@ jobs:
           chmod 600 /tmp/ansible_vault_key
           rm vault_ssh.json
 
-          CF_SECRET=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/cloudflared)
-          echo "CF_TUNNEL_TOKEN=$(echo $CF_SECRET | jq -r .data.data.cloudflare_tunnel_token)" >> $GITHUB_ENV
+          #Alle Services die es gibt werden durch die for-Schleife zu umgebungsvariable generiert (DRY)
+          SERVICES=("affine" "cloudflare" "collabora" "immich" "monitoring" "nextcloud" "traefik" "vaultwarden")
 
-          VW_SECRET=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/vaultwarden)
-          echo "ADMIN_TOKEN=$(echo $VW_SECRET | jq -r .data.data.ADMIN_TOKEN)" >> $GITHUB_ENV
+          for SERVICE in "${SERVICES[@]}"; do
+            SECRET_JSON=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/$SERVICE)
+            
+            if [ "$(echo "$SECRET_JSON" | jq -r '.data')" != "null" ]; then
+              
+              echo "$SECRET_JSON" | jq -r '.data.data | to_entries | .[] | "\(.key | ascii_upcase)=\(.value)"' >> $GITHUB_ENV
+              
+            fi
+          done
 
       - name: Run Ansible Playbook
         working-directory: ./ansible
