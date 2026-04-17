@@ -1,4 +1,5 @@
 ---
+proxmox_ip: "{{ lookup('env', 'PROXMOX_IP') }}"
 monitoring_install_path: '/opt/monitoring'
 grafana_admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PASSWORD') }}"
 grafana_port: '3000'
