@@ -7,4 +7,4 @@ services:
     restart: unless-stopped
     command: tunnel --no-autoupdate run
     environment:
-      - TUNNEL_TOKEN={{ cloudflare_tunnel_token }}
+      - TUNNEL_TOKEN={{ cloudflared_tunnel_token }}

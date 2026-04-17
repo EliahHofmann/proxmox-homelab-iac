@@ -85,7 +85,7 @@ jobs:
           rm vault_ssh.json
 
           #Alle Services die es gibt werden durch die for-Schleife zu umgebungsvariable generiert (DRY)
-          SERVICES=("affine" "cloudflare" "collabora" "immich" "monitoring" "nextcloud" "traefik" "vaultwarden")
+          SERVICES=("affine" "cloudflared" "collabora" "immich" "monitoring" "nextcloud" "traefik" "vaultwarden")
 
           for SERVICE in "${SERVICES[@]}"; do
             SECRET_JSON=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/$SERVICE)

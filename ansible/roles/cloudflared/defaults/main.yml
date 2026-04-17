@@ -1,3 +1,3 @@
 ---
 cloudflared_install_path: '/opt/cloudflared'
-cloudflare_tunnel_token: "{{ lookup('env', 'CLOUDFLARE_TUNNEL_TOKEN') }}"
+cloudflared_tunnel_token: "{{ lookup('env', 'CLOUDFLARED_TUNNEL_TOKEN') }}"
