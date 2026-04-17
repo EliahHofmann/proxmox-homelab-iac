@@ -3,6 +3,7 @@
 CF_DNS_API_TOKEN: "{{ lookup('env', 'CF_DNS_API_TOKEN') }}"
 CF_API_TOKEN: "{{ lookup('env', 'CF_API_TOKEN') }}"
 subdomain: "{{ lookup('env', 'SUBDOMAIN') }}"
+domain_name: "{{ lookup('env', 'DOMAIN_NAME') }}"
 docker_dest: "/opt/traefik"
 
 #Let's Encrypt Email
