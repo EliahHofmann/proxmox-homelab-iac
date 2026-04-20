@@ -4,8 +4,6 @@ http:
       rule: "Host(`{{ immich_subdomain }}.{{ domain_name }}`)"
       service: "immich-service"
       entryPoints: ["websecure"]
-      middlewares:
-        - "immich-timeout"
       priority: 10
 
       tls:
@@ -15,19 +13,16 @@ http:
             sans:
                 - "*.{{ domain_name }}"
 
-  middlewares:
-    immich-timeout:
-      forwardingTimeouts:
-        dialTimeout: "30s"
-        responseHeaderTimeout: "0s"
-        idleTimeout: "120s"
-
   services:
     immich-service:
       loadBalancer:
+        serversTransport: "immich-transport"
         servers:
           - url: "http://{{ immich_internal_ip }}:{{ immich_internal_port }}"
-        
-        transport:
-          respondingTimeouts:
-            readTimeout: "0s"
+
+  serversTransports:
+    immich-transport:
+      forwardingTimeouts:
+        dialTimeout: "30s"
+        responseHeaderTimeout: "0s"
+        idleConnTimeout: "120s"
