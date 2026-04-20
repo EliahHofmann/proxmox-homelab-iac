@@ -1,0 +1,123 @@
+name: DevOps CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+
+
+  # STUFE 1: QA & SECURITY CHECKS
+  qa-checks:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Terraform Security Scan (tfsec)
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: ./terraform
+
+      - name: Install & Run Ansible Lint
+        working-directory: ./ansible
+        run: |
+          pipx install ansible-lint
+          ~/.local/bin/ansible-lint .
+
+      - name: Trivy FS Scan (Security)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+  # STUFE 2: TERRAFORM DEPLOYMENT
+  terraform-deploy:
+    needs: qa-checks          
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Fetch Proxmox Secrets from Vault
+        run: |
+          VAULT_TOKEN=$(curl -s --request POST --data "{\"role_id\": \"$VAULT_ROLE_ID\", \"secret_id\": \"$VAULT_SECRET_ID\"}" $VAULT_ADDR/v1/auth/approle/login | jq -r .auth.client_token)
+          
+          PM_SECRETS=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/proxmox)
+          echo "TF_VAR_proxmox_api_url=$(echo $PM_SECRETS | jq -r .data.data.proxmox_api_url)" >> $GITHUB_ENV
+          echo "TF_VAR_proxmox_api_token_id=$(echo $PM_SECRETS | jq -r .data.data.proxmox_api_token_id)" >> $GITHUB_ENV
+          echo "TF_VAR_proxmox_api_token_secret=$(echo $PM_SECRETS | jq -r .data.data.proxmox_api_token_secret)" >> $GITHUB_ENV
+          echo "TF_VAR_ssh_public_key=$(echo $PM_SECRETS | jq -r .data.data.ssh_public_key)" >> $GITHUB_ENV
+
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init -upgrade
+
+      - name: Terraform Plan
+        if: github.event_name == 'pull_request'
+        working-directory: ./terraform
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: github.event_name == 'push'
+        working-directory: ./terraform
+        run: terraform apply -auto-approve
+
+  # STUFE 3: ANSIBLE CONFIGURATION
+  ansible-deploy:
+    needs: terraform-deploy   
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Fetch Ansible Secrets from Vault
+        run: |
+          VAULT_TOKEN=$(curl -s --request POST --data "{\"role_id\": \"$VAULT_ROLE_ID\", \"secret_id\": \"$VAULT_SECRET_ID\"}" $VAULT_ADDR/v1/auth/approle/login | jq -r .auth.client_token)
+          
+          curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/ssh > vault_ssh.json
+          jq -r '.data.data.private_key' vault_ssh.json | base64 -d > /tmp/ansible_vault_key
+          
+          chmod 600 /tmp/ansible_vault_key
+          rm vault_ssh.json
+
+          #Alle Services die es gibt werden durch die for-Schleife zu umgebungsvariable generiert (DRY)
+          SERVICES=("affine" "cloudflared" "collabora" "immich" "monitoring" "nextcloud" "traefik" "vaultwarden")
+
+          for SERVICE in "${SERVICES[@]}"; do
+            SECRET_JSON=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/secret/data/$SERVICE)
+            
+            if [ "$(echo "$SECRET_JSON" | jq -r '.data')" != "null" ]; then
+              
+              echo "$SECRET_JSON" | jq -r '.data.data | to_entries | .[] | "\(.key | ascii_upcase)=\(.value)"' >> $GITHUB_ENV
+              
+            fi
+          done
+
+      - name: Ansible Check / Dry-Run
+        if: github.event_name == 'pull_request'
+        working-directory: ./ansible
+        run: ansible-playbook -i inventory.ini site.yml --private-key /tmp/ansible_vault_key --check
+
+      - name: Ansible Deploy (Scharfschaltung für Main)
+        if: github.event_name == 'push'
+        working-directory: ./ansible
+        run: ansible-playbook -i inventory.ini site.yml --private-key /tmp/ansible_vault_key
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: rm -f /tmp/ansible_vault_key

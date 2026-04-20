@@ -1,0 +1,51 @@
+---
+- name: Erstelle den Ordner für Nextcloud
+  file:
+    path: '{{ nextcloud_install_path }}'
+    state: directory
+    mode: '0755'
+
+- name: docker-compose.yml erstellen
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ nextcloud_install_path }}/docker-compose.yml"
+    mode: '0644'
+      
+- name: Container starten
+  command: docker compose up -d
+  args:
+    chdir: '{{ nextcloud_install_path }}'
+
+- name: Nextcloud Reverse-Proxy und Sicherheits-Configs setzen
+  command: >
+    docker compose exec -T --user www-data app php occ config:system:set {{ item.key }} {{ item.type | default('--value') }}="{{ item.value }}"
+  args:
+    chdir: '{{ nextcloud_install_path }}'
+  loop:
+    # Behebt Reverse-Proxy und HTTPS Fehler
+    - { key: 'trusted_proxies 0', value: '{{ traefik_ip }}' }
+    - { key: 'overwriteprotocol', value: 'https' }
+    - { key: 'overwritehost', value: '{{ nextcloud_subdomain }}.{{ domain_name }}' }
+    - { key: 'overwritecliurl', value: 'https://{{ nextcloud_subdomain }}.{{ domain_name }}' }
+    # Telefonregion und Wartungsfenster
+    - { key: 'default_phone_region', value: 'DE' }
+    - { key: 'maintenance_window_start', value: '2', type: '--type=integer --value' }
+    - { key: 'memcache.locking', value: '\OC\Memcache\Redis' }
+    - { key: 'redis host', value: 'redis' }
+    - { key: 'redis port', value: '6379', type: '--type=integer --value' }
+  register: occ_config
+  changed_when: "'set to string' in occ_config.stdout or 'set to integer' in occ_config.stdout"
+
+- name: Fehlende Datenbank-Indizes hinzufügen (Behebt die gelbe Warnung)
+  command: docker compose exec -T --user www-data app php occ db:add-missing-indices -n
+  args:
+    chdir: '{{ nextcloud_install_path }}'
+  register: occ_indices
+  changed_when: "'Done' in occ_indices.stdout or 'Added' in occ_indices.stdout"
+
+- name: MIME-Type Migrationen durchführen (Behebt die gelbe Warnung)
+  command: docker compose exec -T --user www-data app php occ maintenance:repair --include-expensive -n
+  args:
+    chdir: '{{ nextcloud_install_path }}'
+  register: occ_mime
+  changed_when: false

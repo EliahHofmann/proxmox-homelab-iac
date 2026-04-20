@@ -1,0 +1,16 @@
+---
+affine_install_path: "/opt/affine"
+
+# Affine Container-Einstellungen
+affine_revision: 'stable'
+affine_port: '3010'
+
+# Pfade für die Volumes auf dem LXC-Server
+affine_upload_location: '/opt/affine/storage'
+affine_config_location: '/opt/affine/config'
+affine_db_data_location: '/opt/affine/postgres'
+
+# Datenbank-Zugangsdaten
+affine_db_username: "{{ lookup('env', 'AFFINE_DB_USERNAME') }}"
+affine_db_password: "{{ lookup('env', 'AFFINE_DB_PASSWORD') }}"
+affine_db_database: "{{ lookup('env', 'AFFINE_DB_DATABASE') }}"

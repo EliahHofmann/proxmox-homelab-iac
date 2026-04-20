@@ -1,11 +1,8 @@
 . 
-*.auto.tfvars
 .terraform/
 .tfstate
 .tfstate.backup
 terraform.tfstate
 terraform.tfstate.backup
-ansible/inventory.ini
 ansible/*.retry
 ansible/vars.yml
-ansible/roles/*/defaults/main.yml

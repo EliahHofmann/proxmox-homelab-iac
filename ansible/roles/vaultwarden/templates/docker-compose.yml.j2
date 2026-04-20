@@ -5,6 +5,7 @@ services:
         restart: always
         environment:
             - WEBSOCKET_ENABLED=true
+            - ADMIN_TOKEN={{ ADMIN_TOKEN }}
         volumes:
             - ./vw-data:/data
         ports:

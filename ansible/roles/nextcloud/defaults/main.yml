@@ -1,0 +1,9 @@
+---
+collabora_subdomain: "{{ lookup('env', 'COLLABORA_SUBDOMAIN') }}"
+nextcloud_subdomain: "{{ lookup('env', 'NEXTCLOUD_SUBDOMAIN') }}"
+nextcloud_install_path: "/opt/nextcloud"
+traefik_ip: "192.168.178.31"
+MYSQL_ROOT_PASSWORD: "{{ lookup('env', 'MYSQL_ROOT_PASSWORD') }}"
+MYSQL_PASSWORD: "{{ lookup('env', 'MYSQL_PASSWORD') }}"
+MYSQL_DATABASE: "{{ lookup('env', 'MYSQL_DATABASE') }}"
+MYSQL_USER: "{{ lookup('env', 'MYSQL_USER') }}"

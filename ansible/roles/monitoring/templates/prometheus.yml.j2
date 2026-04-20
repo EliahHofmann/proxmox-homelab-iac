@@ -1,0 +1,24 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'homelab-nodes'
+    static_configs:
+      - targets:
+        - 'node-exporter:9100'  # Der Sensor deiner Monitoring-VM selbst
+{% for host in groups['debian_guests'] %}
+        - '{{ hostvars[host].ansible_host | default(host) }}:9100'
+{% endfor %}
+
+  - job_name: 'proxmox'
+    metrics_path: /pve
+    static_configs:
+      - targets:
+        - '{{ proxmox_ip }}'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: pve-exporter:9221

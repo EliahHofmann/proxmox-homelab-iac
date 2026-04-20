@@ -2,23 +2,62 @@
 - name: Basis-Konfiguration für alle Server
   hosts: all
   become: yes
-  vars_files:
-    - vars.yml
   roles:
     - common
 
 - name: Setup Vaultwarden Dienst
   hosts: vaultwarden
   become: yes
-  vars_files:
-    - vars.yml
   roles:
     - vaultwarden
 
 - name: Setup Traefik Config Dienst
   hosts: traefik
   become: yes
-  vars_files:
-    - vars.yml
   roles:
     - traefik
+
+- name: Setup Collabora Dienst
+  hosts: collabora
+  become: yes
+  roles:
+    - collabora
+
+- name: Setup Affine Dienst
+  hosts: affine
+  become: yes
+  roles:
+    - affine
+
+- name: Setup Adguard Dienst
+  hosts: adguard
+  become: yes
+  roles:
+    - adguard
+
+- name: Setup Cloudflared Dienst
+  hosts: cloudflared
+  become: yes
+  roles:
+    - cloudflared
+
+- name: Setup Monitoring Dienst
+  hosts: monitoring
+  become: yes
+  roles:
+    - monitoring
+
+- name: Setup Immich Dienst
+  hosts: immich
+  become: yes
+  roles:
+    - immich
+
+
+- name: Deploy node-exporter to all guest VMs
+  hosts: debian_guests
+  become: yes
+  roles:
+    - node_exporter
+
+#Das ist ein Test für meine neue Pipeline

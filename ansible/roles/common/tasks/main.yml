@@ -1,19 +1,119 @@
 ---
-# dieses Playhook beinhaltet plays die auf allen nodes laufen wird.
+# dieses Playbook beinhaltet plays die auf allen nodes laufen wird.
+- name: Zeitzone auf Europa/Berlin setzen
+  timezone:
+    name: Europe/Berlin
 
-  - name: System-Update und Upgrade
-    apt:
-      update_cache: yes
-      upgrade: yes
-      autoremove: yes
+- name: Voraussetzungen für das moderne Docker-Setup installieren
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: yes
 
-  - name: Basis installieren
-    apt:
-      name:
-        - curl
-      state: present
+#große Hilfe von Reddit: https://www.reddit.com/r/ansible/comments/163x5iy/installing_docker_on_debian_12/
 
-  - name: Zeitzone auf Europa/Berlin
-    timezone:
-      name: Europe/Berlin
+- name: Alte Docker-Repository-Dateien und veraltete Einträge bereinigen
+  block:
+    - name: Remove all old Docker lines from any sources file
+      shell: find /etc/apt -name "*.list" -o -name "*.sources" | xargs sed -i '/download\.docker\.com/d' || true
+      changed_when: false
+    - name: Remove old Docker repo files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/docker.list
+        - /etc/apt/sources.list.d/docker.sources
+        - /etc/apt/sources.list.d/docker
+    - name: Clear stale apt cache
+      command: rm -rf /var/lib/apt/lists/*
+      changed_when: false
 
+- name: Prüfen, ob der Docker-Schlüssel bereits existiert
+  stat:
+    path: /etc/apt/keyrings/docker.asc
+  register: docker_gpg
+
+- name: APT-Keyring-Verzeichnis erstellen
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Docker GPG-Schlüssel (.asc) herunterladen
+  get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+  when: not docker_gpg.stat.exists
+
+- name: Berechtigungen für den Docker-Schlüssel setzen
+  file:
+    path: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+    owner: root
+    group: root
+  when: not docker_gpg.stat.exists
+
+- name: Docker APT-Repository hinzufügen (modernes .sources Format)
+  copy:
+    dest: /etc/apt/sources.list.d/docker.sources
+    content: |
+      Types: deb
+      URIs: https://download.docker.com/linux/debian
+      Suites: {{ ansible_distribution_release }}
+      Components: stable
+      Architectures: amd64
+      Signed-By: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+
+- name: Installiere Docker, Compose und Basis
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: yes
+
+- name: Prüfen, ob das Loki Docker Plugin bereits installiert ist
+  command: docker plugin ls
+  register: docker_plugins
+  changed_when: false
+
+- name: Loki Docker Plugin installieren
+  command: docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+  when: "'loki' not in docker_plugins.stdout"
+
+- name: Docker daemon.json für globales Loki-Logging erstellen
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "loki",
+        "log-opts": {
+          "loki-url": "http://192.168.178.60:3100/loki/api/v1/push",
+          "loki-retries": "5",
+          "loki-batch-size": "400"
+        }
+      }
+  register: docker_daemon_config
+
+- name: Docker Dienst neu starten
+  service:
+    name: docker
+    state: restarted
+  when: docker_daemon_config.changed
+
+- name: System-Update und Upgrade
+  apt:
+    update_cache: yes
+    upgrade: yes
+    autoremove: yes

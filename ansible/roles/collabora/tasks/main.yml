@@ -1,0 +1,18 @@
+---
+- name: Erstelle den Ordner für Collabora
+  file:
+    path: '{{ collabora_install_path }}'
+    state: directory
+    mode: '0755'
+
+- name: docker-compose.yml erstellen
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ collabora_install_path }}/docker-compose.yml"
+    mode: '0644'
+      
+
+- name: Container starten
+  command: docker compose up -d
+  args:
+    chdir: '{{ collabora_install_path }}'

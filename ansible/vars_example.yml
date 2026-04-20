@@ -1,7 +1,0 @@
-domain_name: "domain.de"
-backup_zip_password: "XXXXX"
-smtp_host: "XXX"
-smtp_port: "587"
-smtp_user: "XXX@XXX"
-smtp_token: "XXXX"
-mail_to: "XXX@XXX"
