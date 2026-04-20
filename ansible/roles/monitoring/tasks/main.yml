@@ -1,4 +1,13 @@
 ---
+- name: Konfliktvermeidung - alten nativen Node-Exporter restlos deinstallieren
+  apt:
+    name: prometheus-node-exporter
+    state: absent
+    purge: yes
+    autoremove: yes
+  become: yes
+  ignore_errors: yes
+  
 - name: Monitoring Hauptordner erstellen
   file:
     path: "{{ monitoring_install_path }}"
