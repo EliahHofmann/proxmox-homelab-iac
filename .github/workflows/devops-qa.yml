@@ -2,12 +2,17 @@ name: DevOps CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+
 
   # STUFE 1: QA & SECURITY CHECKS
   qa-checks:
@@ -40,7 +45,6 @@ jobs:
   # STUFE 2: TERRAFORM DEPLOYMENT
   terraform-deploy:
     needs: qa-checks          
-    environment: Terraform-Approval 
     runs-on: self-hosted
     steps:
       - name: Checkout Code
@@ -59,16 +63,23 @@ jobs:
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init & Apply
+      - name: Terraform Init
         working-directory: ./terraform
-        run: |
-          terraform init -upgrade
-          terraform apply -auto-approve
+        run: terraform init -upgrade
+
+      - name: Terraform Plan
+        if: github.event_name == 'pull_request'
+        working-directory: ./terraform
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: github.event_name == 'push'
+        working-directory: ./terraform
+        run: terraform apply -auto-approve
 
   # STUFE 3: ANSIBLE CONFIGURATION
   ansible-deploy:
-    needs: terraform-deploy
-    environment: Ansible-Approval    
+    needs: terraform-deploy   
     runs-on: self-hosted
     steps:
       - name: Checkout Code
@@ -97,10 +108,15 @@ jobs:
             fi
           done
 
-      - name: Run Ansible Playbook
+      - name: Ansible Check / Dry-Run
+        if: github.event_name == 'pull_request'
         working-directory: ./ansible
-        run: |
-          ansible-playbook -i inventory.ini site.yml --private-key /tmp/ansible_vault_key
+        run: ansible-playbook -i inventory.ini site.yml --private-key /tmp/ansible_vault_key --check
+
+      - name: Ansible Deploy (Scharfschaltung für Main)
+        if: github.event_name == 'push'
+        working-directory: ./ansible
+        run: ansible-playbook -i inventory.ini site.yml --private-key /tmp/ansible_vault_key
 
       - name: Cleanup SSH Key
         if: always()
