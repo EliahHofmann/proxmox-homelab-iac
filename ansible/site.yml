@@ -53,6 +53,11 @@
   roles:
     - immich
 
+- name: Setup Consul Dienst
+  hosts: consul
+  become: yes
+  roles:
+    - consul
 
 - name: Deploy node-exporter to all guest VMs
   hosts: debian_guests

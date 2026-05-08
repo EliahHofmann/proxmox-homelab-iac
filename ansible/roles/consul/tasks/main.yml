@@ -1,0 +1,60 @@
+---
+- name: Unzip installieren
+  apt:
+    name: unzip
+    state: present
+    update_cache: yes
+
+- name: Consul Binary herunterladen und entpacken
+  unarchive:
+    src: "https://releases.hashicorp.com/consul/1.18.1/consul_1.18.1_linux_amd64.zip"
+    dest: "/usr/local/bin/"
+    remote_src: yes
+    creates: "/usr/local/bin/consul"
+
+- name: Consul Gruppe erstellen
+  group:
+    name: consul
+    system: yes
+    state: present
+
+- name: Consul Benutzer erstellen
+  user:
+    name: consul
+    group: consul
+    system: yes
+    shell: /bin/false
+    create_home: no
+
+- name: Consul Ordnerstruktur erstellen
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: consul
+    group: consul
+    mode: '0755'
+  loop:
+    - /etc/consul.d
+    - /opt/consul
+
+- name: Consul Konfiguration (HCL) aus Template kopieren
+  template:
+    src: consul.hcl.j2
+    dest: /etc/consul.d/consul.hcl
+    owner: consul
+    group: consul
+    mode: '0640'
+  notify: restart consul
+
+- name: Systemd Service-Datei für Consul anlegen
+  template:
+    src: consul.service.j2
+    dest: /etc/systemd/system/consul.service
+  notify: restart consul
+
+- name: Consul Service aktivieren und starten
+  systemd:
+    name: consul
+    enabled: yes
+    state: started
+    daemon_reload: yes
