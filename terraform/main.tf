@@ -5,8 +5,10 @@ terraform {
       version = "3.0.2-rc07"
     }
   }
-  backend "local" {
-    path = "/home/github-runner/terraform-state/terraform.tfstate"
+  backend "consul" {
+    address = "192.168.178.63:8500"
+    scheme  = "http"
+    path    = "terraform/state/proxmox"
   }
 }
 
