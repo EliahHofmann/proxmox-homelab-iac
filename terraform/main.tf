@@ -6,9 +6,7 @@ terraform {
     }
   }
   backend "local" {
-#    address = "192.168.178.63:8500"
-#    scheme  = "http"
-#    path    = "terraform/state/proxmox"
+    path = "/home/github-runner/terraform-state/terraform.tfstate"
   }
 }
 
