@@ -35,6 +35,7 @@ variable "lxc_configs" {
     storage    = string
     size       = string
     nameserver = string
+    tags       = string
   }))
 }
 
@@ -51,5 +52,6 @@ variable "vm_configs" {
     memory    = number
     disk_size = string
     storage   = string
+    tags      = string
   }))
 }
