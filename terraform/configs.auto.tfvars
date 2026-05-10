@@ -56,7 +56,7 @@ lxc_configs = {
     size       = "2G"
     storage    = "local-lvm"
     nameserver = "1.1.1.1"
-    tags       = "cloudflare"
+    tags       = "cloudflared"
   },
   "collabora" = {
     vmid       = 201

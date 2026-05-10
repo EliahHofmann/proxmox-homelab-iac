@@ -95,6 +95,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Upgrade Ansible
+        run: pip3 install --upgrade ansible-core --break-system-packages
+
       - name: Install Ansible Proxmox Collection
         run: ansible-galaxy collection install community.proxmox
 
