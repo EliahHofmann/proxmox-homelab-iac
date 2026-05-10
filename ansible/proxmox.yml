@@ -1,4 +1,4 @@
-plugin: community.general.proxmox
+plugin: community.proxmox.proxmox
 url: "{{ lookup('env', 'PROXMOX_URL') }}"
 token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID') }}"
 token_secret: "{{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
