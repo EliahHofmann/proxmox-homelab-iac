@@ -6,63 +6,58 @@
     - common
 
 - name: Setup Vaultwarden Dienst
-  hosts: vaultwarden
+  hosts: tag_vaultwarden
   become: yes
   roles:
     - vaultwarden
 
 - name: Setup Traefik Config Dienst
-  hosts: traefik
+  hosts: tag_traefik
   become: yes
   roles:
     - traefik
 
 - name: Setup Collabora Dienst
-  hosts: collabora
+  hosts: tag_collabora
   become: yes
   roles:
     - collabora
 
 - name: Setup Affine Dienst
-  hosts: affine
+  hosts: tag_affine
   become: yes
   roles:
     - affine
 
 - name: Setup Adguard Dienst
-  hosts: adguard
+  hosts: tag_adguard
   become: yes
   roles:
     - adguard
 
 - name: Setup Cloudflared Dienst
-  hosts: cloudflared
+  hosts: tag_cloudflared
   become: yes
   roles:
     - cloudflared
 
 - name: Setup Monitoring Dienst
-  hosts: monitoring
+  hosts: tag_monitoring
   become: yes
   roles:
     - monitoring
 
 - name: Setup Immich Dienst
-  hosts: immich
+  hosts: tag_immich
   become: yes
   roles:
     - immich
 
 - name: Setup Consul Dienst
-  hosts: consul
+  hosts: tag_consul
   become: yes
   roles:
     - consul
 
 - name: Deploy node-exporter to all guest VMs
-  hosts: debian_guests
-  become: yes
-  roles:
-    - node_exporter
-
-#Das ist ein Test für meine neue Pipeline
+  hosts: all

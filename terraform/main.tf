@@ -26,6 +26,7 @@ resource "proxmox_vm_qemu" "vms" {
   target_node = each.value.target_node
   vmid        = each.value.vmid
   clone       = each.value.clone
+  tags        = each.value.tags
 
   agent   = 1
   os_type = "cloud-init"
@@ -85,6 +86,7 @@ resource "proxmox_lxc" "containers" {
   vmid        = each.value.vmid
   hostname    = each.value.hostname
   ostemplate  = each.value.template
+  tags        = each.value.tags
   
   ssh_public_keys = var.ssh_public_key
   unprivileged    = true
