@@ -50,6 +50,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Lade Runner Systemvariablen in GitHub ENV
+        run: |
+          echo "VAULT_ADDR=$VAULT_ADDR" >> $GITHUB_ENV
+          echo "VAULT_ROLE_ID=$VAULT_ROLE_ID" >> $GITHUB_ENV
+          echo "VAULT_SECRET_ID=$VAULT_SECRET_ID" >> $GITHUB_ENV
+
       - name: Fetch Proxmox Secrets from Vault
         uses: hashicorp/vault-action@v3
         with:
@@ -88,6 +94,12 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Lade Runner Systemvariablen in GitHub ENV
+        run: |
+          echo "VAULT_ADDR=$VAULT_ADDR" >> $GITHUB_ENV
+          echo "VAULT_ROLE_ID=$VAULT_ROLE_ID" >> $GITHUB_ENV
+          echo "VAULT_SECRET_ID=$VAULT_SECRET_ID" >> $GITHUB_ENV
 
       - name: Fetch Core Secrets from Vault
         uses: hashicorp/vault-action@v3
