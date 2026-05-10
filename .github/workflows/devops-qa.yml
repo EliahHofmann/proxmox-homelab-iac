@@ -114,8 +114,8 @@ jobs:
           exportToken: true
           secrets: |
             secret/data/proxmox proxmox_api_url | PROXMOX_URL ;
-            secret/data/proxmox proxmox_api_token_id | PROXMOX_TOKEN_ID ;
-            secret/data/proxmox proxmox_api_token_secret | PROXMOX_TOKEN_SECRET ;
+            secret/data/proxmox proxmox_api_token_id | PROXMOX_USER ;
+            secret/data/proxmox proxmox_api_token_secret | PROXMOX_PASSWORD ;
             secret/data/ssh private_key | ANSIBLE_SSH_KEY_B64
 
       - name: Prepare SSH Key & Fetch Service Secrets
