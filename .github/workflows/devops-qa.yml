@@ -121,6 +121,12 @@ jobs:
             secret/data/proxmox proxmox_api_token_secret | PROXMOX_TOKEN_SECRET ;
             secret/data/ssh private_key | ANSIBLE_SSH_KEY_B64
 
+      - name: Set Proxmox Auth for Ansible Inventory
+        run: |
+          FULL_TOKEN="$PROXMOX_TOKEN_ID"
+          echo "PROXMOX_USER=${FULL_TOKEN%%!*}" >> $GITHUB_ENV
+          echo "PROXMOX_TOKEN_ID=${FULL_TOKEN##*!}" >> $GITHUB_ENV
+
       - name: Prepare SSH Key & Fetch Service Secrets
         run: |
           #SSH Key entschlüsseln und ablegen
