@@ -53,11 +53,5 @@
   roles:
     - immich
 
-- name: Setup Consul Dienst
-  hosts: tag_consul
-  become: yes
-  roles:
-    - consul
-
 - name: Deploy node-exporter to all guest VMs
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax
