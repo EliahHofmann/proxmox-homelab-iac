@@ -21,13 +21,18 @@ variable "ssh_public_key" {
   sensitive   = true
 }
 
+variable "default_lxc_template" {
+  type    = string
+  default = "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
+}
+
 variable "lxc_configs" {
   description = "Map für alle LXC-Konfigurationen"
   type = map(object({
     vmid       = number
     target_node = string
     hostname   = string
-    template   = string
+    template   = optional(string)
     ip         = string
     cpu        = number
     memory     = number

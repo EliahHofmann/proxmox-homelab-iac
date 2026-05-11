@@ -85,7 +85,7 @@ resource "proxmox_lxc" "containers" {
   target_node = each.value.target_node
   vmid        = each.value.vmid
   hostname    = each.value.hostname
-  ostemplate  = each.value.template
+  ostemplate  = coalesce(each.value.template, var.default_lxc_template)
   tags        = each.value.tags
   
   ssh_public_keys = var.ssh_public_key
