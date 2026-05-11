@@ -126,6 +126,7 @@ jobs:
           FULL_TOKEN="$PROXMOX_TOKEN_ID"
           echo "PROXMOX_USER=${FULL_TOKEN%%!*}" >> $GITHUB_ENV
           echo "PROXMOX_TOKEN_ID=${FULL_TOKEN##*!}" >> $GITHUB_ENV
+          echo "PROXMOX_URL=${PROXMOX_URL%/api2/json}" >> $GITHUB_ENV
 
       - name: Prepare SSH Key & Fetch Service Secrets
         run: |
