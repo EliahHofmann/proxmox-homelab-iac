@@ -4,7 +4,7 @@ want_facts: true
 want_proxmox_nodes_ansible_host: false
 
 keyed_groups:
-  - key: tags_parsed
+  - key: proxmox_tags_parsed
     prefix: tag
     separator: "_"
 
