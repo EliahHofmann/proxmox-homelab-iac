@@ -1,75 +1,89 @@
-# Proxmox Homelab IaC
+# Proxmox Homelab: Infrastructure-as-Code & CI/CD Automation
 
-In diesem Repository verwalte ich die Infrastruktur und Konfiguration für mein privates Proxmox Homelab. Das gesamte Setup basiert auf einem Infrastructure as Code (IaC) Ansatz, um die Serverumgebung reproduzierbar und automatisiert aufbauen zu können.
+[![CI/CD Pipeline](https://github.com/EliahHofmann/proxmox-homelab-iac/actions/workflows/devops-qa.yml/badge.svg)](https://github.com/EliahHofmann/proxmox-homelab-iac/actions)
 
-**Hinweis: Aktuell fehlen noch einige Kommentare im Code. Diese werden aber demnächst ergänzt und überarbeitet.**
+Dieses Repository enthält die Infrastruktur- und Konfigurationsverwaltung für mein privates Proxmox Homelab. Das Projekt demonstriert einen vollständigen, professionellen **Infrastructure-as-Code (IaC)** Ansatz in Kombination mit einer modernen **CI/CD-Pipeline** und **zentraler Secret-Verwaltung**.
 
-Die Bereitstellung der Infrastruktur ist strikt von der Software-Konfiguration getrennt. OpenTofu (Terraform) übernimmt das Erstellen der virtuellen Maschinen und LXC-Container über die Proxmox API. Ansible kümmert sich anschließend um die Installation und Konfiguration der Dienste.
+Das primäre Ziel dieses Projekts ist es, die Bereitstellung von Servern und Diensten zu 100% reproduzierbar, automatisiert und sicher zu gestalten – von der physischen Hardware-Ressource bis zum fertig konfigurierten Reverse-Proxy.
 
-## Tech Stack
+---
+
+## Kern-Features
+
+* **100% Infrastructure as Code:** Die komplette Infrastruktur (LXC & QEMU VMs) wird via **Terraform (OpenTofu)** provisioniert.
+* **Dynamisches Inventory:** Anstelle von statischen IP-Listen nutzt **Ansible** die Proxmox API und Tags (z.B. `tag_adguard`), um Server dynamisch zu finden und zu konfigurieren.
+* **Automatisierte CI/CD Pipeline:** Eine **GitHub Actions** Pipeline validiert Änderungen in Pull Requests (`--check`) und rollt diese nach dem Merge in den Main-Branch automatisch aus.
+* **Zero-Trust Secrets Management:** Passwörter, API-Tokens und SSH-Keys werden nicht im Quellcode versioniert. Sie werden zur Laufzeit dynamisch von einem selbst gehosteten **HashiCorp Vault** in die Pipeline integriert.
+
+---
+
+## Tech Stack & Architektur
+
+### Infrastruktur & Provisioning
 * **Hypervisor:** Proxmox VE
-* **Infrastructure Provisioning:** OpenTofu / Terraform
-* **Configuration Management:** Ansible
-* **Core Services:** Docker, Traefik (Reverse Proxy), Vaultwarden, Nextcloud
-* **Netzwerk:** Netbird (Wireguard VPN), AdGuard Home (Split-DNS)
+* **Provisioning:** OpenTofu / Terraform (mit Proxmox Provider)
+* **Configuration Management:** Ansible (mit `community.proxmox` Dynamic Inventory)
+
+### Security & CI/CD
+* **Secrets Management:** HashiCorp Vault
+* **Automation:** GitHub Actions (Runner wird lokal gehostet)
+* **Netzwerk:** Netbird (Wireguard VPN), Cloudflare Tunnels
+
+### Gehostete Core-Services
+* **Traefik:** Zentraler Reverse Proxy & Zertifikatsverwaltung
+* **AdGuard Home:** DNS-Server und Split-DNS für internes Routing
+* **Vaultwarden:** Selbst gehosteter Passwort-Manager
+* **Nextcloud:** Cloud-Speicher und Kollaboration
+* **Monitoring:** Prometheus, Grafana, Loki (inkl. automatischem Node-Exporter & Docker-Log Deployment via Ansible)
+* **Weitere Services:** Consul, Immich, Affine, Collabora, Qwen3 (AI)
+
+---
 
 ## Repository Struktur
 
-Das Projekt nutzt Ansible-Rollen und Jinja2-Templates für die dynamische Konfiguration der Dienste. Um sensible Daten (Passwörter, IPs, API-Keys) aus dem Versionsverlauf herauszuhalten, liegen im gesamten Projekt `example`-Dateien bei.
+Die Codebase ist modular aufgebaut und trennt Hardware-Provisionierung strikt von der Software-Konfiguration:
 
 ```text
 proxmox-homelab-iac/
+├── .github/workflows/
+│   └── devops-qa.yml           # CI/CD Pipeline Definition
 ├── ansible/
-│   ├── roles/
-│   │   ├── common/             # Basis-Setup für alle Hosts (Updates, Docker etc.)
-│   │   ├── traefik/            # Reverse Proxy Setup & Zertifikatsverwaltung
-│   │   │   ├── defaults/       # Standardvariablen (z.B. main_example.yml)
-│   │   │   ├── tasks/          # Playbooks für Traefik
-│   │   │   └── templates/      # Jinja2 Templates (traefik, nextcloud, vaultwarden etc.)
-│   │   └── vaultwarden/        # Passwort-Manager Deployment inkl. Backups
-│   │       ├── defaults/       
-│   │       ├── tasks/          
-│   │       └── templates/      # Jinja2 Templates (docker-compose, backup-script etc.)
-│   ├── ansible.cfg             # Globale Ansible Konfiguration
-│   ├── inventory.example.ini   # Beispiel für das Host-Inventory
-│   ├── site.yml                # Haupt-Playbook
-│   └── vars_example.yml        # Globale Variablen
+│   ├── roles/                  # Modulare Ansible Rollen für jeden Service
+│   │   ├── common/             # Basis-Setup (Docker, APT, Loki-Plugin, Node-Exporter)
+│   │   ├── traefik/
+│   │   ├── vaultwarden/
+│   │   └── ...                 # (adguard, immich, consul, etc.)
+│   ├── ansible.cfg             # Globale Ansible Konfiguration (z.B. auto_silent)
+│   ├── proxmox.yml             # Konfiguration für das dynamische Proxmox Inventory
+│   └── site.yml                # Haupt-Playbook zur Orchestrierung
 ├── terraform/
-│   ├── main.tf                 # Definition der Proxmox Ressourcen (LXC/VMs)
-│   ├── variables.tf            # Terraform Variablen
-└── .gitignore
+│   ├── main.tf                 # Terraform Ressourcen (Proxmox LXC/QEMU)
+│   └── variables.tf            # Terraform Variablen
+└── README.md
 ```
 
-## Setup und Verwendung 
+---
 
-Bevor die Skripte ausgeführt werden können, müssen die lokalen Variablen gesetzt werden.
+## Architektur & Workflow
 
-    Alle *example* Dateien (z.B. inventory.example.ini, vars_example.yml, main_example.yml) kopieren und umbenennen (das "example" aus dem Dateinamen entfernen).
+1. **Infrastruktur erstellen (Terraform):** 
+   Terraform kommuniziert mit der Proxmox API, erstellt neue Container/VMs, weist Ressourcen (CPU, RAM, Disk) zu und vergibt spezifische **Tags** (z.B. `monitoring`).
+2. **Dynamic Inventory (Ansible):** 
+   Das Ansible-Plugin greift auf Proxmox zu, sucht nach diesen Tags und ermittelt vollautomatisch die korrekten IP-Adressen der frisch erstellten Hosts (unabhängig davon, ob es sich um LXC Container oder QEMU VMs handelt).
+3. **Pipeline Deployment (GitHub Actions):** 
+   Der GitHub Runner authentifiziert sich via AppRole bei **HashiCorp Vault**, ruft den privaten SSH-Schlüssel sowie alle benötigten Service-Secrets ab und startet den Ansible-Lauf.
+4. **Software Rollout (Ansible):** 
+   Ansible installiert Docker, richtet ein zentrales Logging ein und deployt die jeweiligen Services über Jinja2-getemplatete Docker-Compose Dateien.
 
-    Die eigenen Werte (IP-Adressen, Passwörter, Tokens) in die neuen Dateien eintragen. Die .gitignore sorgt dafür, dass diese Dateien nicht versehentlich ins Repository gepusht werden.
+---
 
-Infrastruktur ausrollen (OpenTofu)
+## Projektziele und Ergebnisse
 
-Wechsel in das Terraform-Verzeichnis, um die Container und VMs auf dem Proxmox-Server zu erstellen:
+Dieses Homelab dient als Portfolio-Projekt zur Vertiefung von DevOps Best Practices und moderner Systemadministration.
+Wesentliche technische Meilensteine umfassen:
+* Die erfolgreiche Integration von **HashiCorp Vault** in GitHub Actions für eine passwortfreie und sichere Pipeline.
+* Die Entwicklung dynamischer **Jinja2-Expressions**, um in Ansible IP-Adressen über verschiedene Proxmox-Netzwerktypen hinweg fehlerfrei aufzulösen.
+* Die Orchestrierung einer komplexen Infrastruktur, die durch eine Tag-basierte Architektur eine sehr hohe Skalierbarkeit ermöglicht (neuer Server = neues Tag = automatische Konfiguration).
 
-```text
-cd terraform
-tofu init
-tofu plan
-tofu apply
-```
-
-### Server konfigurieren (Ansible) 
-
-Sobald die Maschinen laufen, übernimmt Ansible die Installation und Konfiguration der Dienste:
-
-```text
-cd ../ansible
-ansible-playbook -i inventory.ini site.yml
-```
-
-## Projektziele und Learnings 
-
-Dieses Projekt dient mir als praktische Umgebung, um tiefere Erfahrungen im Bereich DevOps und Systemadministration zu sammeln. Schwerpunkte waren dabei der Umgang mit der Proxmox API über Terraform-Provider, das Schreiben idempotenter Ansible Playbooks, das Templating mit Jinja2 sowie die Absicherung der Dienste durch Traefik und Split-DNS.
-
-Erstellt von Eliah Hofmann - LinkedIn (www.linkedin.com/in/eliah-hofmann)
+---
+*Erstellt von Eliah Hofmann - [LinkedIn](https://www.linkedin.com/in/eliah-hofmann)*

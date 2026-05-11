@@ -6,7 +6,7 @@ scrape_configs:
     static_configs:
       - targets:
         - 'node-exporter:9100'  # Der Sensor deiner Monitoring-VM selbst
-{% for host in groups['debian_guests'] %}
+{% for host in (groups.get('proxmox_all_lxc', []) + groups.get('proxmox_all_qemu', [])) %}
         - '{{ hostvars[host].ansible_host | default(host) }}:9100'
 {% endfor %}
 
