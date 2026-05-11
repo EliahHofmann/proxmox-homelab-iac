@@ -143,6 +143,10 @@ jobs:
             fi
           done
 
+      - name: Debug - Show Inventory Variables
+        working-directory: ./ansible
+        run: ansible-inventory -i proxmox.yml --list --yaml 2>/dev/null | head -200
+
       - name: Ansible Check / Dry-Run
         if: github.event_name == 'pull_request'
         working-directory: ./ansible
