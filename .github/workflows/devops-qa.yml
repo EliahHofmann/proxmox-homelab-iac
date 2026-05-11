@@ -69,8 +69,8 @@ jobs:
             secret/data/proxmox proxmox_api_token_id | TF_VAR_proxmox_api_token_id ;
             secret/data/proxmox proxmox_api_token_secret | TF_VAR_proxmox_api_token_secret ;
             secret/data/proxmox ssh_public_key | TF_VAR_ssh_public_key ;
-            secret/data/scaleway access_key | AWS_ACCESS_KEY_ID ;
-            secret/data/scaleway secret_key | AWS_SECRET_ACCESS_KEY ;
+            secret/data/scaleway ACCESS_KEY | AWS_ACCESS_KEY_ID ;
+            secret/data/scaleway SECRET_KEY | AWS_SECRET_ACCESS_KEY ;
 
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v3
