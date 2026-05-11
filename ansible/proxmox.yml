@@ -10,5 +10,5 @@ keyed_groups:
 
 compose:
   ansible_host: >-
-    {{ proxmox_net0.ip | default(proxmox_ipconfig0.ip | default(inventory_hostname)) | regex_replace('/\d+$', '') }}
+    {% if proxmox_net0 is defined and proxmox_net0.ip is defined %}{{ proxmox_net0.ip.split('/')[0] }}{% elif proxmox_ipconfig0 is defined and proxmox_ipconfig0.ip is defined %}{{ proxmox_ipconfig0.ip.split('/')[0] }}{% else %}{{ inventory_hostname }}{% endif %}
   ansible_user: "'root'"
