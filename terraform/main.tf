@@ -5,10 +5,15 @@ terraform {
       version = "3.0.2-rc07"
     }
   }
-  backend "consul" {
-    address = "192.168.178.63:8500"
-    scheme  = "http"
-    path    = "terraform/state/proxmox"
+  backend "s3" {
+    bucket                      = "melchior-s3-vault"
+    key                         = "terraform.tfstate"
+    region                      = "nl-ams"
+    endpoints                   = { s3 = "https://s3.nl-ams.scw.cloud" }
+    skip_credentials_validation = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
   }
 }
 

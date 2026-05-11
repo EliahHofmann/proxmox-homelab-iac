@@ -119,18 +119,5 @@ lxc_configs = {
     storage    = "local-lvm"
     nameserver = "1.1.1.1"
     tags       = "qwen3"
-  },
-  "consul" = {
-    vmid       = 403
-    target_node = "dell-optiplex-melchior" 
-    hostname   = "consul"
-    ip         = "192.168.178.63/24"
-    cpu        = 1
-    memory     = 512
-    gw         = "192.168.178.1"
-    size       = "2G"
-    storage    = "local-lvm"
-    nameserver = "1.1.1.1"
-    tags       = "consul"
   }
 }
