@@ -1,6 +1,6 @@
 ---
 - name: Basis-Konfiguration für alle Server
-  hosts: all
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax
   become: yes
   roles:
     - common
@@ -60,4 +60,4 @@
     - consul
 
 - name: Deploy node-exporter to all guest VMs
-  hosts: all
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax
