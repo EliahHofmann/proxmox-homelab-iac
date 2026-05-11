@@ -9,5 +9,5 @@ keyed_groups:
     separator: "_"
 
 compose:
-  ansible_host: "(proxmox_net0.ip if proxmox_net0 is defined else (proxmox_ipconfig0.ip if proxmox_ipconfig0 is defined else inventory_hostname)) | regex_replace('/.*', '')"
+  ansible_host: "(proxmox_net0.ip if (proxmox_net0 is defined and 'ip' in proxmox_net0) else (proxmox_ipconfig0.ip if (proxmox_ipconfig0 is defined and 'ip' in proxmox_ipconfig0) else inventory_hostname)) | regex_replace('/.*', '')"
   ansible_user: "'root'"
