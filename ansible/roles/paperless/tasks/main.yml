@@ -1,0 +1,38 @@
+---
+- name: paperless-ngx Gruppe erstellen
+  group:
+    name: paperless-ngx
+    system: yes
+    state: present
+
+- name: paperless-ngx Benutzer erstellen
+  user:
+    name: paperless-ngx
+    group: paperless-ngx
+    system: yes
+    shell: /bin/bash
+    create_home: yes
+
+- name: paperless-ngx Ordnerstruktur erstellen
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: paperless-ngx
+    group: paperless-ngx
+    mode: '0755'
+  loop:
+    - "{{ paperless_install_path }}"
+    - "{{ paperless_install_path }}/data"
+    - "{{ paperless_install_path }}/media"
+    - "{{ paperless_install_path }}/export"
+    - "{{ paperless_install_path }}/consume"
+
+- name: paperless-ngx docker-compose.yml erstellen
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ paperless_install_path }}/docker-compose.yml"
+
+- name: paperless-ngx Container starten
+  command: docker compose up -d
+  args:
+    chdir: "{{ paperless_install_path }}"

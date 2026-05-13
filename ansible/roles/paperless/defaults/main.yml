@@ -1,0 +1,7 @@
+---
+paperless_version: "latest"
+paperless_install_path: "/opt/paperless-ngx"
+paperless_port: 8010
+PAPERLESS_DBPASS: "{{ lookup('env', 'PAPERLESS_DBPASS') }}"
+MARIADB_PASSWORD: "{{ lookup('env', 'MARIADB_PASSWORD') }}"
+MARIADB_ROOT_PASSWORD: "{{ lookup('env', 'MARIADB_ROOT_PASSWORD') }}"

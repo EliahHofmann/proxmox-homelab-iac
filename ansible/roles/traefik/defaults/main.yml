@@ -14,24 +14,29 @@ config_dest: "/opt/traefik/config"
 
 #Vaultwarden
 vault_subdomain: "{{ lookup('env', 'VAULT_SUBDOMAIN') }}"
-vault_internal_ip: "192.168.178.82"
+vault_internal_ip: "{{ hostvars[groups['tag_vaultwarden'][0]]['ansible_host'] }}"
 vault_internal_port: "8080"
 
 #Affine
 affine_subdomain: "{{ lookup('env', 'AFFINE_SUBDOMAIN') }}"
-affine_internal_ip: "192.168.178.83"
+affine_internal_ip: "{{ hostvars[groups['tag_affine'][0]]['ansible_host'] }}"
 affine_internal_port: "3010"
 
 #Nextcloud
 nextcloud_subdomain: "{{ lookup('env', 'NEXTCLOUD_SUBDOMAIN') }}"
 nextcloud_internal_ip: "192.168.178.80"
 
-#Office-Nextcloud
+#Office-Nextcloud (Collabora)
 office_subdomain: "{{ lookup('env', 'OFFICE_SUBDOMAIN') }}"
-office_internal_ip: "192.168.178.81"
+office_internal_ip: "{{ hostvars[groups['tag_collabora'][0]]['ansible_host'] }}"
 office_internal_port: "9980"
 
 #Immich
 immich_subdomain: "{{ lookup('env', 'IMMICH_SUBDOMAIN') }}"
-immich_internal_ip: "192.168.178.84"
+immich_internal_ip: "{{ hostvars[groups['tag_immich'][0]]['ansible_host'] }}"
 immich_internal_port: "2283"
+
+#Paperless
+paperless_subdomain: "{{ lookup('env', 'PAPERLESS_SUBDOMAIN') }}"
+paperless_internal_ip: "{{ hostvars[groups['tag_paperless'][0]]['ansible_host'] }}"
+paperless_internal_port: "8010"

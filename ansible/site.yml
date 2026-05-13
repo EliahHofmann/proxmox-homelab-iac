@@ -53,5 +53,11 @@
   roles:
     - immich
 
+- name: Setup Paperless Dienst
+  hosts: tag_paperless
+  become: yes
+  roles:
+    - paperless
+
 - name: Deploy node-exporter to all guest VMs
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax

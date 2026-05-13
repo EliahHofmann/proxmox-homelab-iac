@@ -1,0 +1,42 @@
+services:
+  broker:
+    image: docker.io/library/redis:8
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+  db:
+    image: docker.io/library/mariadb:12
+    restart: unless-stopped
+    volumes:
+      - dbdata:/var/lib/mysql
+    environment:
+      MARIADB_HOST: paperless
+      MARIADB_DATABASE: paperless
+      MARIADB_USER: paperless
+      MARIADB_PASSWORD: {{ MARIADB_PASSWORD }}
+      MARIADB_ROOT_PASSWORD: {{ MARIADB_ROOT_PASSWORD }}
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:{{ paperless_version }}
+    restart: unless-stopped
+    depends_on:
+      - db
+      - broker
+    ports:
+      - "{{ paperless_port }}:8000"
+    volumes:
+      - {{ paperless_install_path }}/data:/usr/src/paperless/data
+      - {{ paperless_install_path }}/media:/usr/src/paperless/media
+      - {{ paperless_install_path }}/export:/usr/src/paperless/export
+      - {{ paperless_install_path }}/consume:/usr/src/paperless/consume
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBENGINE: mariadb
+      PAPERLESS_DBHOST: db
+      PAPERLESS_DBUSER: paperless
+      PAPERLESS_DBPASS: {{ PAPERLESS_DBPASS }}
+      PAPERLESS_DBPORT: 3306
+volumes:
+  data:
+  media:
+  dbdata:
+  redisdata:

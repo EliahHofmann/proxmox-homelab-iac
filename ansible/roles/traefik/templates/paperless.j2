@@ -1,0 +1,19 @@
+http:
+  routers:
+    paperless-router:
+      rule: "Host(`{{ paperless_subdomain }}.{{ domain_name }}`)"
+      service: "paperless-service"
+      entryPoints: ["websecure"]
+
+      tls:
+        certResolver: cloudflare
+        domains:
+          - main: "{{ domain_name }}"
+            sans:
+                - "*.{{ domain_name }}"
+
+  services:
+    paperless-service:
+      loadBalancer:
+        servers:
+         - url: "http://{{ paperless_internal_ip }}:{{ paperless_internal_port }}"

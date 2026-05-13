@@ -27,6 +27,7 @@
     - { src: 'office-nextcloud.yml.j2', dest: 'office.yml' }
     - { src: 'affine.yml.j2', dest: 'affine.yml' }
     - { src: 'immich.yml.j2', dest: 'immich.yml' }
+    - { src: 'paperless.j2', dest: 'paperless.yml' }
 
 - name: Traefik Haupt-Konfigurationen erstellen
   template:

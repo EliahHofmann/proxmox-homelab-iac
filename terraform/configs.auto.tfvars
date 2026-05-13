@@ -119,5 +119,18 @@ lxc_configs = {
     storage    = "local-lvm"
     nameserver = "1.1.1.1"
     tags       = "qwen3"
+  },
+  "paperless_ngx" = {
+    vmid       = 206
+    target_node = "hp-server-balthasar" 
+    hostname   = "paperless-ngx"
+    ip         = "192.168.178.86/24"
+    cpu        = 2
+    memory     = 4096
+    gw         = "192.168.178.1"
+    size       = "20G"
+    storage    = "local-lvm"
+    nameserver = "1.1.1.1"
+    tags       = "paperless"
   }
 }
