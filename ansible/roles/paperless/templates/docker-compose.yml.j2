@@ -13,7 +13,7 @@ services:
       MARIADB_HOST: paperless
       MARIADB_DATABASE: paperless
       MARIADB_USER: paperless
-      MARIADB_PASSWORD: {{ MARIADB_PASSWORD }}
+      MARIADB_PASSWORD: {{ PAPERLESS_DBPASS }}
       MARIADB_ROOT_PASSWORD: {{ MARIADB_ROOT_PASSWORD }}
   webserver:
     image: ghcr.io/paperless-ngx/paperless-ngx:{{ paperless_version }}
@@ -35,6 +35,9 @@ services:
       PAPERLESS_DBUSER: paperless
       PAPERLESS_DBPASS: {{ PAPERLESS_DBPASS }}
       PAPERLESS_DBPORT: 3306
+      PAPERLESS_SECRET_KEY: {{ PAPERLESS_SECRET_KEY }}
+      PAPERLESS_ADMIN_USER: {{ PAPERLESS_ADMIN_USER }}
+      PAPERLESS_ADMIN_PASSWORD: {{ PAPERLESS_ADMIN_PASSWORD }}
 volumes:
   data:
   media:
