@@ -38,6 +38,7 @@ services:
       PAPERLESS_ADMIN_USER: {{ PAPERLESS_ADMIN_USER }}
       PAPERLESS_ADMIN_PASSWORD: {{ PAPERLESS_ADMIN_PASSWORD }}
       PAPERLESS_POST_CONSUME_SCRIPT: /usr/src/paperless/scripts/ai_tagger.py
+      AI_TAGGER_TOKEN: {{ PAPERLESS_API_TOKEN }}
 volumes:
   data:
   media:

@@ -26,6 +26,16 @@
     - "{{ paperless_install_path }}/media"
     - "{{ paperless_install_path }}/export"
     - "{{ paperless_install_path }}/consume"
+    - "{{ paperless_install_path }}/scripts"
+
+- name: Python Skript (ai_tagger.py) auf den Server kopieren
+  copy:
+    src: ai_tagger.py
+    dest: "{{ paperless_install_path }}/scripts/ai_tagger.py"
+    owner: paperless-ngx
+    group: paperless-ngx
+    mode: '0755'
+
 
 - name: paperless-ngx docker-compose.yml erstellen
   template:
