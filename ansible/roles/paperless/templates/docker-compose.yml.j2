@@ -26,6 +26,7 @@ services:
       - {{ paperless_install_path }}/media:/usr/src/paperless/media
       - {{ paperless_install_path }}/export:/usr/src/paperless/export
       - {{ paperless_install_path }}/consume:/usr/src/paperless/consume
+      - {{ paperless_install_path }}/scripts:/usr/src/paperless/scripts
     environment:
       PAPERLESS_REDIS: redis://broker:6379
       PAPERLESS_DBENGINE: postgres
@@ -36,6 +37,7 @@ services:
       PAPERLESS_SECRET_KEY: {{ PAPERLESS_SECRET_KEY }}
       PAPERLESS_ADMIN_USER: {{ PAPERLESS_ADMIN_USER }}
       PAPERLESS_ADMIN_PASSWORD: {{ PAPERLESS_ADMIN_PASSWORD }}
+      PAPERLESS_POST_CONSUME_SCRIPT: /usr/src/paperless/scripts/ai_tagger.py
 volumes:
   data:
   media:
