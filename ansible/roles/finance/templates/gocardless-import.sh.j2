@@ -1,0 +1,12 @@
+#!/bin/bash
+# Taeglicher GoCardless-Autoimport (Sparkasse -> Firefly).
+# Das Secret liegt in der 0600-Datei import.curlcfg, nicht in argv/Logs.
+set -o pipefail
+
+if ! curl -sS -o /dev/null --fail --config "{{ finance_install_path }}/import.curlcfg"; then
+  curl -sS -o /dev/null \
+    -H 'Title: Sparkasse Sync fehlgeschlagen' \
+    -H 'Tags: warning' \
+    -d 'Bank-Import fehlgeschlagen - evtl. 90-Tage-Reconsent noetig' \
+    "http://{{ finance_host_ip }}:8082/finanzen" || true
+fi
