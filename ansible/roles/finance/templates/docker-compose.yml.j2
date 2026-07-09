@@ -22,12 +22,12 @@ services:
     volumes:
       - /opt/finance-stack/actual-data:/data
 
-  finance-webhook:
+finance-webhook:
     build: ./webhook-src
     container_name: finance-webhook
     restart: unless-stopped
     ports:
       - "9000:9000"
     environment:
-      - PAPERLESS_TOKEN={{ vault_secrets.paperless_token }}
-      - ACTUAL_TOKEN={{ vault_secrets.actual_token }}
+      - PAPERLESS_TOKEN={{ FINANCE_PAPERLESS_TOKEN }}
+      - ACTUAL_TOKEN={{ FINANCE_ACTUAL_TOKEN }}
