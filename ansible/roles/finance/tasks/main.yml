@@ -21,14 +21,14 @@
     group: finance-stack
     mode: '0755'
   loop:
-    - /opt/finance-stack
-    - /opt/finance-stack/proton-data
-    - /opt/finance-stack/actual-data
+    - "{{ finance_install_path }}"
+    - "{{ finance_proton_data }}"
+    - "{{ finance_actual_data }}"
 
 - name: Webhook Source-Code kopieren
   copy:
     src: webhook-src
-    dest: /opt/finance-stack/
+    dest: "{{ finance_install_path }}/"
     owner: finance-stack
     group: finance-stack
     mode: '0644'
@@ -36,7 +36,7 @@
 - name: Docker Compose generieren
   template:
     src: docker-compose.yml.j2
-    dest: /opt/finance-stack/docker-compose.yml
+    dest: "{{ finance_install_path }}/docker-compose.yml"
     owner: finance-stack
     group: finance-stack
     mode: '0644'
@@ -44,4 +44,4 @@
 - name: Docker Compose starten
   command: docker compose up -d --build
   args:
-    chdir: /opt/finance-stack
+    chdir: "{{ finance_install_path }}"

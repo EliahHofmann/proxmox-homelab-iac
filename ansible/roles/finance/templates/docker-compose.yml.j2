@@ -11,7 +11,7 @@ services:
     environment:
       - NON_INTERACTIVE=1
     volumes:
-      - /opt/finance-stack/proton-data:/root/.config/protonmail
+      - {{ finance_proton_data }}:/root/.config/protonmail
 
   actual-budget:
     image: ghcr.io/actualbudget/actual-server:latest
@@ -20,14 +20,14 @@ services:
     ports:
       - "5006:5006"
     volumes:
-      - /opt/finance-stack/actual-data:/data
+      - {{ finance_actual_data }}:/data
 
-finance-webhook:
+  finance-webhook:
     build: ./webhook-src
     container_name: finance-webhook
     restart: unless-stopped
     ports:
       - "9000:9000"
     environment:
-      - PAPERLESS_TOKEN={{ FINANCE_PAPERLESS_TOKEN }}
-      - ACTUAL_TOKEN={{ FINANCE_ACTUAL_TOKEN }}
+      - PAPERLESS_TOKEN={{ finance_paperless_token }}
+      - ACTUAL_TOKEN={{ finance_actual_token }}

@@ -1,0 +1,10 @@
+---
+finance_install_path: "/opt/finance-stack"
+
+# Pfade für die Volumes
+finance_proton_data: "/opt/finance-stack/proton-data"
+finance_actual_data: "/opt/finance-stack/actual-data"
+
+# Tokens via Umgebungsvariablen (GitHub Secrets)
+finance_paperless_token: "{{ lookup('env', 'FINANCE_PAPERLESS_TOKEN') }}"
+finance_actual_token: "{{ lookup('env', 'FINANCE_ACTUAL_TOKEN') }}"
