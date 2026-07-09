@@ -191,5 +191,18 @@ def main():
     api_call(f"documents/{DOCUMENT_ID}", method="PATCH", data=patch_data)
     print(f"Update abgeschlossen fuer ID {DOCUMENT_ID} - Titel: {finaler_titel} | Typ: {typ_bereinigt}")
 
+    # Finance-Webhook nur bei Rechnung/Quittung anstossen (Datenstrom 1)
+    if typ_bereinigt in ("Rechnung", "Quittung"):
+        try:
+            req = urllib.request.Request(
+                "http://192.168.178.87:9000/webhook",
+                data=json.dumps({"document_id": int(DOCUMENT_ID), "event": "document_consumed"}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST")
+            urllib.request.urlopen(req, timeout=10)
+            print(f"Finance-Webhook getriggert fuer Dok {DOCUMENT_ID}")
+        except Exception as e:
+            print(f"Finance-Webhook-Trigger fehlgeschlagen (nicht kritisch): {e}")
+
 if __name__ == "__main__":
     main()
