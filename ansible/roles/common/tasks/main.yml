@@ -60,16 +60,15 @@
     group: root
   when: not docker_gpg.stat.exists
 
-- name: Docker APT-Repository hinzufügen (modernes .sources Format)
+- name: Alte fehlerhafte .sources Datei entfernen
+  file:
+    path: /etc/apt/sources.list.d/docker.sources
+    state: absent
+
+- name: Docker APT-Repository hinzufügen (klassisches .list Format)
   copy:
-    dest: /etc/apt/sources.list.d/docker.sources
-    content: |
-      Types: deb
-      URIs: https://download.docker.com/linux/debian
-      Suites: {{ ansible_distribution_release }}
-      Components: stable
-      Architectures: amd64
-      Signed-By: /etc/apt/keyrings/docker.asc
+    dest: /etc/apt/sources.list.d/docker.list
+    content: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable\n"
     mode: '0644'
 
 - name: Installiere Docker, Compose und Basis
