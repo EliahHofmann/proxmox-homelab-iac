@@ -137,7 +137,7 @@ jobs:
           chmod 600 /tmp/ansible_vault_key
 
           #Service Environment Variables laden
-          SERVICES=("adguard" "affine" "cloudflared" "collabora" "immich" "monitoring" "nextcloud" "paperless" "traefik" "vaultwarden")
+          SERVICES=("adguard" "affine" "cloudflared" "collabora" "immich" "monitoring" "nextcloud" "paperless" "traefik" "vaultwarden" "finance")
           for SERVICE in "${SERVICES[@]}"; do
             SECRET_JSON=$(curl -s --header "X-Vault-Token: ${{ env.VAULT_TOKEN }}" ${{ env.VAULT_ADDR }}/v1/secret/data/$SERVICE)
             if [ "$(echo "$SECRET_JSON" | jq -r '.data')" != "null" ]; then
