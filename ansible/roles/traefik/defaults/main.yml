@@ -40,3 +40,7 @@ immich_internal_port: "2283"
 paperless_subdomain: "{{ lookup('env', 'PAPERLESS_SUBDOMAIN') }}"
 paperless_internal_ip: "{{ hostvars[groups['tag_paperless'][0]]['ansible_host'] }}"
 paperless_internal_port: "8010"
+
+#Finance (Firefly III)
+finance_subdomain: "finanzen"
+finance_internal_ip: "{{ hostvars[groups['tag_actualbudget'][0]]['ansible_host'] }}"
