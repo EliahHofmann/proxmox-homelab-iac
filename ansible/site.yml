@@ -60,7 +60,7 @@
     - paperless
 
 - name: Setup Actual-Budget Dienst
-  hosts: tag_ActualBudget
+  hosts: tag_actualbudget
   become: yes
   roles:
     - finance
