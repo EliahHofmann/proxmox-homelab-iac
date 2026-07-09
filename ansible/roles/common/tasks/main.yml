@@ -117,6 +117,10 @@
     update_cache: yes
     upgrade: dist
     autoremove: yes
+    dpkg_options: 'force-confdef,force-confold'
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+    APT_LISTCHANGES_FRONTEND: none
 
 - name: Prüfen, ob ein Neustart erforderlich ist
   stat:
