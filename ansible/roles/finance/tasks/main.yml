@@ -22,8 +22,10 @@
     mode: '0755'
   loop:
     - "{{ finance_install_path }}"
-    - "{{ finance_proton_data }}"
-    - "{{ finance_actual_data }}"
+    - "{{ finance_firefly_data }}"
+    - "{{ finance_db_data }}"
+    - "{{ finance_install_path }}/import"
+    - "{{ finance_install_path }}/ntfy"
 
 - name: Webhook Source-Code kopieren
   copy:
@@ -39,9 +41,35 @@
     dest: "{{ finance_install_path }}/docker-compose.yml"
     owner: finance-stack
     group: finance-stack
-    mode: '0644'
+    mode: '0640'
 
 - name: Docker Compose starten
   command: docker compose up -d --build
   args:
     chdir: "{{ finance_install_path }}"
+
+- name: Taeglicher GoCardless-Autoimport (Sparkasse)
+  cron:
+    name: "firefly-gocardless-import"
+    hour: "6"
+    minute: "30"
+    job: >-
+      curl -s 'http://{{ finance_host_ip }}:8081/autoimport?secret={{ importer_autoimport_secret }}&directory=/import'
+      || curl -s -H 'Title: Sparkasse Sync fehlgeschlagen'
+      -d 'Bank-Import fehlgeschlagen - evtl. 90-Tage-Reconsent noetig'
+      http://{{ finance_host_ip }}:8082/finanzen
+
+- name: Dedup-Matching nach Bank-Import
+  cron:
+    name: "firefly-matching-job"
+    hour: "7"
+    minute: "0"
+    job: "docker exec finance-webhook python /app/matching_job.py"
+
+- name: Monatlicher KI-Finanzbericht
+  cron:
+    name: "firefly-advisor"
+    day: "1"
+    hour: "8"
+    minute: "0"
+    job: "docker exec finance-webhook python /app/advisor.py"

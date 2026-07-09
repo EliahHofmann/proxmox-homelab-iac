@@ -1,10 +1,25 @@
 ---
 finance_install_path: "/opt/finance-stack"
+finance_firefly_data: "/opt/finance-stack/firefly-upload"
+finance_db_data: "/opt/finance-stack/db"
 
-# Pfade für die Volumes
-finance_proton_data: "/opt/finance-stack/proton-data"
-finance_actual_data: "/opt/finance-stack/actual-data"
+# Domain
+finance_subdomain: "finanzen"
+finance_domain: "{{ lookup('env', 'DOMAIN_NAME') }}"
 
-# Tokens via Umgebungsvariablen (GitHub Secrets)
+# Secrets (Vault -> env)
+finance_db_password: "{{ lookup('env', 'FINANCE_DB_PASSWORD') }}"
+firefly_app_key: "{{ lookup('env', 'FIREFLY_APP_KEY') }}"
+firefly_pat: "{{ lookup('env', 'FIREFLY_PAT') }}"
 finance_paperless_token: "{{ lookup('env', 'FINANCE_PAPERLESS_TOKEN') }}"
-finance_actual_token: "{{ lookup('env', 'FINANCE_ACTUAL_TOKEN') }}"
+gocardless_id: "{{ lookup('env', 'GOCARDLESS_ID') }}"
+gocardless_key: "{{ lookup('env', 'GOCARDLESS_KEY') }}"
+importer_autoimport_secret: "{{ lookup('env', 'IMPORTER_AUTOIMPORT_SECRET') }}"
+ntfy_token: "{{ lookup('env', 'NTFY_TOKEN') | default('', true) }}"
+
+# Interne Adressen
+finance_host_ip: "192.168.178.87"
+finance_paperless_url: "http://192.168.178.86:8010"
+finance_ollama_url: "http://192.168.178.85:11434/api/generate"
+finance_ollama_model: "paperlessKI"
+finance_ntfy_url: "http://ntfy:80/finanzen"
