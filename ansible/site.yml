@@ -59,5 +59,11 @@
   roles:
     - paperless
 
+- name: Setup Actual-Budget Dienst
+  hosts: tag_actual_budget
+  become: yes
+  roles:
+    - finance
+
 - name: Deploy node-exporter to all guest VMs
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax

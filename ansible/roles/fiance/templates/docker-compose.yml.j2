@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  proton-bridge:
+    image: shenxn/protonmail-bridge:latest
+    container_name: proton-bridge
+    restart: unless-stopped
+    ports:
+      - "1143:1143"
+      - "1025:1025"
+    environment:
+      - NON_INTERACTIVE=1
+    volumes:
+      - /opt/finance-stack/proton-data:/root/.config/protonmail
+
+  actual-budget:
+    image: ghcr.io/actualbudget/actual-server:latest
+    container_name: actual-budget
+    restart: unless-stopped
+    ports:
+      - "5006:5006"
+    volumes:
+      - /opt/finance-stack/actual-data:/data
+
+  finance-webhook:
+    build: ./webhook-src
+    container_name: finance-webhook
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      - PAPERLESS_TOKEN={{ vault_secrets.paperless_token }}
+      - ACTUAL_TOKEN={{ vault_secrets.actual_token }}

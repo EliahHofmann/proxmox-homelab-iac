@@ -1,0 +1,47 @@
+---
+- name: finance-stack Gruppe erstellen
+  group:
+    name: finance-stack
+    system: yes
+    state: present
+
+- name: finance-stack Benutzer erstellen
+  user:
+    name: finance-stack
+    group: finance-stack
+    system: yes
+    shell: /bin/bash
+    create_home: yes
+
+- name: finance-stack Ordnerstruktur erstellen
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: finance-stack
+    group: finance-stack
+    mode: '0755'
+  loop:
+    - /opt/finance-stack
+    - /opt/finance-stack/proton-data
+    - /opt/finance-stack/actual-data
+
+- name: Webhook Source-Code kopieren
+  copy:
+    src: webhook-src
+    dest: /opt/finance-stack/
+    owner: finance-stack
+    group: finance-stack
+    mode: '0644'
+
+- name: Docker Compose generieren
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/finance-stack/docker-compose.yml
+    owner: finance-stack
+    group: finance-stack
+    mode: '0644'
+
+- name: Docker Compose starten
+  command: docker compose up -d --build
+  args:
+    chdir: /opt/finance-stack

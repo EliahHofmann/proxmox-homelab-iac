@@ -132,5 +132,18 @@ lxc_configs = {
     storage    = "local-lvm"
     nameserver = "1.1.1.1"
     tags       = "paperless"
-  }
+  },
+    "finance_stack" = {
+    vmid       = 207
+    target_node = "hp-server-balthasar" 
+    hostname   = "actual_budget"
+    ip         = "192.168.178.87/24"
+    cpu        = 2
+    memory     = 2048
+    gw         = "192.168.178.1"
+    size       = "10G"
+    storage    = "local-lvm"
+    nameserver = "1.1.1.1"
+    tags       = "actual_budget"
+    }
 }
