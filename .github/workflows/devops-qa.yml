@@ -148,12 +148,12 @@ jobs:
       - name: Ansible Check / Dry-Run
         if: github.event_name == 'pull_request'
         working-directory: ./ansible
-        run: ansible-playbook -vvv -i proxmox.yml site.yml --private-key /tmp/ansible_vault_key --check
+        run: ansible-playbook -i proxmox.yml site.yml --private-key /tmp/ansible_vault_key --check
 
       - name: Ansible Deploy (Main Branch Only)
         if: github.event_name == 'push'
         working-directory: ./ansible
-        run: ansible-playbook -vvv -i proxmox.yml site.yml --private-key /tmp/ansible_vault_key
+        run: ansible-playbook -i proxmox.yml site.yml --private-key /tmp/ansible_vault_key
 
       - name: Cleanup SSH Key
         if: always()
