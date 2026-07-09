@@ -1,5 +1,9 @@
 ---
-# dieses Playbook beinhaltet plays die auf allen nodes laufen wird.
+- name: NOTFALL-FIX - Alte fehlerhafte .sources Datei entfernen
+  file:
+    path: /etc/apt/sources.list.d/docker.sources
+    state: absent
+
 - name: Zeitzone auf Europa/Berlin setzen
   timezone:
     name: Europe/Berlin
