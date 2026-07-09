@@ -11,3 +11,8 @@ ansible/vars.yml
 CLAUDE.md
 .claude/
 docs/
+
+# Python-Artefakte
+__pycache__/
+.pytest_cache/
+*.pyc
