@@ -49,6 +49,9 @@ services:
       # _FILE-Variante: Key bleibt Datei, taucht nicht in `docker inspect` auf
       - ENABLE_BANKING_PRIVATE_KEY_FILE={{ enable_banking_key_path }}
       - ENABLE_BANKING_IMPORT_IP_HEADER={{ enable_banking_ip_header }}
+      # hinter Traefik: sonst baut der Importer eine http-Callback-URL
+      # und Enable Banking lehnt den Redirect ab
+      - TRUSTED_PROXIES=**
       - TZ=Europe/Berlin
       - CAN_POST_AUTOIMPORT=true
       - AUTO_IMPORT_SECRET={{ importer_autoimport_secret }}
