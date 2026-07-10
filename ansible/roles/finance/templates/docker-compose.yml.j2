@@ -38,7 +38,7 @@ services:
     networks: [finance-net]
 
   firefly-importer:
-    image: fireflyiii/data-importer:version-1
+    image: fireflyiii/data-importer:version-2   # Enable Banking erst ab v2.1.0
     container_name: firefly-importer
     restart: unless-stopped
     depends_on: [firefly-iii]
