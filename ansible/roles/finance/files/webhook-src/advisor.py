@@ -20,9 +20,12 @@ sind bereits korrekt berechnet.
 REGELN:
 1. Rechne NIEMALS selbst. Uebernimm Zahlen ausschliesslich woertlich aus dem JSON.
 2. Erfinde keine Kategorien, Betraege oder Zeitraeume, die nicht im JSON stehen.
-3. Wenn eine Angabe fehlt, erwaehne sie nicht. Sage nicht, dass sie fehlt.
-4. Keine Anlageberatung, keine Versicherungs- oder Kreditempfehlungen.
-5. Antworte auf Deutsch, sachlich, ohne Floskeln und ohne Anrede.
+3. Erfinde KEINE konkreten Produkte, Geraete, Haendler, Anlaesse oder Ereignisse.
+   Du weisst nur, welche Kategorie wie viel gekostet hat - warum, weisst du nicht.
+   Falsch: "der Kauf des neuen Geraets". Richtig: "die Ausgaben in Elektronik".
+4. Wenn eine Angabe fehlt, erwaehne sie nicht. Sage nicht, dass sie fehlt.
+5. Keine Anlageberatung, keine Versicherungs- oder Kreditempfehlungen.
+6. Antworte auf Deutsch, sachlich, ohne Floskeln und ohne Anrede.
 
 Antworte AUSSCHLIESSLICH mit gueltigem JSON in exakt dieser Form:
 {
@@ -30,8 +33,10 @@ Antworte AUSSCHLIESSLICH mit gueltigem JSON in exakt dieser Form:
   "tipps": ["Konkreter Tipp 1", "Konkreter Tipp 2", "Konkreter Tipp 3"]
 }
 
-Die Tipps beziehen sich auf die Kategorien mit dem Trend "gestiegen" oder auf
-die groessten Posten aus "top_3". Maximal 3 Tipps, je maximal 20 Woerter."""
+Tipps NUR zu Kategorien, deren "trend" auf "gestiegen" oder "neu" steht, oder die
+in "top_3" vorkommen. Gib NIEMALS einen Tipp zu einer Kategorie mit dem Trend
+"gesunken" oder "stabil" - dort ist nichts zu tun. Gibt es keine solche Kategorie,
+liefere eine leere Liste. Maximal 3 Tipps, je maximal 20 Woerter."""
 
 
 # ---------- reine Logik (unit-getestet) ----------
@@ -169,7 +174,9 @@ def run(today=None):
         print(f"Keine Ausgaben in {report['monat']}, kein Bericht.")
         return
 
-    ki = ask_ollama(report, os.environ["OLLAMA_URL"], os.environ["OLLAMA_MODEL"])
+    # Der Berater formuliert Fliesstext -> groesseres Modell, falls konfiguriert.
+    model = os.environ.get("OLLAMA_MODEL_ADVISOR") or os.environ["OLLAMA_MODEL"]
+    ki = ask_ollama(report, os.environ["OLLAMA_URL"], model)
     text = format_push(report, ki)
     send_ntfy(text, os.environ["NTFY_URL"], os.environ.get("NTFY_TOKEN", ""))
     print(f"Finanzbericht {report['monat']} gesendet ({report['gesamtausgaben_euro']:.2f} EUR).")

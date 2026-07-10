@@ -29,5 +29,8 @@ enable_banking_ip_header: "false"
 finance_host_ip: "192.168.178.87"
 finance_paperless_url: "http://192.168.178.86:8010"
 finance_ollama_url: "http://192.168.178.85:11434/api/generate"
+# Extraktion: kleines Modell reicht, Ausgabe ist erzwungenes JSON.
 finance_ollama_model: "paperlessKI"
+# Berater: formuliert freien Text -> groesseres Modell (liegt auf demselben Host).
+finance_ollama_model_advisor: "qwen3:latest"
 finance_ntfy_url: "http://ntfy:80/finanzen"
