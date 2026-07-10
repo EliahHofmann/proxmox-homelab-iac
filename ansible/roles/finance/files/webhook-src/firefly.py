@@ -84,6 +84,7 @@ class FireflyClient:
                 "description": split.get("description"),
                 "notes": split.get("notes"),
                 "source_name": split.get("source_name"),
+                "destination_name": split.get("destination_name"),
             })
         return out
 
