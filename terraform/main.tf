@@ -81,6 +81,15 @@ resource "proxmox_vm_qemu" "vms" {
   ipconfig0 = "ip=${each.value.ip},gw=${each.value.gw}"
   ciuser    = "root"
   sshkeys   = var.ssh_public_key
+
+  # telmate/proxmox 3.0.2-rc07 ordnet disk-Bloecke positional zu. Im State liegt
+  # ide2 (cloudinit) vor scsi0, im Code umgekehrt. Der Provider plant deshalb, die
+  # beiden Disks zu tauschen - das wuerde die Systemplatte der VM ueberschreiben.
+  # Bis Provider/State sauber sind: Disks nicht anfassen.
+  # startup_shutdown taucht nur als Provider-Drift auf, wird hier nie gesetzt.
+  lifecycle {
+    ignore_changes = [disk, startup_shutdown]
+  }
 }
 
 

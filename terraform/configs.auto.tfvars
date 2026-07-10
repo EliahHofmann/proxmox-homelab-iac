@@ -144,6 +144,6 @@ lxc_configs = {
     size       = "10G"
     storage    = "local-lvm"
     nameserver = "1.1.1.1"
-    tags       = "ActualBudget"
+    tags       = "actualbudget"   # Proxmox normalisiert Tags klein -> sonst Dauer-Drift
     }
 }
