@@ -2,6 +2,7 @@
 paperless_version: "latest"
 paperless_install_path: "/opt/paperless-ngx"
 paperless_port: 8010
+paperless_proton_data: "/opt/paperless-ngx/proton-data"
 PAPERLESS_DBPASS: "{{ lookup('env', 'PAPERLESS_DBPASS') }}"
 PAPERLESS_SECRET_KEY: "{{ lookup('env', 'PAPERLESS_SECRET_KEY') }}"
 PAPERLESS_ADMIN_USER: "{{ lookup('env', 'PAPERLESS_ADMIN_USER') }}"

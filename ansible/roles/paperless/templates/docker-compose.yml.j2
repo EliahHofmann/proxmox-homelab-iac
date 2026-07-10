@@ -1,4 +1,21 @@
 services:
+  # Proton hat kein natives IMAP -> Bridge uebersetzt fuer den Paperless-Mailimport.
+  # Kein Port-Publish: nur der webserver-Container erreicht sie unter proton-bridge:1143.
+  # Erst-Login einmalig manuell:
+  #   docker run --rm -it -v {{ paperless_proton_data }}:/root/.config/protonmail \
+  #     shenxn/protonmail-bridge:latest init
+  proton-bridge:
+    image: shenxn/protonmail-bridge:latest
+    container_name: proton-bridge
+    restart: unless-stopped
+    environment:
+      - NON_INTERACTIVE=1
+    expose:
+      - "1143"
+      - "1025"
+    volumes:
+      - {{ paperless_proton_data }}:/root/.config/protonmail
+
   broker:
     image: docker.io/library/redis:8
     restart: unless-stopped
@@ -19,6 +36,7 @@ services:
     depends_on:
       - db
       - broker
+      - proton-bridge
     ports:
       - "{{ paperless_port }}:8000"
     volumes:

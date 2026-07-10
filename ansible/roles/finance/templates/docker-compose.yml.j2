@@ -32,7 +32,7 @@ services:
       - DEFAULT_LANGUAGE=de_DE
       - DEFAULT_LOCALE=equal
     ports:
-      - "8080:8080"
+      - "{{ finance_host_ip }}:8080:8080"   # nur LAN, oeffentlich nur via Traefik
     volumes:
       - {{ finance_firefly_data }}:/var/www/html/storage/upload
     networks: [finance-net]

@@ -27,6 +27,7 @@
     - "{{ paperless_install_path }}/export"
     - "{{ paperless_install_path }}/consume"
     - "{{ paperless_install_path }}/scripts"
+    - "{{ paperless_proton_data }}"
 
 - name: Python Skript (ai_tagger.py) auf den Server kopieren
   copy:
