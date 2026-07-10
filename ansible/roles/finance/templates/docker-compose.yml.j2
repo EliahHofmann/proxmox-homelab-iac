@@ -46,8 +46,11 @@ services:
       - FIREFLY_III_URL=http://firefly-iii:8080
       - FIREFLY_III_ACCESS_TOKEN={{ firefly_pat }}
       - ENABLE_BANKING_APP_ID={{ enable_banking_app_id }}
-      # _FILE-Variante: Key bleibt Datei, taucht nicht in `docker inspect` auf
-      - ENABLE_BANKING_PRIVATE_KEY_FILE={{ enable_banking_key_path }}
+      # Wert ist der PFAD zur Datei, nicht der Key selbst: config/eb.php liest
+      # env('ENABLE_BANKING_PRIVATE_KEY') und prueft per realpath, ob es eine
+      # lesbare Datei ist -> dann file_get_contents. Die _FILE-Variante aus der
+      # Doku wird NICHT gelesen (leer -> realpath('') -> CWD -> "Is a directory").
+      - ENABLE_BANKING_PRIVATE_KEY={{ enable_banking_key_path }}
       - ENABLE_BANKING_IMPORT_IP_HEADER={{ enable_banking_ip_header }}
       # hinter Traefik: sonst baut der Importer eine http-Callback-URL
       # und Enable Banking lehnt den Redirect ab
