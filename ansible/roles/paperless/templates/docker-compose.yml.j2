@@ -10,7 +10,8 @@ services:
   #   -> im CLI: login / <Proton-Adresse> / <Passwort> / <2FA>, dann: info (IMAP-PW), exit
   #   docker start proton-bridge
   proton-bridge:
-    image: shenxn/protonmail-bridge:latest
+    build: ./proton-bridge   # shenxn + libfido2 (siehe proton-bridge/Dockerfile)
+    image: paperless-proton-bridge:local
     container_name: proton-bridge
     restart: unless-stopped
     environment:

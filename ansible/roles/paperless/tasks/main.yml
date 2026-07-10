@@ -38,12 +38,20 @@
     mode: '0755'
 
 
+- name: proton-bridge Build-Context (Dockerfile) kopieren
+  copy:
+    src: proton-bridge
+    dest: "{{ paperless_install_path }}/"
+    owner: paperless-ngx
+    group: paperless-ngx
+    mode: '0644'
+
 - name: paperless-ngx docker-compose.yml erstellen
   template:
     src: docker-compose.yml.j2
     dest: "{{ paperless_install_path }}/docker-compose.yml"
 
 - name: paperless-ngx Container starten
-  command: docker compose up -d
+  command: docker compose up -d --build
   args:
     chdir: "{{ paperless_install_path }}"
