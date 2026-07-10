@@ -59,7 +59,7 @@
   roles:
     - paperless
 
-- name: Setup Actual-Budget Dienst
+- name: Setup Firefly III (Finance) Dienst
   hosts: tag_actualbudget
   become: yes
   roles:
