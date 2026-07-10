@@ -6,3 +6,13 @@ terraform.tfstate
 terraform.tfstate.backup
 ansible/*.retry
 ansible/vars.yml
+
+# Arbeitskontext / lokale Notizen (nicht versionieren)
+CLAUDE.md
+.claude/
+docs/
+
+# Python-Artefakte
+__pycache__/
+.pytest_cache/
+*.pyc

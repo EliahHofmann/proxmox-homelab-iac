@@ -1,0 +1,4 @@
+# Von Ansible generiert. Enthaelt das Autoimport-Secret -> Rechte 0600.
+# Wird von bank-import.sh via `curl --config` genutzt, damit das Secret
+# NICHT in der Prozessliste (ps/argv) oder in Cron-Logs erscheint.
+url = "http://{{ finance_host_ip }}:8081/autoimport?secret={{ importer_autoimport_secret }}&directory=/import"

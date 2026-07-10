@@ -28,6 +28,7 @@
     - { src: 'affine.yml.j2', dest: 'affine.yml' }
     - { src: 'immich.yml.j2', dest: 'immich.yml' }
     - { src: 'paperless.j2', dest: 'paperless.yml' }
+    - { src: 'finance.yml.j2', dest: 'finance.yml' }
 
 - name: Traefik Haupt-Konfigurationen erstellen
   template:

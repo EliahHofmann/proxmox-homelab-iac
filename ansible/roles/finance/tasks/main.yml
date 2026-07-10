@@ -22,8 +22,10 @@
     mode: '0755'
   loop:
     - "{{ finance_install_path }}"
-    - "{{ finance_proton_data }}"
-    - "{{ finance_actual_data }}"
+    - "{{ finance_firefly_data }}"
+    - "{{ finance_db_data }}"
+    - "{{ finance_install_path }}/import"
+    - "{{ finance_install_path }}/ntfy"
 
 - name: Webhook Source-Code kopieren
   copy:
@@ -33,15 +35,75 @@
     group: finance-stack
     mode: '0644'
 
+- name: Secrets-Verzeichnis erstellen
+  file:
+    path: "{{ finance_install_path }}/secrets"
+    state: directory
+    owner: root
+    group: "33"          # www-data im Importer-Container
+    mode: '0750'
+
+# Muss VOR "docker compose up" laufen: fehlt die Datei beim Bind-Mount,
+# legt Docker an ihrer Stelle ein Verzeichnis an.
+- name: Enable-Banking Private Key ablegen
+  copy:
+    content: "{{ enable_banking_private_key_b64 | b64decode }}"
+    dest: "{{ finance_install_path }}/secrets/enable_banking.pem"
+    owner: root
+    group: "33"
+    mode: '0640'         # nur root + Container-User, nicht world-readable
+  no_log: true
+
 - name: Docker Compose generieren
   template:
     src: docker-compose.yml.j2
     dest: "{{ finance_install_path }}/docker-compose.yml"
     owner: finance-stack
     group: finance-stack
-    mode: '0644'
+    mode: '0640'
 
+# --remove-orphans raeumt die Container des alten Stacks ab (actual-budget,
+# proton-bridge). Ohne das liefen sie mitsamt offener Ports weiter.
 - name: Docker Compose starten
-  command: docker compose up -d --build
+  command: docker compose up -d --build --remove-orphans
   args:
     chdir: "{{ finance_install_path }}"
+
+- name: Autoimport curl-config bereitstellen (Secret, 0600)
+  template:
+    src: import.curlcfg.j2
+    dest: "{{ finance_install_path }}/import.curlcfg"
+    owner: finance-stack
+    group: finance-stack
+    mode: '0600'
+  no_log: true
+
+- name: Bank-Import Wrapper-Skript bereitstellen
+  template:
+    src: bank-import.sh.j2
+    dest: "{{ finance_install_path }}/bank-import.sh"
+    owner: finance-stack
+    group: finance-stack
+    mode: '0750'
+
+- name: Taeglicher Bank-Autoimport (Sparkasse via Enable Banking)
+  cron:
+    name: "firefly-bank-import"
+    hour: "6"
+    minute: "30"
+    job: "{{ finance_install_path }}/bank-import.sh"
+
+- name: Dedup-Matching nach Bank-Import
+  cron:
+    name: "firefly-matching-job"
+    hour: "7"
+    minute: "0"
+    job: "docker exec finance-webhook python /app/matching_job.py"
+
+- name: Monatlicher KI-Finanzbericht
+  cron:
+    name: "firefly-advisor"
+    day: "1"
+    hour: "8"
+    minute: "0"
+    job: "docker exec finance-webhook python /app/advisor.py"

@@ -1,10 +1,36 @@
 ---
 finance_install_path: "/opt/finance-stack"
+finance_firefly_data: "/opt/finance-stack/firefly-upload"
+finance_db_data: "/opt/finance-stack/db"
 
-# Pfade für die Volumes
-finance_proton_data: "/opt/finance-stack/proton-data"
-finance_actual_data: "/opt/finance-stack/actual-data"
+# Domain
+finance_subdomain: "finanzen"
+finance_domain: "{{ lookup('env', 'DOMAIN_NAME') }}"
 
-# Tokens via Umgebungsvariablen (GitHub Secrets)
+# Secrets (Vault -> env)
+finance_db_password: "{{ lookup('env', 'FINANCE_DB_PASSWORD') }}"
+firefly_app_key: "{{ lookup('env', 'FIREFLY_APP_KEY') }}"
+firefly_pat: "{{ lookup('env', 'FIREFLY_PAT') }}"
 finance_paperless_token: "{{ lookup('env', 'FINANCE_PAPERLESS_TOKEN') }}"
-finance_actual_token: "{{ lookup('env', 'FINANCE_ACTUAL_TOKEN') }}"
+enable_banking_app_id: "{{ lookup('env', 'ENABLE_BANKING_APP_ID') }}"
+# PEM ist mehrzeilig -> in Vault base64-kodiert (einzeilig) ablegen,
+# sonst zerlegt es die Vault->Env-Schleife der Pipeline.
+enable_banking_private_key_b64: "{{ lookup('env', 'ENABLE_BANKING_PRIVATE_KEY_B64') }}"
+importer_autoimport_secret: "{{ lookup('env', 'IMPORTER_AUTOIMPORT_SECRET') }}"
+ntfy_token: "{{ lookup('env', 'NTFY_TOKEN') | default('', true) }}"
+
+# PEM im Container; auf dem Host unter {{ finance_install_path }}/secrets/
+enable_banking_key_path: "/secrets/enable_banking.pem"
+# Setzt die Sparkasse einen PSU-IP-Header voraus, hier auf true stellen und
+# finance_public_ip fuellen (autodetect wuerde icanhazip.com kontaktieren).
+enable_banking_ip_header: "false"
+
+# Interne Adressen
+finance_host_ip: "192.168.178.87"
+finance_paperless_url: "http://192.168.178.86:8010"
+finance_ollama_url: "http://192.168.178.85:11434/api/generate"
+# Extraktion: kleines Modell reicht, Ausgabe ist erzwungenes JSON.
+finance_ollama_model: "paperlessKI"
+# Berater: formuliert freien Text -> groesseres Modell (liegt auf demselben Host).
+finance_ollama_model_advisor: "qwen3:latest"
+finance_ntfy_url: "http://ntfy:80/finanzen"

@@ -1,33 +1,100 @@
-version: '3.8'
-
 services:
-  proton-bridge:
-    image: shenxn/protonmail-bridge:latest
-    container_name: proton-bridge
+  firefly-db:
+    image: mariadb:11
+    container_name: firefly-db
     restart: unless-stopped
-    ports:
-      - "1143:1143"
-      - "1025:1025"
     environment:
-      - NON_INTERACTIVE=1
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_USER=firefly
+      - MYSQL_PASSWORD={{ finance_db_password }}
+      - MYSQL_DATABASE=firefly
     volumes:
-      - {{ finance_proton_data }}:/root/.config/protonmail
+      - {{ finance_db_data }}:/var/lib/mysql
+    networks: [finance-net]
 
-  actual-budget:
-    image: ghcr.io/actualbudget/actual-server:latest
-    container_name: actual-budget
+  firefly-iii:
+    image: fireflyiii/core:version-6
+    container_name: firefly-iii
     restart: unless-stopped
+    depends_on: [firefly-db]
+    environment:
+      - APP_ENV=production
+      - APP_KEY={{ firefly_app_key }}
+      - TZ=Europe/Berlin
+      - APP_URL=https://{{ finance_subdomain }}.{{ finance_domain }}
+      - TRUSTED_PROXIES=**
+      - DB_CONNECTION=mysql
+      - DB_HOST=firefly-db
+      - DB_PORT=3306
+      - DB_DATABASE=firefly
+      - DB_USERNAME=firefly
+      - DB_PASSWORD={{ finance_db_password }}
+      - DEFAULT_LANGUAGE=de_DE
+      - DEFAULT_LOCALE=equal
     ports:
-      - "5006:5006"
+      - "{{ finance_host_ip }}:8080:8080"   # nur LAN, oeffentlich nur via Traefik
     volumes:
-      - {{ finance_actual_data }}:/data
+      - {{ finance_firefly_data }}:/var/www/html/storage/upload
+    networks: [finance-net]
+
+  firefly-importer:
+    image: fireflyiii/data-importer:version-1
+    container_name: firefly-importer
+    restart: unless-stopped
+    depends_on: [firefly-iii]
+    environment:
+      - FIREFLY_III_URL=http://firefly-iii:8080
+      - FIREFLY_III_ACCESS_TOKEN={{ firefly_pat }}
+      - ENABLE_BANKING_APP_ID={{ enable_banking_app_id }}
+      # _FILE-Variante: Key bleibt Datei, taucht nicht in `docker inspect` auf
+      - ENABLE_BANKING_PRIVATE_KEY_FILE={{ enable_banking_key_path }}
+      - ENABLE_BANKING_IMPORT_IP_HEADER={{ enable_banking_ip_header }}
+      # hinter Traefik: sonst baut der Importer eine http-Callback-URL
+      # und Enable Banking lehnt den Redirect ab
+      - TRUSTED_PROXIES=**
+      - TZ=Europe/Berlin
+      - CAN_POST_AUTOIMPORT=true
+      - AUTO_IMPORT_SECRET={{ importer_autoimport_secret }}
+      - IMPORT_DIR_ALLOWLIST=/import
+    volumes:
+      - {{ finance_install_path }}/import:/import
+      - {{ finance_install_path }}/secrets/enable_banking.pem:{{ enable_banking_key_path }}:ro
+    ports:
+      - "{{ finance_host_ip }}:8081:8080"   # nur LAN, fuer Ersteinrichtung
+    networks: [finance-net]
 
   finance-webhook:
     build: ./webhook-src
     container_name: finance-webhook
     restart: unless-stopped
-    ports:
-      - "9000:9000"
+    depends_on: [firefly-iii]
     environment:
+      - PAPERLESS_URL={{ finance_paperless_url }}
       - PAPERLESS_TOKEN={{ finance_paperless_token }}
-      - ACTUAL_TOKEN={{ finance_actual_token }}
+      - OLLAMA_URL={{ finance_ollama_url }}
+      - OLLAMA_MODEL={{ finance_ollama_model }}
+      - OLLAMA_MODEL_ADVISOR={{ finance_ollama_model_advisor }}
+      - FIREFLY_URL=http://firefly-iii:8080
+      - FIREFLY_PAT={{ firefly_pat }}
+      - NTFY_URL={{ finance_ntfy_url }}
+      - NTFY_TOKEN={{ ntfy_token }}
+    ports:
+      - "{{ finance_host_ip }}:9000:9000"   # nur an LAN-IP binden
+    networks: [finance-net]
+
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    restart: unless-stopped
+    command: serve
+    environment:
+      - NTFY_BASE_URL=http://{{ finance_host_ip }}:8082
+    volumes:
+      - {{ finance_install_path }}/ntfy:/var/cache/ntfy
+    ports:
+      - "{{ finance_host_ip }}:8082:80"
+    networks: [finance-net]
+
+networks:
+  finance-net:
+    name: finance-net

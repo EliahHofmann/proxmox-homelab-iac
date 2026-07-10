@@ -139,11 +139,11 @@ lxc_configs = {
     hostname   = "ActualBudget"
     ip         = "192.168.178.87/24"
     cpu        = 2
-    memory     = 2048
+    memory     = 4096
     gw         = "192.168.178.1"
     size       = "10G"
     storage    = "local-lvm"
     nameserver = "1.1.1.1"
-    tags       = "ActualBudget"
+    tags       = "actualbudget"   # Proxmox normalisiert Tags klein -> sonst Dauer-Drift
     }
 }
