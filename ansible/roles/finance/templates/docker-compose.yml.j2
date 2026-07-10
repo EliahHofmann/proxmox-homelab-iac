@@ -58,7 +58,9 @@ services:
       - IMPORT_DIR_ALLOWLIST=/import
     volumes:
       - {{ finance_install_path }}/import:/import
-      - {{ finance_install_path }}/secrets/enable_banking.pem:{{ enable_banking_key_path }}:ro
+      # ganzes Verzeichnis mounten, nicht die Einzeldatei: sonst legt Docker
+      # bei fehlender Host-Datei ein Verzeichnis an ihrer Stelle an (errno 21)
+      - {{ finance_install_path }}/secrets:/secrets:ro
     ports:
       - "{{ finance_host_ip }}:8081:8080"   # nur LAN, fuer Ersteinrichtung
     networks: [finance-net]
