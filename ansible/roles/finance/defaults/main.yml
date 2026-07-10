@@ -12,10 +12,18 @@ finance_db_password: "{{ lookup('env', 'FINANCE_DB_PASSWORD') }}"
 firefly_app_key: "{{ lookup('env', 'FIREFLY_APP_KEY') }}"
 firefly_pat: "{{ lookup('env', 'FIREFLY_PAT') }}"
 finance_paperless_token: "{{ lookup('env', 'FINANCE_PAPERLESS_TOKEN') }}"
-gocardless_id: "{{ lookup('env', 'GOCARDLESS_ID') }}"
-gocardless_key: "{{ lookup('env', 'GOCARDLESS_KEY') }}"
+enable_banking_app_id: "{{ lookup('env', 'ENABLE_BANKING_APP_ID') }}"
+# PEM ist mehrzeilig -> in Vault base64-kodiert (einzeilig) ablegen,
+# sonst zerlegt es die Vault->Env-Schleife der Pipeline.
+enable_banking_private_key_b64: "{{ lookup('env', 'ENABLE_BANKING_PRIVATE_KEY_B64') }}"
 importer_autoimport_secret: "{{ lookup('env', 'IMPORTER_AUTOIMPORT_SECRET') }}"
 ntfy_token: "{{ lookup('env', 'NTFY_TOKEN') | default('', true) }}"
+
+# PEM im Container; auf dem Host unter {{ finance_install_path }}/secrets/
+enable_banking_key_path: "/secrets/enable_banking.pem"
+# Setzt die Sparkasse einen PSU-IP-Header voraus, hier auf true stellen und
+# finance_public_ip fuellen (autodetect wuerde icanhazip.com kontaktieren).
+enable_banking_ip_header: "false"
 
 # Interne Adressen
 finance_host_ip: "192.168.178.87"

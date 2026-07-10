@@ -45,14 +45,17 @@ services:
     environment:
       - FIREFLY_III_URL=http://firefly-iii:8080
       - FIREFLY_III_ACCESS_TOKEN={{ firefly_pat }}
-      - NORDIGEN_ID={{ gocardless_id }}
-      - NORDIGEN_KEY={{ gocardless_key }}
+      - ENABLE_BANKING_APP_ID={{ enable_banking_app_id }}
+      # _FILE-Variante: Key bleibt Datei, taucht nicht in `docker inspect` auf
+      - ENABLE_BANKING_PRIVATE_KEY_FILE={{ enable_banking_key_path }}
+      - ENABLE_BANKING_IMPORT_IP_HEADER={{ enable_banking_ip_header }}
       - TZ=Europe/Berlin
       - CAN_POST_AUTOIMPORT=true
       - AUTO_IMPORT_SECRET={{ importer_autoimport_secret }}
       - IMPORT_DIR_ALLOWLIST=/import
     volumes:
       - {{ finance_install_path }}/import:/import
+      - {{ finance_install_path }}/secrets/enable_banking.pem:{{ enable_banking_key_path }}:ro
     ports:
       - "{{ finance_host_ip }}:8081:8080"   # nur LAN, fuer Ersteinrichtung
     networks: [finance-net]
