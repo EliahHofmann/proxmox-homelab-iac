@@ -93,6 +93,13 @@
     minute: "30"
     job: "{{ finance_install_path }}/bank-import.sh"
 
+- name: Bank-Buchungen nach Empfaenger kategorisieren
+  cron:
+    name: "firefly-categorize"
+    hour: "6"
+    minute: "45"
+    job: "docker exec finance-webhook python /app/categorize.py"
+
 - name: Dedup-Matching nach Bank-Import
   cron:
     name: "firefly-matching-job"
