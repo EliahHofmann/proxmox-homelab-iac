@@ -1,9 +1,14 @@
 services:
   # Proton hat kein natives IMAP -> Bridge uebersetzt fuer den Paperless-Mailimport.
   # Kein Port-Publish: nur der webserver-Container erreicht sie unter proton-bridge:1143.
-  # Erst-Login einmalig manuell:
-  #   docker run --rm -it -v {{ paperless_proton_data }}:/root/.config/protonmail \
-  #     shenxn/protonmail-bridge:latest init
+  # WICHTIG: ganzes /root mounten (nicht nur .config/protonmail) -> sonst geht der
+  # pass-Passwortspeicher (~/.password-store) + GPG (~/.gnupg) beim Neustart verloren
+  # und die Bridge meldet "no supported password manager".
+  # Erst-Login einmalig manuell (Container vorher stoppen):
+  #   docker stop proton-bridge
+  #   docker run --rm -it -v {{ paperless_proton_data }}:/root shenxn/protonmail-bridge init
+  #   -> im CLI: login / <Proton-Adresse> / <Passwort> / <2FA>, dann: info (IMAP-PW), exit
+  #   docker start proton-bridge
   proton-bridge:
     image: shenxn/protonmail-bridge:latest
     container_name: proton-bridge
@@ -14,7 +19,7 @@ services:
       - "1143"
       - "1025"
     volumes:
-      - {{ paperless_proton_data }}:/root/.config/protonmail
+      - {{ paperless_proton_data }}:/root
 
   broker:
     image: docker.io/library/redis:8
