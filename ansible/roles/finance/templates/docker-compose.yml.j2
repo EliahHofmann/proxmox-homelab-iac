@@ -83,8 +83,17 @@ services:
       - FIREFLY_PAT={{ firefly_pat }}
       - NTFY_URL={{ finance_ntfy_url }}
       - NTFY_TOKEN={{ ntfy_token }}
+      # Monitoring: gemeinsame State-Dateien der Cron-Jobs + Log-Salt (kein Secret,
+      # nur damit merchant_hash nicht rueckrechenbar ist). Siehe metrics.py/slog.py.
+      - METRICS_STATE_DIR=/app/state
+      - LOG_SALT={{ finance_log_salt }}
+    volumes:
+      # Cron-Jobs (docker exec) und der Webhook teilen sich diese State-Dateien;
+      # /metrics liest sie beim Scrape. Auf dem Host persistent -> Counter
+      # ueberleben einen Rebuild.
+      - {{ finance_metrics_state }}:/app/state
     ports:
-      - "{{ finance_host_ip }}:9000:9000"   # nur an LAN-IP binden
+      - "{{ finance_host_ip }}:9000:9000"   # nur an LAN-IP binden (Prometheus scrapt via LAN)
     networks: [finance-net]
 
   ntfy:

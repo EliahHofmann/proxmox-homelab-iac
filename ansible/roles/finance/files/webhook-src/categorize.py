@@ -8,7 +8,10 @@ Muster erweitern: einfach den passenden Laden (klein geschrieben) in die Liste
 der Kategorie eintragen. Teilstring-Match, Gross-/Kleinschreibung egal.
 """
 import os
+import time
 from firefly import FireflyClient, ASSET_BANK
+from metrics import JobMetrics
+import slog
 
 # Kategorie -> Empfaenger-Muster (case-insensitive Teilstring im destination_name)
 RULES = {
@@ -38,18 +41,33 @@ def match_category(dest):
 
 
 def run():
-    fc = FireflyClient(os.environ["FIREFLY_URL"], os.environ["FIREFLY_PAT"])
-    txs = fc._search_transactions(f'source_account_is:"{ASSET_BANK}" type:withdrawal')
-    changed = 0
-    for t in txs:
-        if t.get("category_name"):      # schon kategorisiert -> nicht anfassen
-            continue
-        cat = match_category(t.get("destination_name"))
-        if cat:
-            fc.update_transaction(t["id"], t["journal_id"], {"category_name": cat})
-            changed += 1
-            print(f"Kategorisiert: {t.get('destination_name')} -> {cat} ({t['amount']}EUR)")
-    print(f"Fertig: {changed} Buchungen kategorisiert.")
+    t0 = time.perf_counter()
+    m = JobMetrics("categorize")
+    try:
+        fc = FireflyClient(os.environ["FIREFLY_URL"], os.environ["FIREFLY_PAT"])
+        txs = fc._search_transactions(f'source_account_is:"{ASSET_BANK}" type:withdrawal')
+        changed = 0
+        uncategorized = 0
+        for t in txs:
+            if t.get("category_name"):      # schon kategorisiert -> nicht anfassen
+                continue
+            cat = match_category(t.get("destination_name"))
+            if cat:
+                fc.update_transaction(t["id"], t["journal_id"], {"category_name": cat})
+                changed += 1
+                print(f"Kategorisiert: {t.get('destination_name')} -> {cat} ({t['amount']}EUR)")
+            else:
+                uncategorized += 1
+        m.set_gauge("finance_uncategorized_transactions_count", uncategorized)
+        m.record_success(time.perf_counter() - t0)
+        m.save()
+        slog.log_event("categorize_run_success", changed=changed, uncategorized=uncategorized)
+        print(f"Fertig: {changed} Buchungen kategorisiert.")
+    except Exception as e:
+        m.record_failure(time.perf_counter() - t0)
+        m.save()
+        slog.log_event("categorize_run_failed", error_type=type(e).__name__)
+        raise
 
 
 if __name__ == "__main__":

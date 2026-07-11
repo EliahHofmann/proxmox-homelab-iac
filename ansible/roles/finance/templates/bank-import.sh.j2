@@ -8,11 +8,21 @@ LOG="/tmp/bank-import-last.log"
 # --fail entfernt: wir wollen den echten HTTP-Status sehen (nicht nur "gescheitert").
 # --request POST: der Autoimport-Endpoint akzeptiert NUR POST (GET -> 405).
 # http_code + curl-Exitcode werden erfasst, der Body landet im LOG zur Diagnose.
+start_ts=$(date +%s.%N)
 http_code=$(curl -sS -o "$LOG" -w '%{http_code}' \
   --request POST --config "{{ finance_install_path }}/import.curlcfg")
 rc=$?
+dur=$(awk "BEGIN{printf \"%.3f\", $(date +%s.%N) - $start_ts}")
+
+# Health-Metrik im Webhook festhalten (record_run schreibt in die State-Datei,
+# die /metrics liest). Fehlschlag hier darf den Import nicht scheitern lassen.
+record() {
+  docker exec finance-webhook python /app/record_run.py \
+    --job bank_import --status "$1" --duration "$dur" >/dev/null 2>&1 || true
+}
 
 if [ "$rc" -ne 0 ] || [ "$http_code" -ge 400 ]; then
+  record failed
   # Deutungshilfe statt Raterei:
   #   rc!=0 / http_code 000 -> Importer nicht erreichbar (Container down?)
   #   4xx                   -> Autoimport-Secret falsch ODER Config fehlt in /import
@@ -28,4 +38,6 @@ if [ "$rc" -ne 0 ] || [ "$http_code" -ge 400 ]; then
     -H 'Tags: warning' \
     -d "Bank-Import fehlgeschlagen (rc=$rc, http=$http_code): $hint" \
     "http://{{ finance_host_ip }}:8082/finanzen" || true
+else
+  record success
 fi
