@@ -73,8 +73,11 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD={{ grafana_admin_password }}
     volumes:
       - '{{ monitoring_install_path }}/grafana-data:/var/lib/grafana'
+      # Provisioning als Code: Datasources (Prometheus/Loki) + Dashboards.
+      - '{{ monitoring_install_path }}/grafana/provisioning:/etc/grafana/provisioning:ro'
+      - '{{ monitoring_install_path }}/grafana/dashboards:/etc/grafana/dashboards:ro'
     networks:
-      - monitoring                   
+      - monitoring
     depends_on:
       - loki
       - prometheus

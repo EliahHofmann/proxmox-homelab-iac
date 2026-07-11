@@ -1,0 +1,14 @@
+# Provisioning-Provider: laedt alle Dashboard-JSONs aus /etc/grafana/dashboards.
+apiVersion: 1
+
+providers:
+  - name: 'finance'
+    orgId: 1
+    folder: 'Finance'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false

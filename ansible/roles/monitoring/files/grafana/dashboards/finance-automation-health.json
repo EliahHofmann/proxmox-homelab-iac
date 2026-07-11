@@ -1,0 +1,231 @@
+{
+  "uid": "finance-automation-health",
+  "title": "Finance Automation Health",
+  "tags": ["finance", "automation"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Systemstatus & Frische",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "collapsed": false
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "finance-webhook",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "up{job=\"finance-webhook\"}", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "auto", "orientation": "auto" }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Letzter Bankimport",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "time() - finance_last_successful_bank_import_timestamp", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 93600 }, { "color": "red", "value": 129600 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "auto", "orientation": "auto" }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Letzter Dedupe-Lauf",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "time() - finance_last_successful_dedupe_timestamp", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 90000 }, { "color": "red", "value": 108000 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "auto", "orientation": "auto" }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Letzter Advisor-Lauf",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "time() - finance_last_successful_advisor_run_timestamp", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 3024000 }, { "color": "red", "value": 3456000 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "auto", "orientation": "auto" }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Letzter Paperless-Webhook",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "time() - finance_last_paperless_webhook_timestamp", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "orientation": "auto" }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Belege: Review noetig",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "finance_receipts_needing_review", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "auto", "orientation": "auto" }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Unmatched Belege",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "finance_dedupe_unmatched_receipts", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 20 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "auto", "orientation": "auto" }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Unkategorisierte Buchungen",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "finance_uncategorized_transactions_count", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 20 }, { "color": "red", "value": 50 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "auto", "orientation": "auto" }
+    },
+    {
+      "type": "row",
+      "title": "Belegpipeline & Dedupe",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Belegpipeline (24h, increase)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "increase(finance_paperless_webhook_received_total[24h])", "legendFormat": "Webhooks empfangen", "datasource": { "type": "prometheus", "uid": "prometheus" } },
+        { "refId": "B", "expr": "increase(finance_invoice_extraction_success_total[24h])", "legendFormat": "Extraktion ok", "datasource": { "type": "prometheus", "uid": "prometheus" } },
+        { "refId": "C", "expr": "increase(finance_invoice_extraction_failed_total[24h])", "legendFormat": "Extraktion Fehler", "datasource": { "type": "prometheus", "uid": "prometheus" } },
+        { "refId": "D", "expr": "increase(finance_firefly_transaction_create_failed_total[24h])", "legendFormat": "Firefly Fehler", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10, "showPoints": "auto" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "none" } }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Dedupe (24h, increase)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "increase(finance_dedupe_matches_total[24h])", "legendFormat": "Matches", "datasource": { "type": "prometheus", "uid": "prometheus" } },
+        { "refId": "B", "expr": "increase(finance_dedupe_failed_total[24h])", "legendFormat": "Dedupe Fehler", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10, "showPoints": "auto" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "none" } }
+    },
+    {
+      "type": "row",
+      "title": "Advisor & Performance",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 102,
+      "collapsed": false
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Advisor Fehler (24h)",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "increase(finance_advisor_run_failed_total[24h])", "legendFormat": "Advisor", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true },
+        { "refId": "B", "expr": "increase(finance_ntfy_push_failed_total[24h])", "legendFormat": "ntfy Push", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "auto", "orientation": "horizontal" }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Performance (p95 Request-Dauer)",
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, rate(finance_ollama_request_duration_seconds_bucket[10m]))", "legendFormat": "Ollama p95", "datasource": { "type": "prometheus", "uid": "prometheus" } },
+        { "refId": "B", "expr": "histogram_quantile(0.95, rate(finance_firefly_api_request_duration_seconds_bucket[10m]))", "legendFormat": "Firefly p95", "datasource": { "type": "prometheus", "uid": "prometheus" } },
+        { "refId": "C", "expr": "finance_dedupe_duration_seconds", "legendFormat": "Dedupe Dauer (letzter Lauf)", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10, "showPoints": "auto" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "none" } }
+    },
+    {
+      "type": "row",
+      "title": "Logs (Loki)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "id": 103,
+      "collapsed": false
+    },
+    {
+      "id": 13,
+      "type": "logs",
+      "title": "finance-webhook Events",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 28 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        { "refId": "A", "expr": "{container_name=\"finance-webhook\"}", "datasource": { "type": "loki", "uid": "loki" } }
+      ],
+      "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" }
+    }
+  ]
+}

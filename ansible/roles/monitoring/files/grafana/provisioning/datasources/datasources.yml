@@ -1,0 +1,19 @@
+# Von Ansible bereitgestellt (monitoring-Rolle). Grafana laeuft im selben
+# Docker-Netz wie Prometheus/Loki -> Ansprache ueber die Container-Namen.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    uid: prometheus
+    isDefault: true
+    editable: false
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    uid: loki
+    editable: false
