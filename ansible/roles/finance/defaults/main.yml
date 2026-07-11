@@ -2,6 +2,8 @@
 finance_install_path: "/opt/finance-stack"
 finance_firefly_data: "/opt/finance-stack/firefly-upload"
 finance_db_data: "/opt/finance-stack/db"
+# Monitoring: gemeinsame Prometheus-State-Dateien der Cron-Jobs (Host-Pfad).
+finance_metrics_state: "/opt/finance-stack/metrics-state"
 
 # Domain
 finance_subdomain: "finanzen"
@@ -18,6 +20,9 @@ enable_banking_app_id: "{{ lookup('env', 'ENABLE_BANKING_APP_ID') }}"
 enable_banking_private_key_b64: "{{ lookup('env', 'ENABLE_BANKING_PRIVATE_KEY_B64') }}"
 importer_autoimport_secret: "{{ lookup('env', 'IMPORTER_AUTOIMPORT_SECRET') }}"
 ntfy_token: "{{ lookup('env', 'NTFY_TOKEN') | default('', true) }}"
+# Salt fuer merchant_hash in Logs (kein hartes Secret; verhindert nur, dass der
+# gekuerzte Hash trivial rueckrechenbar ist). Default reicht, kann via Vault ueberschrieben werden.
+finance_log_salt: "{{ lookup('env', 'FINANCE_LOG_SALT') | default('finance-homelab', true) }}"
 
 # PEM im Container; auf dem Host unter {{ finance_install_path }}/secrets/
 enable_banking_key_path: "/secrets/enable_banking.pem"

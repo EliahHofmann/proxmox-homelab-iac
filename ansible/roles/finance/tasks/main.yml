@@ -26,6 +26,7 @@
     - "{{ finance_db_data }}"
     - "{{ finance_install_path }}/import"
     - "{{ finance_install_path }}/ntfy"
+    - "{{ finance_metrics_state }}"
 
 - name: Webhook Source-Code kopieren
   copy:

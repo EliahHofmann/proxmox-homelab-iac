@@ -6,8 +6,12 @@ Das ist der Halluzinationsschutz fuer das 8B-Modell.
 """
 import os
 import json
+import time
 import datetime
 import requests
+
+from metrics import JobMetrics
+import slog
 
 # Ab welcher Abweichung eine Kategorie als gestiegen/gesunken gilt
 TREND_SCHWELLE_PROZENT = 5.0
@@ -161,25 +165,48 @@ def send_ntfy(text, url, token=""):
 
 def run(today=None):
     today = today or datetime.date.today()
-    base, pat = os.environ["FIREFLY_URL"], os.environ["FIREFLY_PAT"]
+    t0 = time.perf_counter()
+    m = JobMetrics("advisor")
+    try:
+        base, pat = os.environ["FIREFLY_URL"], os.environ["FIREFLY_PAT"]
 
-    start, end = previous_month_range(today)
-    vor_start, vor_end = month_before_range(start)
+        start, end = previous_month_range(today)
+        vor_start, vor_end = month_before_range(start)
 
-    aktuell = fetch_expenses(base, pat, start, end)
-    vormonat = fetch_expenses(base, pat, vor_start, vor_end)
-    report = build_report_json(aktuell, vormonat, start[:7])
+        aktuell = fetch_expenses(base, pat, start, end)
+        vormonat = fetch_expenses(base, pat, vor_start, vor_end)
+        report = build_report_json(aktuell, vormonat, start[:7])
 
-    if report["gesamtausgaben_euro"] == 0:
-        print(f"Keine Ausgaben in {report['monat']}, kein Bericht.")
-        return
+        if report["gesamtausgaben_euro"] == 0:
+            m.record_success(time.perf_counter() - t0)
+            m.save()
+            slog.log_event("advisor_run_empty", monat=report["monat"])
+            print(f"Keine Ausgaben in {report['monat']}, kein Bericht.")
+            return
 
-    # Der Berater formuliert Fliesstext -> groesseres Modell, falls konfiguriert.
-    model = os.environ.get("OLLAMA_MODEL_ADVISOR") or os.environ["OLLAMA_MODEL"]
-    ki = ask_ollama(report, os.environ["OLLAMA_URL"], model)
-    text = format_push(report, ki)
-    send_ntfy(text, os.environ["NTFY_URL"], os.environ.get("NTFY_TOKEN", ""))
-    print(f"Finanzbericht {report['monat']} gesendet ({report['gesamtausgaben_euro']:.2f} EUR).")
+        # Der Berater formuliert Fliesstext -> groesseres Modell, falls konfiguriert.
+        model = os.environ.get("OLLAMA_MODEL_ADVISOR") or os.environ["OLLAMA_MODEL"]
+        ki = ask_ollama(report, os.environ["OLLAMA_URL"], model)
+        text = format_push(report, ki)
+        try:
+            send_ntfy(text, os.environ["NTFY_URL"], os.environ.get("NTFY_TOKEN", ""))
+            m.inc("finance_ntfy_push_success_total")
+        except Exception:
+            m.inc("finance_ntfy_push_failed_total")
+            raise
+
+        m.record_success(time.perf_counter() - t0)
+        m.save()
+        # KEINE Betraege ins Log - nur Zaehl-/Struktur-Infos.
+        slog.log_event("advisor_run_success", monat=report["monat"],
+                       kategorien=len(report["kategorien"]),
+                       tipps=len(ki.get("tipps") or []))
+        print(f"Finanzbericht {report['monat']} gesendet ({report['gesamtausgaben_euro']:.2f} EUR).")
+    except Exception as e:
+        m.record_failure(time.perf_counter() - t0)
+        m.save()
+        slog.log_event("advisor_run_failed", error_type=type(e).__name__)
+        raise
 
 
 if __name__ == "__main__":
