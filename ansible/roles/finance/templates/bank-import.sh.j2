@@ -3,10 +3,29 @@
 # Das Secret liegt in der 0600-Datei import.curlcfg, nicht in argv/Logs.
 set -o pipefail
 
-if ! curl -sS -o /dev/null --fail --config "{{ finance_install_path }}/import.curlcfg"; then
+LOG="/tmp/bank-import-last.log"
+
+# --fail entfernt: wir wollen den echten HTTP-Status sehen (nicht nur "gescheitert").
+# --request POST: der Autoimport-Endpoint akzeptiert NUR POST (GET -> 405).
+# http_code + curl-Exitcode werden erfasst, der Body landet im LOG zur Diagnose.
+http_code=$(curl -sS -o "$LOG" -w '%{http_code}' \
+  --request POST --config "{{ finance_install_path }}/import.curlcfg")
+rc=$?
+
+if [ "$rc" -ne 0 ] || [ "$http_code" -ge 400 ]; then
+  # Deutungshilfe statt Raterei:
+  #   rc!=0 / http_code 000 -> Importer nicht erreichbar (Container down?)
+  #   4xx                   -> Autoimport-Secret falsch ODER Config fehlt in /import
+  #   5xx                   -> Importer-Fehler, evtl. Enable-Banking-Reconsent (90 Tage)
+  case "$http_code" in
+    000) hint="Importer nicht erreichbar (Container down? Port 8081?)" ;;
+    4*)  hint="Autoimport-Secret falsch ODER keine Config in /import" ;;
+    5*)  hint="Importer-Fehler - evtl. Enable-Banking-Reconsent (90 Tage)" ;;
+    *)   hint="unbekannter Fehler" ;;
+  esac
   curl -sS -o /dev/null \
     -H 'Title: Sparkasse Sync fehlgeschlagen' \
     -H 'Tags: warning' \
-    -d 'Bank-Import fehlgeschlagen - evtl. 90-Tage-Reconsent noetig' \
+    -d "Bank-Import fehlgeschlagen (rc=$rc, http=$http_code): $hint" \
     "http://{{ finance_host_ip }}:8082/finanzen" || true
 fi
