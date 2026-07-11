@@ -1,5 +1,5 @@
 import datetime
-from extractor import parse_ai_json
+from extractor import parse_ai_json, fit_text
 
 
 def test_parse_valid():
@@ -36,3 +36,56 @@ def test_parse_invalid_date_falls_back_to_today():
 def test_parse_euro_suffix_amount():
     d = parse_ai_json('{"haendler":"X","betrag_euro":"12.30 EUR","datum":"2026-07-05","kategorie":"Y"}')
     assert d["betrag_euro"] == 12.30
+
+
+def test_gesamtbetrag_wird_verwendet():
+    d = parse_ai_json('{"haendler":"Amazon","gesamtbetrag":24.63,"positionen":[12.99,8.49,3.15],"kategorie":"Online-Shopping"}')
+    assert d["betrag_euro"] == 24.63
+
+
+def test_positionen_werden_summiert_wenn_keine_gesamtsumme():
+    d = parse_ai_json('{"haendler":"Amazon","gesamtbetrag":null,"positionen":[12.99,8.49,3.15]}')
+    assert d["betrag_euro"] == 24.63
+
+
+def test_gesamtbetrag_schlaegt_positionen():
+    # Endsumme steht im Dokument -> Positionen werden ignoriert (kein Doppelzaehlen).
+    d = parse_ai_json('{"haendler":"X","gesamtbetrag":50.00,"positionen":[10,10,10]}')
+    assert d["betrag_euro"] == 50.00
+
+
+def test_positionen_als_komma_strings():
+    d = parse_ai_json('{"haendler":"X","gesamtbetrag":null,"positionen":["12,99","8,49 EUR","3,15"]}')
+    assert d["betrag_euro"] == 24.63
+
+
+def test_kein_betrag_bleibt_null():
+    d = parse_ai_json('{"haendler":"X","gesamtbetrag":null,"positionen":[]}')
+    assert d["betrag_euro"] == 0.0
+
+
+def test_versand_als_eigene_position():
+    d = parse_ai_json('{"haendler":"X","gesamtbetrag":null,"positionen":[19.99,4.99]}')
+    assert d["betrag_euro"] == 24.98
+
+
+def test_fit_text_kurz_bleibt_unveraendert():
+    assert fit_text("kurzer text") == "kurzer text"
+
+
+def test_fit_text_behaelt_ende():
+    text = "A" * 6000 + "GESAMTSUMME 24,63 EUR"
+    out = fit_text(text, limit=4000)
+    assert "GESAMTSUMME 24,63 EUR" in out
+    assert len(out) <= 4000 + 5
+
+
+def test_fit_text_behaelt_anfang():
+    text = "HAENDLER AMAZON" + "B" * 6000
+    out = fit_text(text, limit=4000)
+    assert "HAENDLER AMAZON" in out
+
+
+def test_fit_text_leer():
+    assert fit_text("") == ""
+    assert fit_text(None) == ""

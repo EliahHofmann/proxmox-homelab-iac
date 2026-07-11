@@ -45,13 +45,15 @@ def test_bargeld():
 def test_online_shopping():
     assert match_category("AMAZON PAYMENTS EUROPE S.C.A.") == "Online-Shopping"
     assert match_category("AMAZON EU S.A R.L., NIEDERLASSUNG DEUTSCHLAND") == "Online-Shopping"
+    # PayPal-Einkaeufe (Games, Brettspiele, Lego) -> Online-Shopping (User-Wunsch).
+    # Der konkrete Artikel ist auf dem Kontoauszug nicht sichtbar, die Kategorie passt trotzdem.
+    assert match_category("PayPal Europe S.a.r.l. et Cie S.C.A") == "Online-Shopping"
 
 
 def test_no_match_bleibt_offen():
     # Zahlungsdienstleister/Privatpersonen: bewusst KEIN Automatch
     assert match_category("Landesbank Hessen-Thuringen") is None
     assert match_category("JANA YVES HOFMANN") is None
-    assert match_category("PayPal Europe S.a.r.l. et Cie S.C.A") is None
     assert match_category("SG-VR Payment GmbH") is None
     assert match_category(None) is None
     assert match_category("") is None

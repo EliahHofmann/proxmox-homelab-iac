@@ -22,7 +22,7 @@ RULES = {
     "Tanken":          ["aral", "shell", "esso"],
     "Fixkosten":       ["e-plus", "telekom", "vodafone"],
     "Bargeld":         ["ga nr"],
-    "Online-Shopping": ["amazon"],
+    "Online-Shopping": ["amazon", "paypal"],
 }
 
 
