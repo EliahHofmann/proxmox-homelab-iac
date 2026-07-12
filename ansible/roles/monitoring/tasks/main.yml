@@ -30,6 +30,7 @@
   template:
     src: prometheus.yml.j2
     dest: "{{ monitoring_install_path }}/prometheus.yml"
+  register: prometheus_config
 
 - name: Proxmox Exporter Konfiguration (API Token) generieren
   template:
@@ -53,9 +54,10 @@
     chdir: "{{ monitoring_install_path }}"
 
 # Bei reiner Config-Aenderung wird der Prometheus-Container von "up -d" NICHT neu
-# erstellt -> neue Scrape-Targets wuerden erst nach Neustart greifen. SIGHUP laedt
-# die prometheus.yml zur Laufzeit neu.
-- name: Prometheus-Konfiguration neu laden (SIGHUP)
-  command: docker kill --signal=HUP prometheus
-  changed_when: false
-  failed_when: false
+# erstellt. Ein SIGHUP-Reload reicht NICHT: Ansibles template schreibt die Datei
+# atomar (neuer Inode), der laufende Container haengt aber am alten Inode und wuerde
+# die alte Config neu laden. Daher den Container neu starten -> re-bindet den
+# aktuellen Host-Inode UND laedt die Config neu. Nur wenn sich die Config aenderte.
+- name: Prometheus neu starten, wenn sich die Scrape-Config geaendert hat
+  command: docker restart prometheus
+  when: prometheus_config is changed
