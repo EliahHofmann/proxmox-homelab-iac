@@ -19,21 +19,27 @@ import slog
 # Haendler muessen deshalb VOR "Online-Shopping" stehen - dort faengt "paypal"
 # sonst alles ab, was ueber PayPal bezahlt wurde (Games, Abos, Brettspiele).
 RULES = {
-    # Kroatien-Haendler der Jugendfreizeit 2026. Kartenzahlungen im Ausland
-    # tauchen nach dem Buchen nur noch mit dem Acquirer auf - diese Muster
-    # greifen deshalb nur, solange der Haendlername noch mitgeliefert wird.
-    "Jugendfreizeit":  ["konzum", "ina bacva", "nyx"],
+    # Haendler der Jugendfreizeit 2026 (An-/Rueckreise + Kroatien).
+    # ACHTUNG: Enable Banking liefert bei gebuchten Kartenzahlungen nur den
+    # Acquirer ("Landesbank Hessen-Thuringen"), nicht den Haendler - der steht
+    # nur im CSV-Export der Sparkasse. Diese Muster greifen deshalb nur, wenn
+    # der Haendlername vorhanden ist. "konzum" fehlt bewusst: darunter laeuft
+    # auch die vorgestreckte 170-EUR-Buchung, die keine Kategorie haben soll.
+    "Jugendfreizeit":  ["ina bacva", "nyx", "pto seka", "tobacco rovinj",
+                        "mlinar", "lidl hrvatska", "irschenberg"],
     "Abos & Software": ["openai", "chatgpt", "anthropic", "claude", "proton",
-                        "netcup", "ionos", "strato", "namecheap", "cloudflare"],
+                        "netcup", "ionos", "strato", "namecheap", "cloudflare",
+                        "digiphile"],
     "Gaming":          ["tebex", "steam", "valve", "nintendo", "playstation",
                         "sony interactive", "xbox", "epic games", "gog.com"],
     "Lebensmittel":    ["netto", "edeka", "kaufland", "penny", "aldi", "ege market",
-                        "blankenagel", "lidl", "rewe"],
-    # "cafe neu" (Uni-Cafe) bewusst vor "Bildung" - dort wird gegessen, nicht studiert.
-    "Restaurant":      ["cafe neu", "mcdonald", "schloss burger", "seppels", "kikko",
-                        "burger king", "subway"],
+                        "blankenagel", "lidl", "rewe", "mein-asiamarkt"],
+    # Mensa/Uni-Cafe bewusst vor "Bildung" - dort wird gegessen, nicht studiert.
+    "Restaurant":      ["cafe neu", "akademisches foerderungswerk", "mcdonald",
+                        "schloss burger", "seppels", "kikko", "burger king",
+                        "burgerking", "subway"],
     "Bildung":         ["westfaelische hochschule", "westfälische hochschule"],
-    "Freizeit":        ["bowling", "erlebnisgastronomie"],
+    "Freizeit":        ["bowling", "erlebnisgastronomie", "bookshop"],
     "Drogerie":        ["rossmann"],
     "Kleidung":        ["h+m", "jeans fritz", "c&a", "primark"],
     "Tanken":          ["aral", "shell", "esso"],

@@ -101,17 +101,17 @@ def test_filter_konsum_laesst_normale_kategorien_stehen():
 
 
 # ---- Einnahmen & Sparquote ----
-def test_parse_summary_liest_einnahmen():
-    from advisor import parse_summary
-    payload = {"balance-in-EUR": {"monetary_value": "670.18"},
-               "earned-in-EUR": {"monetary_value": "1705.060000000000"},
-               "spent-in-EUR": {"monetary_value": "-1034.880000000000"}}
-    assert parse_summary(payload) == 1705.06
+def test_parse_income_nimmt_nur_die_einkommens_kategorie():
+    from advisor import parse_income
+    payload = [{"name": "Darlehen", "difference_float": 80},
+               {"name": "Einkommen", "difference_float": 1275.05},
+               {"name": "Erstattung", "difference_float": 350}]
+    assert parse_income(payload) == 1275.05
 
 
-def test_parse_summary_ohne_einnahmen_ist_null():
-    from advisor import parse_summary
-    assert parse_summary({"spent-in-EUR": {"monetary_value": "-10.00"}}) == 0.0
+def test_parse_income_ohne_einkommen_ist_null():
+    from advisor import parse_income
+    assert parse_income([{"name": "Erstattung", "difference_float": 350}]) == 0.0
 
 
 def test_sparquote_rechnet_anteil_der_nicht_verkonsumiert_wurde():
@@ -139,3 +139,16 @@ def test_build_report_ohne_einnahmen_bleibt_rueckwaertskompatibel():
     r = build_report_json({"Lebensmittel": 250.0}, {}, "2026-07")
     assert r["einnahmen_euro"] is None
     assert r["sparquote_prozent"] is None
+
+
+def test_build_report_vormonats_sparquote():
+    """Ohne Vergleichswert wuerde die KI 'gestiegen/gesunken' erfinden."""
+    r = build_report_json({"Lebensmittel": 250.0}, {"Lebensmittel": 500.0}, "2026-07",
+                          einnahmen=1000.0, einnahmen_vor=1000.0)
+    assert r["sparquote_prozent"] == 75.0
+    assert r["sparquote_vormonat_prozent"] == 50.0
+
+
+def test_build_report_ohne_vormonats_einnahmen_ist_none():
+    r = build_report_json({"Lebensmittel": 250.0}, {}, "2026-07", einnahmen=1000.0)
+    assert r["sparquote_vormonat_prozent"] is None

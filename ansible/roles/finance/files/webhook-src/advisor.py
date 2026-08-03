@@ -21,6 +21,10 @@ TREND_SCHWELLE_PROZENT = 5.0
 # Ohne diesen Filter verzerrt eine einzelne Sparrate den ganzen Monatsvergleich.
 NICHT_KONSUM = {"Darlehen", "Investment"}
 
+# Als Einkommen zaehlt nur diese Kategorie (Hilfskraft-Stelle + monatlicher
+# Zuschuss). Alles andere, was auf dem Konto eingeht, ist Rueckfluss.
+EINKOMMEN_KATEGORIE = "Einkommen"
+
 ADVISOR_SYSTEM_PROMPT = """Du bist ein nuechterner Finanzberater fuer einen Privathaushalt.
 
 Du bekommst einen fertig berechneten Monatsbericht als JSON. ALLE Zahlen darin
@@ -34,10 +38,15 @@ REGELN:
    Falsch: "der Kauf des neuen Geraets". Richtig: "die Ausgaben in Elektronik".
 4. Wenn eine Angabe fehlt, erwaehne sie nicht. Sage nicht, dass sie fehlt.
 5. Keine Anlageberatung, keine Versicherungs- oder Kreditempfehlungen.
-6. Antworte auf Deutsch, sachlich, ohne Floskeln und ohne Anrede.
+6. Antworte auf Deutsch, sachlich, ohne Floskeln.
+   Sprich den Leser NIE an - kein "Sie", kein "Du", kein "Ihr/Dein".
+   Formuliere unpersoenlich. Falsch: "Sie sollten Ihre Abos pruefen".
+   Richtig: "Die Abo-Kosten sind gestiegen, eine Pruefung lohnt sich".
 7. "sparquote_prozent" ist der Anteil der Einnahmen, der uebrig blieb. Ist der
    Wert negativ, wurde mehr ausgegeben als eingenommen - benenne das deutlich.
    Sparen und Darlehen sind in den Ausgaben NICHT enthalten, behaupte das nicht.
+   Sage nur dann, die Sparquote sei gestiegen oder gesunken, wenn
+   "sparquote_vormonat_prozent" gefuellt ist und der Vergleich das hergibt.
 
 Antworte AUSSCHLIESSLICH mit gueltigem JSON in exakt dieser Form:
 {
@@ -79,11 +88,16 @@ def filter_konsum(betraege):
     return {k: v for k, v in betraege.items() if k not in NICHT_KONSUM}
 
 
-def parse_summary(payload):
-    """summary/basic -> eingenommene Euro als float (0.0 wenn nicht enthalten)."""
-    for key, row in payload.items():
-        if key.startswith("earned-in-"):
-            return round(abs(float(row.get("monetary_value") or 0.0)), 2)
+def parse_income(payload, kategorie=EINKOMMEN_KATEGORIE):
+    """insight/income/category -> eingenommene Euro dieser einen Kategorie.
+
+    Bewusst NICHT die Summe aller Eingaenge: Rueckzahlungen, Erstattungen und
+    Umbuchungen vom eigenen Bargeld sind kein Einkommen und wuerden die
+    Sparquote schoenrechnen.
+    """
+    for row in payload:
+        if row.get("name") == kategorie:
+            return round(abs(float(row.get("difference_float") or 0.0)), 2)
     return 0.0
 
 
@@ -107,7 +121,7 @@ def _trend(delta_prozent, vormonat):
     return "stabil"
 
 
-def build_report_json(aktuell, vormonat, monat, einnahmen=None):
+def build_report_json(aktuell, vormonat, monat, einnahmen=None, einnahmen_vor=None):
     """Fertig gerechneter Monatsbericht. Die KI bekommt genau dieses Dict."""
     gesamt = round(sum(aktuell.values()), 2)
     gesamt_vor = round(sum(vormonat.values()), 2)
@@ -138,6 +152,9 @@ def build_report_json(aktuell, vormonat, monat, einnahmen=None):
         "einnahmen_euro": round(einnahmen, 2) if einnahmen is not None else None,
         "sparquote_prozent": (sparquote(einnahmen, gesamt)
                               if einnahmen is not None else None),
+        # Vergleichswert, damit die KI "gestiegen/gesunken" nicht raten muss.
+        "sparquote_vormonat_prozent": (sparquote(einnahmen_vor, gesamt_vor)
+                                       if einnahmen_vor is not None else None),
         "kategorien": kategorien,
         "top_3": [k["name"] for k in kategorien[:3]],
     }
@@ -177,14 +194,14 @@ def fetch_expenses(base, token, start, end):
 
 
 def fetch_income(base, token, start, end):
-    """Eingenommene Euro im Zeitraum (Transfers zaehlen hier nicht mit)."""
+    """Echtes Einkommen im Zeitraum (nur die Kategorie "Einkommen")."""
     r = requests.get(
-        f"{base.rstrip('/')}/api/v1/summary/basic",
-        params={"start": start, "end": end, "currency_code": "EUR"},
+        f"{base.rstrip('/')}/api/v1/insight/income/category",
+        params={"start": start, "end": end},
         headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
         timeout=60)
     r.raise_for_status()
-    return parse_summary(r.json())
+    return parse_income(r.json())
 
 
 def ask_ollama(report, url, model):
@@ -225,7 +242,9 @@ def run(today=None):
         aktuell = fetch_expenses(base, pat, start, end)
         vormonat = fetch_expenses(base, pat, vor_start, vor_end)
         einnahmen = fetch_income(base, pat, start, end)
-        report = build_report_json(aktuell, vormonat, start[:7], einnahmen=einnahmen)
+        einnahmen_vor = fetch_income(base, pat, vor_start, vor_end)
+        report = build_report_json(aktuell, vormonat, start[:7],
+                                   einnahmen=einnahmen, einnahmen_vor=einnahmen_vor)
 
         if report["gesamtausgaben_euro"] == 0:
             m.record_success(time.perf_counter() - t0)
