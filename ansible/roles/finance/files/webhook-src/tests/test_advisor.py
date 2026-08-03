@@ -85,3 +85,57 @@ def test_build_report_leerer_monat():
     assert r["kategorien"] == []
     assert r["top_3"] == []
     assert r["delta_gesamt_prozent"] is None
+
+
+# ---- Nicht-Konsum-Kategorien (Darlehen/Investment verzerren jeden Vergleich) ----
+def test_filter_konsum_entfernt_darlehen_und_investment():
+    from advisor import filter_konsum
+    assert filter_konsum({"Lebensmittel": 400.0, "Darlehen": 210.0,
+                          "Investment": 1390.0}) == {"Lebensmittel": 400.0}
+
+
+def test_filter_konsum_laesst_normale_kategorien_stehen():
+    from advisor import filter_konsum
+    daten = {"Lebensmittel": 400.0, "Gaming": 21.64, "Jugendfreizeit": 59.26}
+    assert filter_konsum(daten) == daten
+
+
+# ---- Einnahmen & Sparquote ----
+def test_parse_summary_liest_einnahmen():
+    from advisor import parse_summary
+    payload = {"balance-in-EUR": {"monetary_value": "670.18"},
+               "earned-in-EUR": {"monetary_value": "1705.060000000000"},
+               "spent-in-EUR": {"monetary_value": "-1034.880000000000"}}
+    assert parse_summary(payload) == 1705.06
+
+
+def test_parse_summary_ohne_einnahmen_ist_null():
+    from advisor import parse_summary
+    assert parse_summary({"spent-in-EUR": {"monetary_value": "-10.00"}}) == 0.0
+
+
+def test_sparquote_rechnet_anteil_der_nicht_verkonsumiert_wurde():
+    from advisor import sparquote
+    assert sparquote(1000.0, 250.0) == 75.0
+
+
+def test_sparquote_negativ_wenn_mehr_ausgegeben_als_eingenommen():
+    from advisor import sparquote
+    assert sparquote(1000.0, 1200.0) == -20.0
+
+
+def test_sparquote_ohne_einnahmen_ist_none():
+    from advisor import sparquote
+    assert sparquote(0.0, 100.0) is None
+
+
+def test_build_report_mit_einnahmen():
+    r = build_report_json({"Lebensmittel": 250.0}, {}, "2026-07", einnahmen=1000.0)
+    assert r["einnahmen_euro"] == 1000.0
+    assert r["sparquote_prozent"] == 75.0
+
+
+def test_build_report_ohne_einnahmen_bleibt_rueckwaertskompatibel():
+    r = build_report_json({"Lebensmittel": 250.0}, {}, "2026-07")
+    assert r["einnahmen_euro"] is None
+    assert r["sparquote_prozent"] is None

@@ -57,3 +57,37 @@ def test_no_match_bleibt_offen():
     assert match_category("SG-VR Payment GmbH") is None
     assert match_category(None) is None
     assert match_category("") is None
+
+
+# ---- neue Kategorien ----
+def test_gaming():
+    assert match_category("Tebex Limited") == "Gaming"
+    assert match_category("STEAM GAMES") == "Gaming"
+    assert match_category("Nintendo of Europe") == "Gaming"
+
+
+def test_bildung():
+    assert match_category("Westfaelische Hochschule") == "Bildung"
+    assert match_category("Westfälische Hochschule") == "Bildung"
+
+
+def test_abos_und_software():
+    assert match_category("OPENAI *CHATGPT") == "Abos & Software"
+    assert match_category("ANTHROPIC* CLAUDE SUB") == "Abos & Software"
+    assert match_category("Proton AG") == "Abos & Software"
+    assert match_category("netcup GmbH") == "Abos & Software"
+
+
+def test_jugendfreizeit_kroatien():
+    assert match_category("KONZUM P-3270 PULA HR") == "Jugendfreizeit"
+    assert match_category("INA BACVA-SJEVER VISNJAN HR") == "Jugendfreizeit"
+    assert match_category("NYX*INABavasjever Prsurici HR") == "Jugendfreizeit"
+
+
+def test_gaming_schlaegt_online_shopping():
+    """Tebex laeuft ueber PayPal - Gaming muss vor dem Auffangnetz greifen."""
+    assert match_category("PayPal Europe - Tebex Limited") == "Gaming"
+
+
+def test_abo_schlaegt_online_shopping():
+    assert match_category("PayPal Europe - Proton AG") == "Abos & Software"

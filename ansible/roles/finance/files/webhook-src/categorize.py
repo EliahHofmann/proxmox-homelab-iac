@@ -14,18 +14,33 @@ from metrics import JobMetrics
 import slog
 
 # Kategorie -> Empfaenger-Muster (case-insensitive Teilstring im destination_name)
+#
+# REIHENFOLGE IST BEDEUTSAM: die erste passende Kategorie gewinnt. Spezifische
+# Haendler muessen deshalb VOR "Online-Shopping" stehen - dort faengt "paypal"
+# sonst alles ab, was ueber PayPal bezahlt wurde (Games, Abos, Brettspiele).
 RULES = {
+    # Kroatien-Haendler der Jugendfreizeit 2026. Kartenzahlungen im Ausland
+    # tauchen nach dem Buchen nur noch mit dem Acquirer auf - diese Muster
+    # greifen deshalb nur, solange der Haendlername noch mitgeliefert wird.
+    "Jugendfreizeit":  ["konzum", "ina bacva", "nyx"],
+    "Abos & Software": ["openai", "chatgpt", "anthropic", "claude", "proton",
+                        "netcup", "ionos", "strato", "namecheap", "cloudflare"],
+    "Gaming":          ["tebex", "steam", "valve", "nintendo", "playstation",
+                        "sony interactive", "xbox", "epic games", "gog.com"],
     "Lebensmittel":    ["netto", "edeka", "kaufland", "penny", "aldi", "ege market",
                         "blankenagel", "lidl", "rewe"],
+    # "cafe neu" (Uni-Cafe) bewusst vor "Bildung" - dort wird gegessen, nicht studiert.
     "Restaurant":      ["cafe neu", "mcdonald", "schloss burger", "seppels", "kikko",
                         "burger king", "subway"],
+    "Bildung":         ["westfaelische hochschule", "westfälische hochschule"],
     "Freizeit":        ["bowling", "erlebnisgastronomie"],
     "Drogerie":        ["rossmann"],
     "Kleidung":        ["h+m", "jeans fritz", "c&a", "primark"],
     "Tanken":          ["aral", "shell", "esso"],
     "Fixkosten":       ["e-plus", "telekom", "vodafone"],
     "Bargeld":         ["ga nr"],
-    "Online-Shopping": ["amazon", "paypal"],
+    "Elektronik":      ["mediamarkt", "media markt", "saturn", "conrad"],
+    "Online-Shopping": ["amazon", "paypal"],   # Auffangnetz - muss zuletzt stehen
 }
 
 
