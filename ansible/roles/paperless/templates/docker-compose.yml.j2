@@ -53,7 +53,7 @@ services:
       - {{ paperless_install_path }}/scripts:/usr/src/paperless/scripts
     environment:
       PAPERLESS_REDIS: redis://broker:6379
-      PAPERLESS_DBENGINE: postgres
+      PAPERLESS_DBENGINE: postgresql
       PAPERLESS_DBHOST: db
       PAPERLESS_DBUSER: paperless
       PAPERLESS_DBPASS: {{ PAPERLESS_DBPASS }}
