@@ -23,12 +23,6 @@
   roles:
     - collabora
 
-- name: Setup Affine Dienst
-  hosts: tag_affine
-  become: yes
-  roles:
-    - affine
-
 - name: Setup Adguard Dienst
   hosts: tag_adguard
   become: yes

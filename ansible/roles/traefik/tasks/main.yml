@@ -25,7 +25,6 @@
     - { src: 'vaultwarden.yml.j2', dest: 'vaultwarden.yml' }
     - { src: 'nextcloud.yml.j2', dest: 'nextcloud.yml' }
     - { src: 'office-nextcloud.yml.j2', dest: 'office.yml' }
-    - { src: 'affine.yml.j2', dest: 'affine.yml' }
     - { src: 'immich.yml.j2', dest: 'immich.yml' }
     - { src: 'paperless.j2', dest: 'paperless.yml' }
     - { src: 'finance.yml.j2', dest: 'finance.yml' }

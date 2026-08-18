@@ -17,11 +17,6 @@ vault_subdomain: "{{ lookup('env', 'VAULT_SUBDOMAIN') }}"
 vault_internal_ip: "{{ hostvars[groups['tag_vaultwarden'][0]]['ansible_host'] }}"
 vault_internal_port: "8080"
 
-#Affine
-affine_subdomain: "{{ lookup('env', 'AFFINE_SUBDOMAIN') }}"
-affine_internal_ip: "{{ hostvars[groups['tag_affine'][0]]['ansible_host'] }}"
-affine_internal_port: "3010"
-
 #Nextcloud
 nextcloud_subdomain: "{{ lookup('env', 'NEXTCLOUD_SUBDOMAIN') }}"
 nextcloud_internal_ip: "192.168.178.80"

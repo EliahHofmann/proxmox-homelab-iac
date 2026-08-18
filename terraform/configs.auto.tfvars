@@ -81,19 +81,6 @@ lxc_configs = {
     nameserver = "1.1.1.1"
     tags       = "vaultwarden"
   },
-  "affine" = {
-    vmid       = 203
-    target_node = "hp-server-balthasar" 
-    hostname   = "affine"
-    ip         = "192.168.178.83/24"
-    cpu        = 4
-    memory     = 4096
-    gw         = "192.168.178.1"
-    size       = "25G"
-    storage    = "local-lvm"
-    nameserver = "1.1.1.1"
-    tags       = "affine"
-  },
   "immich" = {
     vmid       = 204
     target_node = "hp-server-balthasar" 

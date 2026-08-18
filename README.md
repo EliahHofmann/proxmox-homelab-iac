@@ -35,7 +35,7 @@ Das primäre Ziel dieses Projekts ist es, die Bereitstellung von Servern und Die
 * **Vaultwarden:** Selbst gehosteter Passwort-Manager
 * **Nextcloud:** Cloud-Speicher und Kollaboration
 * **Monitoring:** Prometheus, Grafana, Loki (inkl. automatischem Node-Exporter & Docker-Log Deployment via Ansible)
-* **Weitere Services:** Consul, Immich, Affine, Collabora, Qwen3 (AI)
+* **Weitere Services:** Consul, Immich, Collabora, Qwen3 (AI)
 
 ---
 
