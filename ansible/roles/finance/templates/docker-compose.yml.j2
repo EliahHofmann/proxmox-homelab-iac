@@ -82,6 +82,8 @@ services:
       - FIREFLY_URL=http://firefly-iii:8080
       - FIREFLY_PAT={{ firefly_pat }}
       - NTFY_URL={{ finance_ntfy_url }}
+      - NTFY_USER=publisher
+      - NTFY_PASSWORD={{ ntfy_publisher_password }}
       - NTFY_TOKEN={{ ntfy_token }}
       # Monitoring: gemeinsame State-Dateien der Cron-Jobs + Log-Salt (kein Secret,
       # nur damit merchant_hash nicht rueckrechenbar ist). Siehe metrics.py/slog.py.
@@ -102,9 +104,10 @@ services:
     restart: unless-stopped
     command: serve
     environment:
-      - NTFY_BASE_URL=http://{{ finance_host_ip }}:8082
+      - TZ=Europe/Berlin
     volumes:
       - {{ finance_install_path }}/ntfy:/var/cache/ntfy
+      - {{ finance_install_path }}/ntfy-config/server.yml:/etc/ntfy/server.yml:ro
     ports:
       - "{{ finance_host_ip }}:8082:80"
     networks: [finance-net]

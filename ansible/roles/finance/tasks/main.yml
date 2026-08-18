@@ -26,6 +26,7 @@
     - "{{ finance_db_data }}"
     - "{{ finance_install_path }}/import"
     - "{{ finance_install_path }}/ntfy"
+    - "{{ finance_install_path }}/ntfy-config"
     - "{{ finance_metrics_state }}"
 
 - name: Webhook Source-Code kopieren
@@ -54,6 +55,14 @@
     group: "33"
     mode: '0640'         # nur root + Container-User, nicht world-readable
   no_log: true
+
+- name: ntfy-Serverkonfiguration generieren
+  template:
+    src: ntfy-server.yml.j2
+    dest: "{{ finance_install_path }}/ntfy-config/server.yml"
+    owner: root
+    group: root
+    mode: '0644'
 
 - name: Docker Compose generieren
   template:
@@ -115,3 +124,32 @@
     hour: "8"
     minute: "0"
     job: "docker exec finance-webhook python /app/advisor.py"
+
+# ntfy haelt seine Benutzer in einer eigenen Datenbank, nicht in der Config.
+# "user add" meldet bei vorhandenem Benutzer einen Fehler - das ist der
+# Normalfall bei jedem weiteren Lauf und wird abgefangen.
+- name: ntfy-Benutzer anlegen
+  command: >-
+    docker exec -e NTFY_PASSWORD={{ item.password | quote }} ntfy
+    ntfy user add --role=user {{ item.name | quote }}
+  register: ntfy_user_add
+  changed_when: "'added' in (ntfy_user_add.stdout | lower)"
+  failed_when:
+    - ntfy_user_add.rc != 0
+    - "'already exists' not in (ntfy_user_add.stderr | lower)"
+  no_log: true
+  when: item.password | length > 0
+  loop:
+    - { name: "publisher", password: "{{ ntfy_publisher_password }}" }
+    - { name: "{{ ntfy_reader_user }}", password: "{{ ntfy_reader_password }}" }
+
+- name: ntfy-Zugriffsrechte auf das Finanz-Topic setzen
+  command: docker exec ntfy ntfy access {{ item.name | quote }} finanzen {{ item.recht }}
+  register: ntfy_access
+  changed_when: ntfy_access.rc == 0
+  when: item.password | length > 0
+  loop:
+    - { name: "publisher", recht: "write-only", password: "{{ ntfy_publisher_password }}" }
+    - { name: "{{ ntfy_reader_user }}", recht: "read-only", password: "{{ ntfy_reader_password }}" }
+  loop_control:
+    label: "{{ item.name }}"

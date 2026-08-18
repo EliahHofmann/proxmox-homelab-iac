@@ -1,0 +1,19 @@
+## ntfy-Serverkonfiguration
+## Erreichbar von aussen ueber Traefik -> deshalb ZWINGEND mit Zugriffsschutz.
+## Ohne auth-default-access: deny-all koennte jeder im Internet in das Topic
+## schreiben und mitlesen - dort stehen Kategorie-Summen und die Sparquote.
+
+base-url: "https://{{ ntfy_subdomain }}.{{ finance_domain }}"
+listen-http: ":80"
+
+# Traefik terminiert TLS und setzt X-Forwarded-For.
+behind-proxy: true
+
+cache-file: "/var/cache/ntfy/cache.db"
+cache-duration: "48h"
+auth-file: "/var/cache/ntfy/user.db"
+auth-default-access: "deny-all"
+
+# Keine anonymen Abonnements, keine Web-Anmeldung fremder Nutzer.
+enable-signup: false
+enable-login: true

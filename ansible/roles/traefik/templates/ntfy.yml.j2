@@ -1,0 +1,23 @@
+http:
+  routers:
+    # ntfy muss von unterwegs erreichbar sein, sonst kommt der Monatsbericht
+    # nur im heimischen WLAN an. Zugriffsschutz macht ntfy selbst
+    # (auth-default-access: deny-all) - KEIN Cloudflare Access davor, das
+    # wuerde die App-Anmeldung mit einem Redirect beantworten.
+    ntfy-router:
+      rule: "Host(`{{ ntfy_subdomain }}.{{ domain_name }}`)"
+      service: "ntfy-service"
+      entryPoints: ["websecure"]
+
+      tls:
+        certResolver: cloudflare
+        domains:
+          - main: "{{ domain_name }}"
+            sans:
+                - "*.{{ domain_name }}"
+
+  services:
+    ntfy-service:
+      loadBalancer:
+        servers:
+         - url: "http://{{ finance_internal_ip }}:8082"
