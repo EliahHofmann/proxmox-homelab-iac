@@ -5,6 +5,9 @@ import os, json, urllib.request, sys
 PAPERLESS_URL = "http://localhost:8000"
 PAPERLESS_TOKEN = os.environ.get("AI_TAGGER_TOKEN")
 OLLAMA_URL = "http://192.168.178.85:11434/api/generate"
+# Modell fuer Titel/Absender/Typ. Ueber die Umgebung ueberschreibbar,
+# damit ein Wechsel keinen neuen Deploy des Skripts braucht.
+OLLAMA_MODEL = os.environ.get("AI_TAGGER_MODEL", "qwen3.6-14b-a3b")
 DOCUMENT_ID = os.environ.get("DOCUMENT_ID")
 
 ERLAUBTE_TYPEN = [
@@ -113,7 +116,7 @@ def main():
     )
     
     payload = {
-        "model": "paperlessKI",
+        "model": OLLAMA_MODEL,
         "prompt": prompt,
         "stream": False,
         "format": "json",
