@@ -1,5 +1,5 @@
 import datetime
-from extractor import parse_ai_json, fit_text
+from extractor import parse_ai_json, fit_text, datum_aus_text, SYSTEM_PROMPT
 
 
 def test_parse_valid():
@@ -89,3 +89,58 @@ def test_fit_text_behaelt_anfang():
 def test_fit_text_leer():
     assert fit_text("") == ""
     assert fit_text(None) == ""
+
+
+def test_mehrere_rechnungen_werden_summiert():
+    # Ein PDF kann mehrere Rechnungen enthalten (mehrere Verkaeufer, je eigener
+    # Gesamtpreis). Abgebucht wird die Summe - nur so findet das matching_job
+    # die passende Bankbuchung.
+    d = parse_ai_json('{"haendler":"Shop","gesamtbetrag":null,"positionen":[10.00,20.00],'
+                      '"datum":"2020-03-15","kategorie":"Online-Shopping"}')
+    assert d["betrag_euro"] == 30.00
+    assert d["datum"] == "2020-03-15"
+
+
+def test_prompt_nennt_regel_fuer_mehrere_rechnungen():
+    assert "MEHRERE Rechnungen" in SYSTEM_PROMPT
+
+
+def test_prompt_nennt_datumsumrechnung():
+    # Ohne diese Regel liefert das Modell das Beispieldatum oder das heutige Datum.
+    assert "TT.MM.JJJJ" in SYSTEM_PROMPT
+    assert "Nimm nicht das heutige Datum." in SYSTEM_PROMPT
+
+
+def test_datum_aus_text_findet_rechnungsdatum():
+    text = "Rechnungsdatum /Lieferdatum 10.07.2020  Bestelldatum 08.07.2020"
+    assert datum_aus_text(text) == "2020-07-10"
+
+
+def test_datum_aus_text_ueberspringt_unmoegliches_datum():
+    assert datum_aus_text("Beleg 32.13.2020 vom 05.11.2020") == "2020-11-05"
+
+
+def test_datum_aus_text_ohne_treffer():
+    assert datum_aus_text("kein Datum enthalten") is None
+    assert datum_aus_text("") is None
+    assert datum_aus_text(None) is None
+
+
+def test_unmoegliches_ki_datum_faellt_auf_beleg_zurueck():
+    # Beobachtet: das Modell lieferte "2025-16-00". Ohne Fallback wuerde heute
+    # gesetzt und das matching_job faende die Bankbuchung (+-7 Tage) nicht mehr.
+    d = parse_ai_json('{"haendler":"Shop","gesamtbetrag":50.00,"datum":"2025-16-00"}',
+                      ocr_text="Rechnungsdatum 14.05.2020")
+    assert d["datum"] == "2020-05-14"
+    assert d["betrag_euro"] == 50.00
+
+
+def test_gueltiges_ki_datum_schlaegt_den_fallback():
+    d = parse_ai_json('{"haendler":"X","gesamtbetrag":10,"datum":"2020-07-10"}',
+                      ocr_text="Rechnungsdatum 14.05.2020")
+    assert d["datum"] == "2020-07-10"
+
+
+def test_ohne_ocr_text_bleibt_es_beim_heutigen_datum():
+    d = parse_ai_json('{"haendler":"X","gesamtbetrag":10,"datum":"2025-16-00"}')
+    assert d["datum"] == datetime.date.today().isoformat()
