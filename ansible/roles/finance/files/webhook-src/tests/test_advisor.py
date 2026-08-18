@@ -1,5 +1,6 @@
 import datetime
 
+import advisor
 from advisor import (
     previous_month_range,
     month_before_range,
@@ -85,3 +86,53 @@ def test_build_report_leerer_monat():
     assert r["kategorien"] == []
     assert r["top_3"] == []
     assert r["delta_gesamt_prozent"] is None
+
+
+def test_send_ntfy_nutzt_basic_auth_ohne_token(monkeypatch):
+    # ntfy laeuft mit deny-all -> ohne Anmeldung 403.
+    gesehen = {}
+
+    def fake_post(url, data=None, headers=None, timeout=None):
+        gesehen["headers"] = headers
+
+        class R:
+            def raise_for_status(self):
+                pass
+        return R()
+
+    monkeypatch.setattr(advisor.requests, "post", fake_post)
+    advisor.send_ntfy("text", "http://ntfy/finanzen", "", "publisher", "geheim")
+    # base64("publisher:geheim")
+    assert gesehen["headers"]["Authorization"] == "Basic cHVibGlzaGVyOmdlaGVpbQ=="
+
+
+def test_send_ntfy_token_schlaegt_basic_auth(monkeypatch):
+    gesehen = {}
+
+    def fake_post(url, data=None, headers=None, timeout=None):
+        gesehen["headers"] = headers
+
+        class R:
+            def raise_for_status(self):
+                pass
+        return R()
+
+    monkeypatch.setattr(advisor.requests, "post", fake_post)
+    advisor.send_ntfy("text", "http://ntfy/finanzen", "tk_123", "publisher", "geheim")
+    assert gesehen["headers"]["Authorization"] == "Bearer tk_123"
+
+
+def test_send_ntfy_ohne_zugangsdaten_ohne_header(monkeypatch):
+    gesehen = {}
+
+    def fake_post(url, data=None, headers=None, timeout=None):
+        gesehen["headers"] = headers
+
+        class R:
+            def raise_for_status(self):
+                pass
+        return R()
+
+    monkeypatch.setattr(advisor.requests, "post", fake_post)
+    advisor.send_ntfy("text", "http://ntfy/finanzen")
+    assert "Authorization" not in gesehen["headers"]

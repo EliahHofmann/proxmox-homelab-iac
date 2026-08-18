@@ -5,6 +5,7 @@ in Python berechnet; die KI darf ausschliesslich interpretieren, nicht rechnen.
 Das ist der Halluzinationsschutz fuer das 8B-Modell.
 """
 import os
+import base64
 import json
 import time
 import datetime
@@ -155,10 +156,19 @@ def ask_ollama(report, url, model):
         return {}
 
 
-def send_ntfy(text, url, token=""):
+def send_ntfy(text, url, token="", user="", password=""):
+    """Schickt den Bericht an ntfy.
+
+    ntfy laeuft mit auth-default-access: deny-all, weil es von aussen
+    erreichbar ist. Ohne Anmeldung antwortet es mit 403. Ein Token hat
+    Vorrang, sonst wird Basic-Auth aus Benutzer und Passwort gebaut.
+    """
     headers = {"Title": "Finanzbericht", "Tags": "moneybag", "Priority": "default"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    elif user and password:
+        paar = base64.b64encode(f"{user}:{password}".encode("utf-8")).decode("ascii")
+        headers["Authorization"] = f"Basic {paar}"
     r = requests.post(url, data=text.encode("utf-8"), headers=headers, timeout=30)
     r.raise_for_status()
 
@@ -189,7 +199,10 @@ def run(today=None):
         ki = ask_ollama(report, os.environ["OLLAMA_URL"], model)
         text = format_push(report, ki)
         try:
-            send_ntfy(text, os.environ["NTFY_URL"], os.environ.get("NTFY_TOKEN", ""))
+            send_ntfy(text, os.environ["NTFY_URL"],
+                      os.environ.get("NTFY_TOKEN", ""),
+                      os.environ.get("NTFY_USER", ""),
+                      os.environ.get("NTFY_PASSWORD", ""))
             m.inc("finance_ntfy_push_success_total")
         except Exception:
             m.inc("finance_ntfy_push_failed_total")

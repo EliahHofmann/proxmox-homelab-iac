@@ -39,4 +39,7 @@ paperless_internal_port: "8010"
 #Finance (Firefly III)
 finance_subdomain: "finanzen"
 importer_subdomain: "importer"   # nur LAN, siehe finance.yml.j2
+# ntfy muss oeffentlich erreichbar sein, damit der Bericht auch unterwegs
+# ankommt. Schutz uebernimmt ntfy selbst (deny-all + Anmeldung).
+ntfy_subdomain: "ntfy"
 finance_internal_ip: "{{ hostvars[groups['tag_actualbudget'][0]]['ansible_host'] }}"

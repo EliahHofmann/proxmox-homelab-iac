@@ -7,6 +7,7 @@ finance_metrics_state: "/opt/finance-stack/metrics-state"
 
 # Domain
 finance_subdomain: "finanzen"
+ntfy_subdomain: "ntfy"
 finance_domain: "{{ lookup('env', 'DOMAIN_NAME') }}"
 
 # Secrets (Vault -> env)
@@ -20,6 +21,11 @@ enable_banking_app_id: "{{ lookup('env', 'ENABLE_BANKING_APP_ID') }}"
 enable_banking_private_key_b64: "{{ lookup('env', 'ENABLE_BANKING_PRIVATE_KEY_B64') }}"
 importer_autoimport_secret: "{{ lookup('env', 'IMPORTER_AUTOIMPORT_SECRET') }}"
 ntfy_token: "{{ lookup('env', 'NTFY_TOKEN') | default('', true) }}"
+# ntfy ist von aussen erreichbar (Traefik) -> Zugriff nur mit Anmeldung.
+# publisher schreibt (Webhook/Berater), der Lese-Benutzer ist fuer die App.
+ntfy_publisher_password: "{{ lookup('env', 'NTFY_PUBLISHER_PASSWORD') | default('', true) }}"
+ntfy_reader_user: "{{ lookup('env', 'NTFY_READER_USER') | default('eliah', true) }}"
+ntfy_reader_password: "{{ lookup('env', 'NTFY_READER_PASSWORD') | default('', true) }}"
 # Salt fuer merchant_hash in Logs (kein hartes Secret; verhindert nur, dass der
 # gekuerzte Hash trivial rueckrechenbar ist). Default reicht, kann via Vault ueberschrieben werden.
 finance_log_salt: "{{ lookup('env', 'FINANCE_LOG_SALT') | default('finance-homelab', true) }}"
