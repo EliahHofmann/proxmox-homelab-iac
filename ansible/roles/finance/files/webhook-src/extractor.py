@@ -1,6 +1,7 @@
 """Ruft die lokale Ollama-KI und parst robust striktes Finanz-JSON."""
 import json
 import datetime
+import re
 import requests
 
 SYSTEM_PROMPT = (
@@ -16,11 +17,38 @@ SYSTEM_PROMPT = (
     "und liste in positionen die Zeilen-Endpreise ALLER Artikel (Menge x Einzelpreis) "
     "sowie Versandkosten als eigene Zahl. Positive Dezimalzahlen, Punkt als Trenner. "
     "Zahlungen ueber PayPal fuer Einkaeufe: kategorie=Online-Shopping. "
+    "Enthaelt das Dokument MEHRERE Rechnungen (mehrere Verkaeufer oder mehrere Seiten mit "
+    "je eigenem Gesamtpreis/Zahlbetrag), setze gesamtbetrag=null und liste JEDEN dieser "
+    "Gesamtpreise als eigene Zahl in positionen - dann NICHT zusaetzlich die Einzelartikel "
+    "auflisten. "
+    "datum: Suche im Dokument das Feld Rechnungsdatum, Lieferdatum, Bestelldatum oder "
+    "Belegdatum. Es steht dort meist als TT.MM.JJJJ - rechne es nach JJJJ-MM-TT um "
+    "(Beispiel: 28.05.2026 wird zu 2026-05-28). Nimm nicht das heutige Datum. "
     "Wenn unklar: haendler=Unbekannt, gesamtbetrag=null, positionen=[], kategorie=Sonstiges. "
-    "Erfinde niemals Betraege. "
+    "Erfinde niemals Betraege oder Daten. "
     'Beispiel: {"haendler":"Amazon","gesamtbetrag":24.63,"positionen":[12.99,8.49,3.15],'
     '"datum":"2026-07-05","kategorie":"Online-Shopping"}'
 )
+
+
+DATUM_RE = re.compile(r"\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b")
+
+
+def datum_aus_text(ocr_text):
+    """Erstes plausibles TT.MM.JJJJ aus dem Beleg als ISO-Datum.
+
+    Fallback, wenn das Modell gar kein oder ein unmoegliches Datum liefert
+    (beobachtet: "2025-16-00"). Ohne ihn wuerde das heutige Datum gesetzt und
+    das matching_job faende die zugehoerige Bankbuchung nicht mehr (+-7 Tage).
+    """
+    if not ocr_text:
+        return None
+    for tag, monat, jahr in DATUM_RE.findall(str(ocr_text)):
+        try:
+            return datetime.date(int(jahr), int(monat), int(tag)).isoformat()
+        except ValueError:
+            continue
+    return None
 
 
 def _to_euro(value):
@@ -56,9 +84,9 @@ def _resolve_betrag(data):
     return 0.0
 
 
-def parse_ai_json(raw):
-    today = datetime.date.today().isoformat()
-    defaults = {"haendler": "Unbekannt", "betrag_euro": 0.0, "datum": today, "kategorie": "Sonstiges"}
+def parse_ai_json(raw, ocr_text=None):
+    fallback_datum = datum_aus_text(ocr_text) or datetime.date.today().isoformat()
+    defaults = {"haendler": "Unbekannt", "betrag_euro": 0.0, "datum": fallback_datum, "kategorie": "Sonstiges"}
     try:
         data = json.loads(raw)
     except (json.JSONDecodeError, TypeError):
@@ -98,4 +126,4 @@ def extract_finance(ocr_text, ollama_url, model):
     }
     r = requests.post(ollama_url, json=payload, timeout=180)
     r.raise_for_status()
-    return parse_ai_json(r.json().get("response", ""))
+    return parse_ai_json(r.json().get("response", ""), ocr_text)
