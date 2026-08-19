@@ -69,18 +69,18 @@ def test_formatiere_top_zeigt_datum_und_kategorie():
 
 
 def test_saubere_beschreibung_entfernt_transaktionsnummern():
-    roh = "D01-8451173-9167053 AMZNPrime DE 167ZBH0K2UKELHUX"
+    roh = "K01-111-222 AMZNPrime DE XY12AB34"
     assert kommando.saubere_beschreibung(roh) == "AMZNPrime DE"
 
 
 def test_saubere_beschreibung_behaelt_haendler_bei_paypal():
-    roh = "1052344283326 PP.2900.PP . Spotify AB, Ihr Einkauf bei Spotify AB"
+    roh = "9999 PP.1000.PP . Spotify AB, Ihr Einkauf bei Spotify AB"
     assert kommando.saubere_beschreibung(roh).startswith("Spotify AB")
 
 
 def test_saubere_beschreibung_faellt_auf_zielkonto_zurueck():
     # Bleibt nach dem Aussieben nichts uebrig, hilft der Name des Zielkontos.
-    assert kommando.saubere_beschreibung("00002284 BLZ35650000", "Bargeldautomat") == "Bargeldautomat"
+    assert kommando.saubere_beschreibung("00001111 BLZ12345678", "Bargeldautomat") == "Bargeldautomat"
 
 
 def test_saubere_beschreibung_ohne_alles():
