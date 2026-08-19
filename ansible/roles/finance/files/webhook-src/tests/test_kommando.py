@@ -56,10 +56,35 @@ def test_formatiere_saldo_summiert_und_sortiert():
 
 
 def test_formatiere_top_kuerzt_auf_fuenf():
-    posten = [(f"Haendler {i}", float(100 - i)) for i in range(8)]
+    posten = [("2026-08-0%d" % (i + 1), f"Haendler {i}", float(100 - i), "") for i in range(8)]
     text = kommando.formatiere_top(posten)
     assert "Haendler 0" in text
     assert "Haendler 5" not in text
+
+
+def test_formatiere_top_zeigt_datum_und_kategorie():
+    text = kommando.formatiere_top([("2026-08-19", "AMZNPrime DE", 4.49, "Abos & Software")])
+    assert "19.08." in text
+    assert "[Abos & Software]" in text
+
+
+def test_saubere_beschreibung_entfernt_transaktionsnummern():
+    roh = "D01-8451173-9167053 AMZNPrime DE 167ZBH0K2UKELHUX"
+    assert kommando.saubere_beschreibung(roh) == "AMZNPrime DE"
+
+
+def test_saubere_beschreibung_behaelt_haendler_bei_paypal():
+    roh = "1052344283326 PP.2900.PP . Spotify AB, Ihr Einkauf bei Spotify AB"
+    assert kommando.saubere_beschreibung(roh).startswith("Spotify AB")
+
+
+def test_saubere_beschreibung_faellt_auf_zielkonto_zurueck():
+    # Bleibt nach dem Aussieben nichts uebrig, hilft der Name des Zielkontos.
+    assert kommando.saubere_beschreibung("00002284 BLZ35650000", "Bargeldautomat") == "Bargeldautomat"
+
+
+def test_saubere_beschreibung_ohne_alles():
+    assert kommando.saubere_beschreibung("", "") == "ohne Bezeichnung"
 
 
 def test_parse_accounts_nimmt_nur_aktive_assets():
@@ -84,4 +109,4 @@ def test_parse_transactions_liest_betrag_und_beschreibung():
             {"amount": "99.00", "description": "Umbuchung", "type": "transfer"}]}},
     ]}
     posten = kommando.parse_transactions(payload)
-    assert posten == [("Zelt", 44.99), ("Kaffee", 12.5)]   # Transfer faellt raus
+    assert posten == [("", "Zelt", 44.99, ""), ("", "Kaffee", 12.5, "")]   # Transfer faellt raus

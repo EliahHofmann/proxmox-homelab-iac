@@ -50,17 +50,50 @@ def parse_accounts(payload):
     return konten
 
 
+def ist_muell(wort):
+    """Transaktionsnummern, Kartenreferenzen, Uhrzeiten - alles ohne Aussage.
+
+    Merkmal: enthaelt Ziffern und keinen einzigen Kleinbuchstaben. Damit fliegen
+    "D01-8451173-9167053", "PP.2900.PP" und "16.08/15.13UHR" raus, waehrend
+    "AMZNPrime" und "Spotify" stehen bleiben.
+    """
+    kern = wort.strip(".,/-")
+    if not kern:
+        return True
+    if not any(z.isdigit() for z in kern):
+        return False
+    return not any(z.islower() for z in kern)
+
+
+def saubere_beschreibung(description, destination="", grenze=34):
+    """Das Lesbare aus dem Rohtext der Bank herausziehen."""
+    worte = [w for w in str(description or "").split() if not ist_muell(w)]
+    text = " ".join(worte).strip(" .,-")
+    if len(text) < 3:
+        text = str(destination or "").strip()
+    if not text:
+        text = "ohne Bezeichnung"
+    return text[:grenze]
+
+
 def parse_transactions(payload):
-    """Ausgaben als (Beschreibung, Betrag). Transfers zaehlen nicht als Ausgabe."""
+    """Ausgaben als (Datum, Beschreibung, Betrag, Kategorie).
+
+    Transfers zaehlen nicht als Ausgabe.
+    """
     posten = []
     for eintrag in payload.get("data", []):
         for t in eintrag.get("attributes", {}).get("transactions", []):
             if t.get("type") != "withdrawal":
                 continue
             try:
-                posten.append((t.get("description", "?"), round(float(t.get("amount", 0)), 2)))
+                betrag = round(float(t.get("amount", 0)), 2)
             except (TypeError, ValueError):
                 continue
+            posten.append((str(t.get("date", ""))[:10],
+                           saubere_beschreibung(t.get("description"), t.get("destination_name")),
+                           betrag,
+                           t.get("category_name") or ""))
     return posten
 
 
@@ -102,12 +135,19 @@ def formatiere_saldo(konten):
     return "\n".join(zeilen)
 
 
+def _tag_monat(iso_datum):
+    """2026-08-19 -> 19.08."""
+    teile = str(iso_datum).split("-")
+    return f"{teile[2]}.{teile[1]}." if len(teile) == 3 else str(iso_datum)
+
+
 def formatiere_top(posten, anzahl=5):
     if not posten:
         return "Keine Ausgaben in diesem Zeitraum."
     zeilen = [f"Groesste {anzahl} Ausgaben diesen Monat:", ""]
-    for beschreibung, betrag in sorted(posten, key=lambda x: -x[1])[:anzahl]:
-        zeilen.append(f"- {betrag:.2f} EUR  {beschreibung[:40]}")
+    for datum, beschreibung, betrag, kategorie in sorted(posten, key=lambda x: -x[2])[:anzahl]:
+        zusatz = f" [{kategorie}]" if kategorie else ""
+        zeilen.append(f"- {_tag_monat(datum)} {betrag:.2f} EUR  {beschreibung}{zusatz}")
     return "\n".join(zeilen)
 
 
