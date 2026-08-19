@@ -1,5 +1,7 @@
 #!/bin/bash
-# Taeglicher Bank-Autoimport (Sparkasse via Enable Banking -> Firefly).
+# Taeglicher Bank-Autoimport (Enable Banking -> Firefly).
+# Der Importer verarbeitet ALLE JSON-Configs in {{ finance_install_path }}/import,
+# also je eine pro Bank (Sparkasse, C24, ...) - hier ist nichts anzupassen.
 # Das Secret liegt in der 0600-Datei import.curlcfg, nicht in argv/Logs.
 set -o pipefail
 
@@ -34,7 +36,7 @@ if [ "$rc" -ne 0 ] || [ "$http_code" -ge 400 ]; then
     *)   hint="unbekannter Fehler" ;;
   esac
   curl -sS -o /dev/null \
-    -H 'Title: Sparkasse Sync fehlgeschlagen' \
+    -H 'Title: Bank-Sync fehlgeschlagen' \
     -H 'Tags: warning' \
     -d "Bank-Import fehlgeschlagen (rc=$rc, http=$http_code): $hint" \
     "http://{{ finance_host_ip }}:8082/finanzen" || true

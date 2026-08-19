@@ -96,6 +96,17 @@
     group: finance-stack
     mode: '0750'
 
+# Fireflys eigener Wartungs-Cron: verarbeitet Daueraufträge (Recurring),
+# Rechnungen und Auto-Budgets. Ohne diesen Aufruf zeigt die UI den blauen
+# "cron job has never run"-Hinweis und Daueraufträge werden nie gebucht.
+# Muss genau einmal pro Tag laufen; das artisan-Kommando drosselt sich selbst.
+- name: Taeglicher Firefly-Wartungs-Cron (Daueraufträge, Rechnungen, Auto-Budgets)
+  cron:
+    name: "firefly-cron"
+    hour: "3"
+    minute: "0"
+    job: "docker exec firefly-iii php artisan firefly-iii:cron"
+
 - name: Taeglicher Bank-Autoimport (Sparkasse via Enable Banking)
   cron:
     name: "firefly-bank-import"

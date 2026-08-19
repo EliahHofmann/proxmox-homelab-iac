@@ -57,3 +57,60 @@ def test_no_match_bleibt_offen():
     assert match_category("SG-VR Payment GmbH") is None
     assert match_category(None) is None
     assert match_category("") is None
+
+
+# ---- neue Kategorien ----
+def test_gaming():
+    assert match_category("Tebex Limited") == "Gaming"
+    assert match_category("STEAM GAMES") == "Gaming"
+    assert match_category("Nintendo of Europe") == "Gaming"
+
+
+def test_bildung():
+    assert match_category("Westfaelische Hochschule") == "Bildung"
+    assert match_category("Westfälische Hochschule") == "Bildung"
+
+
+def test_abos_und_software():
+    assert match_category("OPENAI *CHATGPT") == "Abos & Software"
+    assert match_category("ANTHROPIC* CLAUDE SUB") == "Abos & Software"
+    assert match_category("Proton AG") == "Abos & Software"
+    assert match_category("netcup GmbH") == "Abos & Software"
+
+
+def test_jugendfreizeit_kroatien():
+    assert match_category("INA BACVA-SJEVER VISNJAN") == "Jugendfreizeit"
+    assert match_category("NYX*INABavasjever Prsurici") == "Jugendfreizeit"
+    assert match_category("PTO SEKA") == "Jugendfreizeit"
+    assert match_category("TOBACCO ROVINJ") == "Jugendfreizeit"
+    assert match_category("MLINAR PEKARSKA INDUST") == "Jugendfreizeit"
+    assert match_category("LIDL HRVATSKA 0200") == "Jugendfreizeit"
+    assert match_category("1160-20103 Irschenberg") == "Jugendfreizeit"
+
+
+def test_konzum_faengt_die_vorgestreckte_buchung_nicht_ein():
+    """Unter KONZUM laeuft auch die 170-EUR-Vorstreckung - die bleibt ohne Kategorie."""
+    assert match_category("KONZUM P-1552") is None
+
+
+def test_mensa_ist_restaurant_nicht_bildung():
+    assert match_category("AKADEMISCHES FOERDERUNGSWERK") == "Restaurant"
+
+
+def test_haendler_hinter_acquirern():
+    assert match_category("Burger King Dorsten 13627") == "Restaurant"
+    assert match_category("BurgerKing 27788 SOT") == "Restaurant"
+    assert match_category("SUBWAY Gelsenkirchen-Bue") == "Restaurant"
+    assert match_category("Tains - mein-asiamarkt GmbH") == "Lebensmittel"
+    assert match_category("GASOMETER BOOKSHOP") == "Freizeit"
+    assert match_category("ANTHROPIC. CLAUDE SUB") == "Abos & Software"
+    assert match_category("DIGIPHILE") == "Abos & Software"
+
+
+def test_gaming_schlaegt_online_shopping():
+    """Tebex laeuft ueber PayPal - Gaming muss vor dem Auffangnetz greifen."""
+    assert match_category("PayPal Europe - Tebex Limited") == "Gaming"
+
+
+def test_abo_schlaegt_online_shopping():
+    assert match_category("PayPal Europe - Proton AG") == "Abos & Software"
