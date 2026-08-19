@@ -171,7 +171,8 @@
   loop:
     # Der Listener liest die Kommandos, die App darf sie schicken.
     - { name: "publisher", recht: "read-only", password: "{{ ntfy_publisher_password }}" }
-    - { name: "{{ ntfy_reader_user }}", recht: "write-only", password: "{{ ntfy_reader_password }}" }
+    # read-write, damit die App das Topic abonnieren kann - beim Abonnieren liest sie.
+    - { name: "{{ ntfy_reader_user }}", recht: "read-write", password: "{{ ntfy_reader_password }}" }
   loop_control:
     label: "{{ item.name }}"
   loop_control:
