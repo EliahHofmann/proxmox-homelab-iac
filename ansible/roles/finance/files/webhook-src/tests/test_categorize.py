@@ -114,3 +114,26 @@ def test_gaming_schlaegt_online_shopping():
 
 def test_abo_schlaegt_online_shopping():
     assert match_category("PayPal Europe - Proton AG") == "Abos & Software"
+
+
+def test_acquirer_im_zeitraum_wird_jugendfreizeit():
+    # Bei Kartenzahlungen bleibt nur der Acquirer uebrig - dann entscheidet das Datum.
+    assert match_category("Landesbank Hessen-Thuringen", "2026-08-03") == "Jugendfreizeit"
+
+
+def test_acquirer_ausserhalb_des_zeitraums_bleibt_offen():
+    assert match_category("Landesbank Hessen-Thuringen", "2026-09-15") is None
+    assert match_category("Landesbank Hessen-Thuringen", "2026-06-01") is None
+
+
+def test_acquirer_ohne_datum_bleibt_offen():
+    assert match_category("Landesbank Hessen-Thuringen") is None
+
+
+def test_haendlername_schlaegt_den_zeitraum():
+    # Steht der Haendler drin, zaehlt er - auch mitten im Zeitfenster.
+    assert match_category("Netto Marken-Discount", "2026-08-03") == "Lebensmittel"
+
+
+def test_sammelkartenmarkt_ist_online_shopping():
+    assert match_category("Sammelkartenmarkt GmbH + Co. KG") == "Online-Shopping"

@@ -46,18 +46,43 @@ RULES = {
     "Fixkosten":       ["e-plus", "telekom", "vodafone"],
     "Bargeld":         ["ga nr"],
     "Elektronik":      ["mediamarkt", "media markt", "saturn", "conrad"],
-    "Online-Shopping": ["amazon", "paypal"],   # Auffangnetz - muss zuletzt stehen
+    "Online-Shopping": ["amazon", "paypal", "sammelkartenmarkt"],  # Auffangnetz - zuletzt
 }
 
+# Buchungen, bei denen nur der Acquirer uebrig bleibt, lassen sich ueber den
+# Haendler nicht zuordnen - wohl aber ueber den Zeitraum, in dem sie anfielen.
+# Die erste passende Regel gewinnt; ausserhalb des Fensters greift keine.
+ZEITRAUM_RULES = [
+    {
+        "kategorie": "Jugendfreizeit",
+        "muster": ["landesbank hessen-thuringen", "landesbank hessen-thüringen"],
+        "von": "2026-07-18",
+        "bis": "2026-08-31",
+    },
+]
 
-def match_category(dest):
-    """Empfaenger -> Kategorie, oder None wenn kein Muster passt."""
+
+def match_category(dest, datum=None):
+    """Empfaenger (und notfalls der Zeitraum) -> Kategorie, sonst None."""
     if not dest:
         return None
     d = dest.lower()
     for cat, patterns in RULES.items():
         if any(p in d for p in patterns):
             return cat
+    return match_zeitraum(d, datum)
+
+
+def match_zeitraum(dest_lower, datum):
+    """Greift nur, wenn der Haendlername fehlt und das Datum im Fenster liegt."""
+    if not datum:
+        return None
+    tag = str(datum)[:10]
+    for regel in ZEITRAUM_RULES:
+        if not any(p in dest_lower for p in regel["muster"]):
+            continue
+        if regel["von"] <= tag <= regel["bis"]:
+            return regel["kategorie"]
     return None
 
 
@@ -72,7 +97,7 @@ def run():
         for t in txs:
             if t.get("category_name"):      # schon kategorisiert -> nicht anfassen
                 continue
-            cat = match_category(t.get("destination_name"))
+            cat = match_category(t.get("destination_name"), t.get("date"))
             if cat:
                 fc.update_transaction(t["id"], t["journal_id"], {"category_name": cat})
                 changed += 1
