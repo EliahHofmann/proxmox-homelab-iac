@@ -49,3 +49,5 @@ finance_ollama_model: "qwen3.6-14b-a3b"
 # englisch, verstuemmelt deutsche JSON-Schluessel und rechnet eigenmaechtig.
 finance_ollama_model_advisor: "qwen3:latest"
 finance_ntfy_url: "http://ntfy:80/finanzen"
+# Topic, in das die Kommandos vom Handy laufen (bericht, saldo, top5, sparquote).
+ntfy_cmd_topic: "finance-cmd"

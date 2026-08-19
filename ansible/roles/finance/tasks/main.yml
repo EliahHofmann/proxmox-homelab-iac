@@ -162,5 +162,17 @@
   loop:
     - { name: "publisher", recht: "write-only", password: "{{ ntfy_publisher_password }}" }
     - { name: "{{ ntfy_reader_user }}", recht: "read-only", password: "{{ ntfy_reader_password }}" }
+
+- name: ntfy-Zugriffsrechte auf das Kommando-Topic setzen
+  command: docker exec ntfy ntfy access {{ item.name | quote }} {{ ntfy_cmd_topic }} {{ item.recht }}
+  register: ntfy_access_cmd
+  changed_when: ntfy_access_cmd.rc == 0
+  when: item.password | length > 0
+  loop:
+    # Der Listener liest die Kommandos, die App darf sie schicken.
+    - { name: "publisher", recht: "read-only", password: "{{ ntfy_publisher_password }}" }
+    - { name: "{{ ntfy_reader_user }}", recht: "write-only", password: "{{ ntfy_reader_password }}" }
+  loop_control:
+    label: "{{ item.name }}"
   loop_control:
     label: "{{ item.name }}"

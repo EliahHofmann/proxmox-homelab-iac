@@ -98,6 +98,26 @@ services:
       - "{{ finance_host_ip }}:9000:9000"   # nur an LAN-IP binden (Prometheus scrapt via LAN)
     networks: [finance-net]
 
+  finance-listener:
+    build: ./webhook-src
+    container_name: finance-listener
+    restart: unless-stopped
+    command: python /app/ntfy_listener.py
+    environment:
+      - FIREFLY_URL=http://firefly-iii:8080
+      - FIREFLY_PAT={{ firefly_pat }}
+      - NTFY_BASE=http://ntfy:80
+      - NTFY_CMD_TOPIC={{ ntfy_cmd_topic }}
+      - NTFY_CMD_URL=https://{{ ntfy_subdomain }}.{{ finance_domain }}/{{ ntfy_cmd_topic }}
+      - NTFY_URL={{ finance_ntfy_url }}
+      - NTFY_USER=publisher
+      - NTFY_PASSWORD={{ ntfy_publisher_password }}
+      - NTFY_READER_USER={{ ntfy_reader_user }}
+      - NTFY_READER_PASSWORD={{ ntfy_reader_password }}
+      - LOG_SALT={{ finance_log_salt }}
+    depends_on: [ntfy, firefly-iii]
+    networks: [finance-net]
+
   ntfy:
     image: binwiederhier/ntfy:latest
     container_name: ntfy

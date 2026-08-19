@@ -222,7 +222,7 @@ def ask_ollama(report, url, model):
         return {}
 
 
-def send_ntfy(text, url, token="", user="", password=""):
+def send_ntfy(text, url, token="", user="", password="", actions=""):
     """Schickt den Bericht an ntfy.
 
     ntfy laeuft mit auth-default-access: deny-all, weil es von aussen
@@ -230,6 +230,8 @@ def send_ntfy(text, url, token="", user="", password=""):
     Vorrang, sonst wird Basic-Auth aus Benutzer und Passwort gebaut.
     """
     headers = {"Title": "Finanzbericht", "Tags": "moneybag", "Priority": "default"}
+    if actions:
+        headers["Actions"] = actions
     if token:
         headers["Authorization"] = f"Bearer {token}"
     elif user and password:
