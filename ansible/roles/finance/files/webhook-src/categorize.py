@@ -8,6 +8,7 @@ Muster erweitern: einfach den passenden Laden (klein geschrieben) in die Liste
 der Kategorie eintragen. Teilstring-Match, Gross-/Kleinschreibung egal.
 """
 import os
+import re
 import time
 from firefly import FireflyClient, ASSET_BANK, ASSET_CASH
 from metrics import JobMetrics
@@ -56,9 +57,23 @@ ZEITRAUM_RULES = [
         "kategorie": "Jugendfreizeit",
         "muster": ["landesbank hessen-thuringen", "landesbank hessen-thüringen"],
         "von": "2026-07-18",
-        "bis": "2026-08-31",
+        "bis": "2026-07-31",
     },
 ]
+
+
+ZAHLUNGSDATUM_RE = re.compile(r"(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}")
+
+
+def zahlungsdatum(beschreibung, buchungsdatum):
+    """Wann wurde tatsaechlich gezahlt?
+
+    Kartenzahlungen erscheinen Tage spaeter auf dem Konto; das Buchungsdatum
+    taugt deshalb nicht zur Abgrenzung eines Aufenthalts. Die Bank stellt den
+    echten Zeitpunkt an den Anfang der Beschreibung.
+    """
+    treffer = ZAHLUNGSDATUM_RE.search(str(beschreibung or ""))
+    return treffer.group(1) if treffer else str(buchungsdatum or "")[:10]
 
 
 def ist_abhebung(dest):
@@ -66,7 +81,7 @@ def ist_abhebung(dest):
     return bool(dest) and "ga nr" in dest.lower()
 
 
-def match_category(dest, datum=None):
+def match_category(dest, datum=None, beschreibung=None):
     """Empfaenger (und notfalls der Zeitraum) -> Kategorie, sonst None."""
     if not dest:
         return None
@@ -74,7 +89,7 @@ def match_category(dest, datum=None):
     for cat, patterns in RULES.items():
         if any(p in d for p in patterns):
             return cat
-    return match_zeitraum(d, datum)
+    return match_zeitraum(d, zahlungsdatum(beschreibung, datum))
 
 
 def match_zeitraum(dest_lower, datum):
@@ -114,7 +129,8 @@ def run():
                     slog.log_event("abhebung_umbuchen_fehlgeschlagen",
                                    error_type=type(e).__name__)
                 continue
-            cat = match_category(t.get("destination_name"), t.get("date"))
+            cat = match_category(t.get("destination_name"), t.get("date"),
+                                 t.get("description"))
             if cat:
                 fc.update_transaction(t["id"], t["journal_id"], {"category_name": cat})
                 changed += 1

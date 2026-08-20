@@ -127,11 +127,29 @@ def test_abo_schlaegt_online_shopping():
 
 def test_acquirer_im_zeitraum_wird_jugendfreizeit():
     # Bei Kartenzahlungen bleibt nur der Acquirer uebrig - dann entscheidet das Datum.
-    assert match_category("Landesbank Hessen-Thuringen", "2026-08-03") == "Jugendfreizeit"
+    assert match_category("Landesbank Hessen-Thuringen", "2026-07-20") == "Jugendfreizeit"
+
+
+def test_spaet_gebuchte_kartenzahlung_zaehlt_zum_zahlungstag():
+    # Am 03.08. gebucht, gezahlt aber am 30.07. - das Fenster endet am 31.07.
+    from categorize import zahlungsdatum
+    assert zahlungsdatum("2026-07-30T12:42   Debitk.0", "2026-08-03") == "2026-07-30"
+    assert match_category("Landesbank Hessen-Thuringen", "2026-08-03",
+                          "2026-07-30T12:42   Debitk.0") == "Jugendfreizeit"
+
+
+def test_zahlung_nach_der_rueckkehr_bleibt_offen():
+    assert match_category("Landesbank Hessen-Thuringen", "2026-08-14",
+                          "2026-08-11T09:45   Debitk.0") is None
+
+
+def test_ohne_zahlungsdatum_gilt_das_buchungsdatum():
+    from categorize import zahlungsdatum
+    assert zahlungsdatum("ohne Datum", "2026-08-03") == "2026-08-03"
 
 
 def test_acquirer_ausserhalb_des_zeitraums_bleibt_offen():
-    assert match_category("Landesbank Hessen-Thuringen", "2026-09-15") is None
+    assert match_category("Landesbank Hessen-Thuringen", "2026-08-15") is None
     assert match_category("Landesbank Hessen-Thuringen", "2026-06-01") is None
 
 
