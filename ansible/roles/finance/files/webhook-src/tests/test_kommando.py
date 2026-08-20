@@ -110,3 +110,16 @@ def test_parse_transactions_liest_betrag_und_beschreibung():
     ]}
     posten = kommando.parse_transactions(payload)
     assert posten == [("", "Zelt", 44.99, ""), ("", "Kaffee", 12.5, "")]   # Transfer faellt raus
+
+
+def test_beantworte_nimmt_einen_abweichenden_zeitraum(monkeypatch):
+    # Ohne Durchreichen wuerde "letzten Monat" still zum laufenden Monat.
+    gesehen = {}
+
+    def fake_fetch(base, pat, start, ende):
+        gesehen["zeitraum"] = (start, ende)
+        return {}
+
+    monkeypatch.setattr(kommando, "fetch_expenses", fake_fetch)
+    kommando.beantworte("bericht", "http://x", "tok", zeitraum=("2026-07-01", "2026-07-31"))
+    assert gesehen["zeitraum"] == ("2026-07-01", "2026-07-31")

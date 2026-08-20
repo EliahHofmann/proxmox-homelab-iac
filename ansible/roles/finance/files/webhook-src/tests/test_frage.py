@@ -61,3 +61,14 @@ def test_formatiere_kategorie_ohne_ausgaben():
 def test_formatiere_kategorie_mit_betrag():
     text = frage.formatiere_kategorie("Restaurant", 60.82, "2026-08-01", "2026-08-20")
     assert "60.82" in text
+
+
+def test_modell_darf_die_frage_ablehnen():
+    # "wie ist das Wetter" darf keinen Finanzbericht ausloesen.
+    assert frage.parse_auswahl('{"funktion":"keine"}', KATEGORIEN)[0] is None
+
+
+def test_prompt_bietet_das_ablehnen_an():
+    p = frage.baue_prompt("wie ist das wetter", KATEGORIEN)
+    assert "keine" in p
+    assert "Im Zweifel keine" in p

@@ -10,7 +10,7 @@ import datetime
 
 import requests
 
-FUNKTIONEN = ("kategorie", "bericht", "saldo", "top5", "sparquote")
+FUNKTIONEN = ("kategorie", "bericht", "saldo", "top5", "sparquote", "keine")
 ZEITRAEUME = ("monat", "vormonat")
 TIMEOUT = 300
 
@@ -27,13 +27,15 @@ SCHEMA = {
 
 def baue_prompt(frage, kategorien):
     return (
-        "Du ordnest eine Frage einer von fuenf Abfragen zu. Antworte NUR mit JSON.\n\n"
+        "Du ordnest eine Frage einer der folgenden Abfragen zu. Antworte NUR mit JSON.\n\n"
         "funktion:\n"
         "- kategorie: Ausgaben einer bestimmten Kategorie (dann kategorie setzen)\n"
         "- bericht: alle Ausgaben nach Kategorie\n"
         "- saldo: Kontostaende und Vermoegen\n"
         "- top5: groesste Einzelausgaben\n"
-        "- sparquote: Einnahmen gegen Ausgaben\n\n"
+        "- sparquote: Einnahmen gegen Ausgaben\n"
+        "- keine: die Frage hat nichts mit den Finanzen zu tun oder passt zu\n"
+        "  keiner der Abfragen. Im Zweifel keine.\n\n"
         f"kategorie: eine aus dieser Liste: {', '.join(kategorien)}\n"
         "zeitraum: monat (laufender Monat) oder vormonat\n\n"
         "Rechne nichts und nenne keine Betraege. Waehle nur aus.\n\n"
@@ -51,7 +53,7 @@ def parse_auswahl(raw, kategorien):
         return None, None, "monat"
 
     funktion = str(d.get("funktion", "")).strip().lower()
-    if funktion not in FUNKTIONEN:
+    if funktion not in FUNKTIONEN or funktion == "keine":
         return None, None, "monat"
 
     zeitraum = str(d.get("zeitraum", "monat")).strip().lower()
@@ -93,7 +95,7 @@ def formatiere_kategorie(name, betrag, start, ende):
 
 def beantworte_frage(frage, base, pat, url, model, heute=None):
     from advisor import fetch_expenses, filter_konsum
-    from kommando import beantworte, formatiere_bericht
+    from kommando import beantworte
 
     kategorien = sorted(filter_konsum(fetch_expenses(base, pat, *zeitraum_grenzen("vormonat", heute))).keys()
                         | filter_konsum(fetch_expenses(base, pat, *zeitraum_grenzen("monat", heute))).keys())
@@ -113,6 +115,5 @@ def beantworte_frage(frage, base, pat, url, model, heute=None):
     if funktion == "kategorie":
         betraege = filter_konsum(fetch_expenses(base, pat, start, ende))
         return formatiere_kategorie(kategorie, betraege.get(kategorie, 0.0), start, ende)
-    if funktion == "bericht" and zeitraum == "vormonat":
-        return formatiere_bericht(filter_konsum(fetch_expenses(base, pat, start, ende)), start, ende)
-    return beantworte(funktion, base, pat, heute)
+    # Zeitraum durchreichen, damit "letzten Monat" auch bei top5 und sparquote wirkt.
+    return beantworte(funktion, base, pat, heute, zeitraum=(start, ende))

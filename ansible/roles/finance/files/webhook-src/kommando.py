@@ -172,8 +172,9 @@ def formatiere_hilfe():
 
 
 # ---------- Ablauf ----------
-def beantworte(kommando, base, pat, today=None, rohtext=""):
-    start, end = monat_bis_heute(today)
+def beantworte(kommando, base, pat, today=None, rohtext="", zeitraum=None):
+    """zeitraum: (start, ende) ueberschreibt den laufenden Monat."""
+    start, end = zeitraum if zeitraum else monat_bis_heute(today)
     if kommando == "frage":
         # Das Modell waehlt nur die Abfrage aus, gerechnet wird in Python.
         from frage import beantworte_frage
