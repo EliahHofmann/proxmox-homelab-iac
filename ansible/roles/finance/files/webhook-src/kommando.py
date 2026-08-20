@@ -54,7 +54,7 @@ def ist_muell(wort):
     """Transaktionsnummern, Kartenreferenzen, Uhrzeiten - alles ohne Aussage.
 
     Merkmal: enthaelt Ziffern und keinen einzigen Kleinbuchstaben. Damit fliegen
-    "D01-8451173-9167053", "PP.2900.PP" und "16.08/15.13UHR" raus, waehrend
+    "K01-111-222", "PP.1000.PP" und "16.08/15.13UHR" raus, waehrend
     "AMZNPrime" und "Spotify" stehen bleiben.
     """
     kern = wort.strip(".,/-")
