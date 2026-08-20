@@ -108,6 +108,9 @@ services:
       - FIREFLY_PAT={{ firefly_pat }}
       - NTFY_BASE=http://ntfy:80
       - NTFY_CMD_TOPIC={{ ntfy_cmd_topic }}
+      - OLLAMA_URL={{ finance_ollama_url }}
+      - OLLAMA_MODEL={{ finance_ollama_model }}
+      - OLLAMA_MODEL_ADVISOR={{ finance_ollama_model_advisor }}
       - NTFY_CMD_URL=https://{{ ntfy_subdomain }}.{{ finance_domain }}/{{ ntfy_cmd_topic }}
       - NTFY_URL={{ finance_ntfy_url }}
       - NTFY_USER=publisher

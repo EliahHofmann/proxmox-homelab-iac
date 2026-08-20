@@ -128,6 +128,13 @@
     minute: "0"
     job: "docker exec finance-webhook python /app/matching_job.py"
 
+- name: Taegliche Pruefung auf auffaellige Buchungen
+  cron:
+    name: "finance-alarme"
+    minute: "0"
+    hour: "7"
+    job: "docker exec finance-webhook python /app/alarme.py >> /var/log/finance-alarme.log 2>&1"
+
 - name: Monatlicher KI-Finanzbericht
   cron:
     name: "firefly-advisor"

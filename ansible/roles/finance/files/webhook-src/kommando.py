@@ -14,7 +14,7 @@ import requests
 from advisor import fetch_expenses, filter_konsum, fetch_income, sparquote, send_ntfy
 import slog
 
-KOMMANDOS = ("bericht", "saldo", "top5", "sparquote", "bargeld", "hilfe")
+KOMMANDOS = ("bericht", "saldo", "top5", "sparquote", "bargeld", "frage", "hilfe")
 TIMEOUT = 60
 
 
@@ -167,12 +167,20 @@ def formatiere_hilfe():
             "- top5: groesste Einzelausgaben des Monats\n"
             "- sparquote: Einnahmen gegen Konsum\n"
             "- bargeld 50 / bargeld ausgabe 12,50 Doener\n"
+            "- frage <Frage in eigenen Worten>\n"
             "- hilfe: diese Uebersicht")
 
 
 # ---------- Ablauf ----------
 def beantworte(kommando, base, pat, today=None, rohtext=""):
     start, end = monat_bis_heute(today)
+    if kommando == "frage":
+        # Das Modell waehlt nur die Abfrage aus, gerechnet wird in Python.
+        from frage import beantworte_frage
+        return beantworte_frage(rohtext, base, pat,
+                                os.environ["OLLAMA_URL"],
+                                os.environ.get("OLLAMA_MODEL_ADVISOR")
+                                or os.environ["OLLAMA_MODEL"], today)
     if kommando == "bargeld":
         # Braucht den ganzen Satz, nicht nur das erste Wort.
         from bargeld import verarbeite
