@@ -99,7 +99,7 @@ def test_jugendfreizeit_kroatien():
 
 def test_konzum_faengt_die_vorgestreckte_buchung_nicht_ein():
     """Unter KONZUM laeuft auch die 170-EUR-Vorstreckung - die bleibt ohne Kategorie."""
-    assert match_category("KONZUM P-1552") is None
+    assert match_category("KONZUM Filiale") is None
 
 
 def test_mensa_ist_restaurant_nicht_bildung():
