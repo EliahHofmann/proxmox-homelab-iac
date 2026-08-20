@@ -94,3 +94,38 @@ def test_verarbeite_meldet_neuen_stand(monkeypatch):
     antwort = bargeld.verarbeite("bargeld ausgabe 12,50 Doener", "http://x", "tok")
     assert "12.50" in antwort
     assert "37.50" in antwort
+
+
+def test_stand_wird_erkannt():
+    assert bargeld.parse_bargeld("bargeld stand 8") == ("stand", 8.0, "")
+    assert bargeld.parse_bargeld("bargeld ist 8,50")[0] == "stand"
+
+
+def test_stand_bucht_die_differenz_nach_unten(monkeypatch):
+    gebucht = {}
+    monkeypatch.setattr(bargeld, "kontostand", lambda *a, **k: 60.0)
+    monkeypatch.setattr(bargeld, "buche", lambda base, tok, p: gebucht.update(p))
+    antwort = bargeld.verarbeite("bargeld stand 8", "http://x", "tok")
+    t = gebucht["transactions"][0]
+    assert t["type"] == "withdrawal"
+    assert t["amount"] == "52.00"
+    assert "60.00 -> 8.00" in antwort
+
+
+def test_stand_bucht_die_differenz_nach_oben(monkeypatch):
+    gebucht = {}
+    monkeypatch.setattr(bargeld, "kontostand", lambda *a, **k: 10.0)
+    monkeypatch.setattr(bargeld, "buche", lambda base, tok, p: gebucht.update(p))
+    bargeld.verarbeite("bargeld stand 25", "http://x", "tok")
+    t = gebucht["transactions"][0]
+    assert t["type"] == "deposit"
+    assert t["amount"] == "15.00"
+
+
+def test_stand_ohne_abweichung_bucht_nichts(monkeypatch):
+    gebucht = []
+    monkeypatch.setattr(bargeld, "kontostand", lambda *a, **k: 8.0)
+    monkeypatch.setattr(bargeld, "buche", lambda *a, **k: gebucht.append(a))
+    antwort = bargeld.verarbeite("bargeld stand 8", "http://x", "tok")
+    assert gebucht == []
+    assert "bereits" in antwort

@@ -44,6 +44,9 @@ def parse_bargeld(text):
     if rest and rest[0].lower() in ("ausgabe", "ausgeben", "raus"):
         art = "ausgabe"
         rest = rest[1:]
+    elif rest and rest[0].lower() in ("stand", "ist", "korrektur"):
+        art = "stand"
+        rest = rest[1:]
     if not rest:
         return None, None, ""
     betrag = parse_betrag(rest[0])
@@ -57,7 +60,8 @@ def hilfetext():
     return ("So wird Bargeld erfasst:\n\n"
             "- bargeld 50            50 EUR ins Portemonnaie\n"
             "- bargeld 50 von Oma    dito, mit Notiz\n"
-            "- bargeld ausgabe 12,50 Doener Imbiss\n\n"
+            "- bargeld ausgabe 12,50 Doener Imbiss\n"
+            "- bargeld stand 8      Bestand auf 8 EUR korrigieren\n\n"
             f"Betrag mit Komma oder Punkt, hoechstens {OBERGRENZE:.0f} EUR.")
 
 
@@ -114,6 +118,23 @@ def verarbeite(text, base, token, heute=None):
     art, betrag, beschreibung = parse_bargeld(text)
     if art is None:
         return hilfetext()
+
+    if art == "stand":
+        # Nicht den Saldo ueberschreiben, sondern die Differenz buchen - sonst
+        # verschwindet ausgegebenes Geld spurlos aus der Auswertung.
+        vorher = kontostand(base, token)
+        if vorher is None:
+            return "Der Bargeld-Bestand liess sich nicht abrufen."
+        differenz = round(betrag - vorher, 2)
+        if abs(differenz) < 0.01:
+            return f"Bargeld steht bereits auf {betrag:.2f} EUR."
+        art = "zugang" if differenz > 0 else "ausgabe"
+        buche(base, token, baue_buchung(art, abs(differenz),
+                                        beschreibung or "Bestandskorrektur", heute))
+        wort = "nachgetragen" if differenz > 0 else "abgezogen"
+        return (f"Bestand korrigiert: {vorher:.2f} -> {betrag:.2f} EUR\n"
+                f"({abs(differenz):.2f} EUR {wort})")
+
     buche(base, token, baue_buchung(art, betrag, beschreibung, heute))
     stand = kontostand(base, token)
     richtung = "Ausgabe" if art == "ausgabe" else "Zugang"
