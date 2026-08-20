@@ -141,21 +141,25 @@ def _tag_monat(iso_datum):
     return f"{teile[2]}.{teile[1]}." if len(teile) == 3 else str(iso_datum)
 
 
-def formatiere_top(posten, anzahl=5):
+def formatiere_top(posten, anzahl=5, start=None, ende=None):
     if not posten:
         return "Keine Ausgaben in diesem Zeitraum."
-    zeilen = [f"Groesste {anzahl} Ausgaben diesen Monat:", ""]
+    # Den Zeitraum immer mitschreiben - sonst steht ueber Juli-Zahlen
+    # "diesen Monat" und die Antwort wirkt falsch, obwohl sie stimmt.
+    spanne = f" ({start} bis {ende})" if start and ende else ""
+    zeilen = [f"Groesste {anzahl} Ausgaben{spanne}:", ""]
     for datum, beschreibung, betrag, kategorie in sorted(posten, key=lambda x: -x[2])[:anzahl]:
         zusatz = f" [{kategorie}]" if kategorie else ""
         zeilen.append(f"- {_tag_monat(datum)} {betrag:.2f} EUR  {beschreibung}{zusatz}")
     return "\n".join(zeilen)
 
 
-def formatiere_sparquote(einnahmen, konsum):
+def formatiere_sparquote(einnahmen, konsum, start=None, ende=None):
     quote = sparquote(einnahmen, konsum)
+    spanne = f" ({start} bis {ende})" if start and ende else ""
     if quote is None:
-        return "Noch keine Einnahmen in diesem Monat erfasst."
-    return (f"Sparquote diesen Monat: {quote:.1f} %\n\n"
+        return f"Noch keine Einnahmen erfasst{spanne}."
+    return (f"Sparquote{spanne}: {quote:.1f} %\n\n"
             f"Einnahmen: {einnahmen:.2f} EUR\nKonsum: {konsum:.2f} EUR\n"
             f"Uebrig: {einnahmen - konsum:.2f} EUR")
 
@@ -191,10 +195,12 @@ def beantworte(kommando, base, pat, today=None, rohtext="", zeitraum=None):
     if kommando == "saldo":
         return formatiere_saldo(fetch_accounts(base, pat))
     if kommando == "top5":
-        return formatiere_top(fetch_transactions(base, pat, start, end))
+        return formatiere_top(fetch_transactions(base, pat, start, end),
+                              start=start, ende=end)
     if kommando == "sparquote":
         konsum = sum(filter_konsum(fetch_expenses(base, pat, start, end)).values())
-        return formatiere_sparquote(fetch_income(base, pat, start, end), konsum)
+        return formatiere_sparquote(fetch_income(base, pat, start, end), konsum,
+                                    start, end)
     return formatiere_hilfe()
 
 

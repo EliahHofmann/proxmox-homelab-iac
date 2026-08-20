@@ -123,3 +123,22 @@ def test_beantworte_nimmt_einen_abweichenden_zeitraum(monkeypatch):
     monkeypatch.setattr(kommando, "fetch_expenses", fake_fetch)
     kommando.beantworte("bericht", "http://x", "tok", zeitraum=("2026-07-01", "2026-07-31"))
     assert gesehen["zeitraum"] == ("2026-07-01", "2026-07-31")
+
+
+def test_top5_nennt_den_zeitraum():
+    # Ohne Zeitraum stand "diesen Monat" auch ueber Vormonatszahlen.
+    text = kommando.formatiere_top([("2026-07-21", "Etwas", 170.0, "")],
+                                   start="2026-07-01", ende="2026-07-31")
+    assert "2026-07-01 bis 2026-07-31" in text
+    assert "diesen Monat" not in text
+
+
+def test_top5_ohne_zeitraum_bleibt_lesbar():
+    text = kommando.formatiere_top([("2026-08-19", "Etwas", 10.0, "")])
+    assert "Groesste 5 Ausgaben:" in text
+
+
+def test_sparquote_nennt_den_zeitraum():
+    text = kommando.formatiere_sparquote(1000.0, 400.0, "2026-07-01", "2026-07-31")
+    assert "2026-07-01 bis 2026-07-31" in text
+    assert "diesen Monat" not in text
