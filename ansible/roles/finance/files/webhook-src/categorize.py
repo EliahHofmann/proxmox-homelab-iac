@@ -9,7 +9,7 @@ der Kategorie eintragen. Teilstring-Match, Gross-/Kleinschreibung egal.
 """
 import os
 import time
-from firefly import FireflyClient, ASSET_BANK
+from firefly import FireflyClient, ASSET_BANK, ASSET_CASH
 from metrics import JobMetrics
 import slog
 
@@ -44,7 +44,6 @@ RULES = {
     "Kleidung":        ["h+m", "jeans fritz", "c&a", "primark"],
     "Tanken":          ["aral", "shell", "esso"],
     "Fixkosten":       ["e-plus", "telekom", "vodafone"],
-    "Bargeld":         ["ga nr"],
     "Elektronik":      ["mediamarkt", "media markt", "saturn", "conrad"],
     "Online-Shopping": ["amazon", "paypal", "sammelkartenmarkt"],  # Auffangnetz - zuletzt
 }
@@ -60,6 +59,11 @@ ZEITRAUM_RULES = [
         "bis": "2026-08-31",
     },
 ]
+
+
+def ist_abhebung(dest):
+    """Geldautomat: der Empfaenger traegt die Automatenkennung."""
+    return bool(dest) and "ga nr" in dest.lower()
 
 
 def match_category(dest, datum=None):
@@ -96,6 +100,19 @@ def run():
         uncategorized = 0
         for t in txs:
             if t.get("category_name"):      # schon kategorisiert -> nicht anfassen
+                continue
+            if ist_abhebung(t.get("destination_name")):
+                # Abhebungen sind kein Konsum, sondern eine Umbuchung ins
+                # Portemonnaie. Ausgegeben wird das Geld erst spaeter, erfasst
+                # ueber das Bargeld-Kommando.
+                try:
+                    fc.update_transaction(t["id"], t["journal_id"],
+                                          {"type": "transfer",
+                                           "destination_name": ASSET_CASH})
+                    changed += 1
+                except Exception as e:
+                    slog.log_event("abhebung_umbuchen_fehlgeschlagen",
+                                   error_type=type(e).__name__)
                 continue
             cat = match_category(t.get("destination_name"), t.get("date"))
             if cat:

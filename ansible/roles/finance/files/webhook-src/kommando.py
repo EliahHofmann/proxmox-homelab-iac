@@ -14,7 +14,7 @@ import requests
 from advisor import fetch_expenses, filter_konsum, fetch_income, sparquote, send_ntfy
 import slog
 
-KOMMANDOS = ("bericht", "saldo", "top5", "sparquote", "hilfe")
+KOMMANDOS = ("bericht", "saldo", "top5", "sparquote", "bargeld", "hilfe")
 TIMEOUT = 60
 
 
@@ -166,12 +166,17 @@ def formatiere_hilfe():
             "- saldo: alle Kontostaende\n"
             "- top5: groesste Einzelausgaben des Monats\n"
             "- sparquote: Einnahmen gegen Konsum\n"
+            "- bargeld 50 / bargeld ausgabe 12,50 Doener\n"
             "- hilfe: diese Uebersicht")
 
 
 # ---------- Ablauf ----------
-def beantworte(kommando, base, pat, today=None):
+def beantworte(kommando, base, pat, today=None, rohtext=""):
     start, end = monat_bis_heute(today)
+    if kommando == "bargeld":
+        # Braucht den ganzen Satz, nicht nur das erste Wort.
+        from bargeld import verarbeite
+        return verarbeite(rohtext, base, pat, today)
     if kommando == "bericht":
         return formatiere_bericht(filter_konsum(fetch_expenses(base, pat, start, end)), start, end)
     if kommando == "saldo":
@@ -207,7 +212,7 @@ def main():
     kommando = parse_kommando(nachricht)
     base, pat = os.environ["FIREFLY_URL"], os.environ["FIREFLY_PAT"]
     try:
-        text = beantworte(kommando, base, pat)
+        text = beantworte(kommando, base, pat, rohtext=nachricht)
     except Exception as e:
         slog.log_event("kommando_failed", kommando=kommando, error_type=type(e).__name__)
         text = f"Das Kommando '{kommando}' konnte nicht ausgefuehrt werden ({type(e).__name__})."

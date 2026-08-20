@@ -38,8 +38,17 @@ def test_fixkosten():
     assert match_category("E-Plus Service GmbH") == "Fixkosten"
 
 
-def test_bargeld():
-    assert match_category("GA NR00002284 BLZ35650000 0") == "Bargeld"
+def test_abhebung_ist_keine_kategorie_mehr():
+    # Seit der Umstellung ist eine Abhebung kein Konsum, sondern eine Umbuchung
+    # ins Portemonnaie - kategorisiert wird erst die einzelne Barausgabe.
+    assert match_category("GA NR00001111 BLZ12345678 0") is None
+
+
+def test_abhebung_wird_erkannt():
+    from categorize import ist_abhebung
+    assert ist_abhebung("GA NR00001111 BLZ12345678 0")
+    assert not ist_abhebung("AMAZON PAYMENTS EUROPE S.C.A.")
+    assert not ist_abhebung(None)
 
 
 def test_online_shopping():
