@@ -87,3 +87,9 @@ def test_zustand_wird_gespeichert_und_gelesen(tmp_path):
 
 def test_fehlende_zustandsdatei_ist_kein_fehler(tmp_path):
     assert alarme.lade_gemeldet(str(tmp_path / "gibtsnicht.json")) == set()
+
+
+def test_alarm_job_ist_in_den_metriken_registriert():
+    # Ohne Eintrag in JOB_SPECS bricht der Job beim Start mit KeyError ab.
+    from metrics import JOB_SPECS
+    assert "alarme" in JOB_SPECS

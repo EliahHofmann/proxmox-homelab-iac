@@ -91,6 +91,12 @@ class timer:
 # Metrik-Namen je Job zentral, damit Schreiber (Jobs) und Leser (Collector)
 # garantiert dieselben Namen verwenden. dedupe zaehlt Matches statt "runs".
 JOB_SPECS = {
+    "alarme": {
+        "success": "finance_alarme_success_total",
+        "failed": "finance_alarme_failed_total",
+        "duration": "finance_alarme_duration_seconds",
+        "last_success": "finance_last_successful_alarme_timestamp",
+    },
     "bank_import": {
         "success": "finance_bank_import_success_total",
         "failed": "finance_bank_import_failed_total",
