@@ -36,6 +36,15 @@ paperless_subdomain: "{{ lookup('env', 'PAPERLESS_SUBDOMAIN') }}"
 paperless_internal_ip: "{{ hostvars[groups['tag_paperless'][0]]['ansible_host'] }}"
 paperless_internal_port: "8010"
 
+#Jellyfin
+jellyfin_subdomain: "{{ lookup('env', 'JELLYFIN_SUBDOMAIN') }}"
+jellyfin_internal_ip: "{{ hostvars[groups['tag_jellyfin'][0]]['ansible_host'] }}"
+jellyfin_internal_port: "8096"
+
+#Halcyon Video
+halcyon_subdomain: "{{ lookup('env', 'HALCYON_SUBDOMAIN') }}"
+halcyon_internal_port: "1420"
+
 #Finance (Firefly III)
 finance_subdomain: "finanzen"
 importer_subdomain: "importer"   # nur LAN, siehe finance.yml.j2

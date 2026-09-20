@@ -59,5 +59,11 @@
   roles:
     - finance
 
+- name: Setup Jellyfin Dienst
+  hosts: tag_jellyfin
+  become: yes
+  roles:
+    - jellyfin
+
 - name: Deploy node-exporter to all guest VMs
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax

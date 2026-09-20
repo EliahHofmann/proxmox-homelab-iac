@@ -132,5 +132,18 @@ lxc_configs = {
     storage    = "local-lvm"
     nameserver = "1.1.1.1"
     tags       = "actualbudget"   # Proxmox normalisiert Tags klein -> sonst Dauer-Drift
-    }
+    },
+  "jellyfin" = {
+    vmid       = 208
+    target_node = "hp-server-balthasar"
+    hostname   = "jellyfin"
+    ip         = "192.168.178.88/24"
+    cpu        = 4
+    memory     = 4096
+    gw         = "192.168.178.1"
+    size       = "100G"
+    storage    = "local-lvm"
+    nameserver = "1.1.1.1"
+    tags       = "jellyfin"
+  }
 }
