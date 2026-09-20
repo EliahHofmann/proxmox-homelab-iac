@@ -1,8 +1,9 @@
 ---
 jellyfin_version: "12.1"
 halcyon_version: "0.20.2"
-halcyon_image: "halcyon-video:{{ halcyon_version }}-region"
+halcyon_image: "halcyon-video:{{ halcyon_version }}-youtube"
 halcyon_watch_region: "DE"
+halcyon_youtube_channels: ""
 
 jellyfin_install_path: "/opt/jellyfin"
 jellyfin_config_dir: "/opt/jellyfin/config"
