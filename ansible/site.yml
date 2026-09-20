@@ -1,6 +1,6 @@
 ---
 - name: Basis-Konfiguration für alle Server
-  hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax, !Sandbox, !Minecraft
   become: yes
   roles:
     - common
@@ -66,4 +66,4 @@
     - jellyfin
 
 - name: Deploy node-exporter to all guest VMs
-  hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax, !Sandbox, !Minecraft
