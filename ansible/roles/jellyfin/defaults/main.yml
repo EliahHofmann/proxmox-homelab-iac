@@ -1,6 +1,8 @@
 ---
 jellyfin_version: "12.1"
 halcyon_version: "0.20.2"
+halcyon_image: "halcyon-video:{{ halcyon_version }}-region"
+halcyon_watch_region: "DE"
 
 jellyfin_install_path: "/opt/jellyfin"
 jellyfin_config_dir: "/opt/jellyfin/config"
@@ -14,3 +16,4 @@ jellyfin_render_gid: 104
 
 domain_name: "{{ lookup('env', 'DOMAIN_NAME') }}"
 jellyfin_subdomain: "{{ lookup('env', 'JELLYFIN_SUBDOMAIN') }}"
+halcyon_subdomain: "{{ lookup('env', 'HALCYON_SUBDOMAIN') }}"
