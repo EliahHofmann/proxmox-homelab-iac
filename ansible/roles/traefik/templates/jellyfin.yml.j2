@@ -1,0 +1,47 @@
+http:
+  routers:
+    jellyfin-router:
+      rule: "Host(`{{ jellyfin_subdomain }}.{{ domain_name }}`)"
+      service: "jellyfin-service"
+      entryPoints: ["websecure"]
+      priority: 10
+
+      tls:
+        certResolver: cloudflare
+        domains:
+          - main: "{{ domain_name }}"
+            sans:
+                - "*.{{ domain_name }}"
+
+    halcyon-router:
+      rule: "Host(`{{ halcyon_subdomain }}.{{ domain_name }}`)"
+      service: "halcyon-service"
+      entryPoints: ["websecure"]
+      priority: 10
+
+      tls:
+        certResolver: cloudflare
+        domains:
+          - main: "{{ domain_name }}"
+            sans:
+                - "*.{{ domain_name }}"
+
+  services:
+    jellyfin-service:
+      loadBalancer:
+        serversTransport: "jellyfin-transport"
+        servers:
+          - url: "http://{{ jellyfin_internal_ip }}:{{ jellyfin_internal_port }}"
+
+    halcyon-service:
+      loadBalancer:
+        serversTransport: "jellyfin-transport"
+        servers:
+          - url: "http://{{ jellyfin_internal_ip }}:{{ halcyon_internal_port }}"
+
+  serversTransports:
+    jellyfin-transport:
+      forwardingTimeouts:
+        dialTimeout: "30s"
+        responseHeaderTimeout: "0s"
+        idleConnTimeout: "300s"

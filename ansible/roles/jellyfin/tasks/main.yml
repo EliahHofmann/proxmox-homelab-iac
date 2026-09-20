@@ -1,0 +1,21 @@
+---
+- name: Jellyfin Unterordner für Volumes erstellen
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ jellyfin_install_path }}"
+    - "{{ jellyfin_config_dir }}"
+    - "{{ jellyfin_cache_dir }}"
+    - "{{ jellyfin_media_dir }}"
+
+- name: Jellyfin docker-compose.yml erstellen
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ jellyfin_install_path }}/docker-compose.yml"
+
+- name: Jellyfin Container starten
+  command: docker compose up -d
+  args:
+    chdir: "{{ jellyfin_install_path }}"

@@ -1,0 +1,30 @@
+services:
+  jellyfin:
+    container_name: jellyfin
+    image: jellyfin/jellyfin:{{ jellyfin_version }}
+    ports:
+      - "{{ jellyfin_port }}:8096"
+    volumes:
+      - {{ jellyfin_config_dir }}:/config
+      - {{ jellyfin_cache_dir }}:/cache
+      - {{ jellyfin_media_dir }}:/media:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Europe/Berlin
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    group_add:
+      - "{{ jellyfin_render_gid }}"
+    restart: unless-stopped
+
+  halcyon:
+    container_name: halcyon
+    image: ghcr.io/halcyon-video/halcyon-video:{{ halcyon_version }}
+    ports:
+      - "{{ halcyon_port }}:1420"
+    environment:
+      HALCYON_JELLYFIN_URL: "https://{{ jellyfin_subdomain }}.{{ domain_name }}"
+      HALCYON_PROXY_ALLOWED_URLS: "https://{{ jellyfin_subdomain }}.{{ domain_name }}"
+    depends_on:
+      - jellyfin
+    restart: unless-stopped

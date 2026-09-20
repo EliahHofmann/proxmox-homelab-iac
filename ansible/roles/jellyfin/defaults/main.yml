@@ -1,0 +1,16 @@
+---
+jellyfin_version: "12.1"
+halcyon_version: "0.20.2"
+
+jellyfin_install_path: "/opt/jellyfin"
+jellyfin_config_dir: "/opt/jellyfin/config"
+jellyfin_cache_dir: "/opt/jellyfin/cache"
+jellyfin_media_dir: "/opt/jellyfin/media"
+
+jellyfin_port: 8096
+halcyon_port: 1420
+
+jellyfin_render_gid: 104
+
+domain_name: "{{ lookup('env', 'DOMAIN_NAME') }}"
+jellyfin_subdomain: "{{ lookup('env', 'JELLYFIN_SUBDOMAIN') }}"
