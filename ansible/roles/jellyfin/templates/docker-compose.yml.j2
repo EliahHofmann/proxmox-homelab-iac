@@ -19,13 +19,15 @@ services:
 
   halcyon:
     container_name: halcyon
-    image: ghcr.io/halcyon-video/halcyon-video:{{ halcyon_version }}
+    image: {{ halcyon_image }}
+    pull_policy: never
     ports:
       - "{{ halcyon_port }}:1420"
     environment:
       HALCYON_JELLYFIN_URL: "https://{{ jellyfin_subdomain }}.{{ domain_name }}"
       HALCYON_PROXY_ALLOWED_URLS: "https://{{ jellyfin_subdomain }}.{{ domain_name }}"
       HALCYON_ALLOWED_HOSTS: "{{ halcyon_subdomain }}.{{ domain_name }}"
+      HALCYON_WATCH_REGION: "{{ halcyon_watch_region }}"
     depends_on:
       - jellyfin
     restart: unless-stopped
