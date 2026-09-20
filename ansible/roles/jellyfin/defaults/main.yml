@@ -14,3 +14,4 @@ jellyfin_render_gid: 104
 
 domain_name: "{{ lookup('env', 'DOMAIN_NAME') }}"
 jellyfin_subdomain: "{{ lookup('env', 'JELLYFIN_SUBDOMAIN') }}"
+halcyon_subdomain: "{{ lookup('env', 'HALCYON_SUBDOMAIN') }}"
