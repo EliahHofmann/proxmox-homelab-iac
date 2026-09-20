@@ -24,6 +24,7 @@ services:
       - "{{ halcyon_port }}:1420"
     environment:
       HALCYON_JELLYFIN_URL: "https://{{ jellyfin_subdomain }}.{{ domain_name }}"
+      HALCYON_PROXY_ALLOWED_URLS: "https://{{ jellyfin_subdomain }}.{{ domain_name }}"
     depends_on:
       - jellyfin
     restart: unless-stopped
