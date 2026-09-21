@@ -1,7 +1,7 @@
 ---
 jellyfin_version: "12.1"
 halcyon_version: "0.20.2"
-halcyon_image: "halcyon-video:{{ halcyon_version }}-c8384c6"
+halcyon_image: "halcyon-video:{{ halcyon_version }}-ad72565"
 halcyon_watch_region: "DE"
 halcyon_youtube_channels: "{{ lookup('env', 'HALCYON_YOUTUBE_CHANNELS') }}"
 
