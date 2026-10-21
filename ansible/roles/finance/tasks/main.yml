@@ -56,6 +56,16 @@
     mode: '0640'         # nur root + Container-User, nicht world-readable
   no_log: true
 
+# PHP2Shell-Workaround (siehe files/php-hardening/zzzz-php2shell.ini).
+# Muss wie der PEM-Key VOR "docker compose up" liegen.
+- name: PHP-Haertung fuer Firefly und Importer ablegen
+  copy:
+    src: php-hardening
+    dest: "{{ finance_install_path }}/"
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: ntfy-Serverkonfiguration generieren
   template:
     src: ntfy-server.yml.j2
