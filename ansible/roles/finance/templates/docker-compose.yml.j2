@@ -13,7 +13,7 @@ services:
     networks: [finance-net]
 
   firefly-iii:
-    image: fireflyiii/core:version-6
+    image: fireflyiii/core:version-6.7.9   # PHP 8.5.12, PHP2Shell gefixt
     container_name: firefly-iii
     restart: unless-stopped
     depends_on: [firefly-db]
@@ -33,16 +33,12 @@ services:
       - DEFAULT_LOCALE=equal
     ports:
       - "{{ finance_host_ip }}:8080:8080"   # nur LAN, oeffentlich nur via Traefik
-    # PHP2Shell-Workaround: memory_limit=-1, die Grenze setzt die cgroup
-    mem_limit: 1g
     volumes:
       - {{ finance_firefly_data }}:/var/www/html/storage/upload
-      - {{ finance_install_path }}/php-hardening/zzzz-php2shell.ini:/usr/local/etc/php/conf.d/zzzz-php2shell.ini:ro
-      - {{ finance_install_path }}/php-hardening/zzzz-php2shell.conf:/usr/local/etc/php-fpm.d/zzzz-php2shell.conf:ro
     networks: [finance-net]
 
   firefly-importer:
-    image: fireflyiii/data-importer:version-2   # Enable Banking erst ab v2.1.0
+    image: fireflyiii/data-importer:version-2.3.5   # Enable Banking erst ab v2.1.0; PHP 8.5.12
     container_name: firefly-importer
     restart: unless-stopped
     depends_on: [firefly-iii]
@@ -68,10 +64,6 @@ services:
       # ganzes Verzeichnis mounten, nicht die Einzeldatei: sonst legt Docker
       # bei fehlender Host-Datei ein Verzeichnis an ihrer Stelle an (errno 21)
       - {{ finance_install_path }}/secrets:/secrets:ro
-      - {{ finance_install_path }}/php-hardening/zzzz-php2shell.ini:/usr/local/etc/php/conf.d/zzzz-php2shell.ini:ro
-      - {{ finance_install_path }}/php-hardening/zzzz-php2shell.conf:/usr/local/etc/php-fpm.d/zzzz-php2shell.conf:ro
-    # PHP2Shell-Workaround: memory_limit=-1, die Grenze setzt die cgroup
-    mem_limit: 1g
     ports:
       - "{{ finance_host_ip }}:8081:8080"   # nur LAN, fuer Ersteinrichtung
     networks: [finance-net]
