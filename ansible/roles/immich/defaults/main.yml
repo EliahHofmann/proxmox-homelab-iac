@@ -1,6 +1,7 @@
 ---
 # Feste Version statt rolling "release": ein Deploy soll nicht ungefragt
 # den naechsten Major ziehen (v3 hat pgvecto.rs entfernt).
+# renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
 immich_version: "v3.3.5"
 immich_install_path: "/opt/immich"
 immich_upload_dir: "/opt/immich/data"

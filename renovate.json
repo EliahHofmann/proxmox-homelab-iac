@@ -1,0 +1,163 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Update-PRs fuer alle gepinnten Versionen. Patch/Digest: Automerge nach gruener Pipeline, hoechstens ein Dienst pro Nacht. Minor/Major: nur PR, nie automatisch.",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "Europe/Berlin",
+  "schedule": [
+    "after 1am and before 5am"
+  ],
+  "automergeSchedule": [
+    "after 2am and before 3am"
+  ],
+  "prHourlyLimit": 1,
+  "separateMinorPatch": true,
+  "platformAutomerge": false,
+  "customManagers": [
+    {
+      "description": "image:-Zeilen in den Compose-Vorlagen der Rollen (ohne die ungenutzte nextcloud-Rolle)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^ansible/roles/(?!nextcloud/)[^/]+/templates/[^/]*compose[^/]*\\.j2$/"
+      ],
+      "matchStrings": [
+        "image:\\s*(?<depName>[^\\s:@{]+):(?<currentValue>[^\\s@{#]+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "*_version-Variablen in den Rollen-Defaults mit '# renovate:'-Kommentar darueber",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^ansible/roles/[^/]+/defaults/main\\.yml$/"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\n[a-z_]+_version:\\s*\"(?<currentValue>[^\"]+)\""
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Ein Branch pro Dienst: adguard",
+      "matchFileNames": [
+        "ansible/roles/adguard/**"
+      ],
+      "groupName": "adguard"
+    },
+    {
+      "description": "Ein Branch pro Dienst: cloudflared",
+      "matchFileNames": [
+        "ansible/roles/cloudflared/**"
+      ],
+      "groupName": "cloudflared"
+    },
+    {
+      "description": "Ein Branch pro Dienst: collabora",
+      "matchFileNames": [
+        "ansible/roles/collabora/**"
+      ],
+      "groupName": "collabora"
+    },
+    {
+      "description": "Ein Branch pro Dienst: finance",
+      "matchFileNames": [
+        "ansible/roles/finance/**"
+      ],
+      "groupName": "finance"
+    },
+    {
+      "description": "Ein Branch pro Dienst: immich",
+      "matchFileNames": [
+        "ansible/roles/immich/**"
+      ],
+      "groupName": "immich"
+    },
+    {
+      "description": "Ein Branch pro Dienst: jellyfin",
+      "matchFileNames": [
+        "ansible/roles/jellyfin/**"
+      ],
+      "groupName": "jellyfin"
+    },
+    {
+      "description": "Ein Branch pro Dienst: monitoring",
+      "matchFileNames": [
+        "ansible/roles/monitoring/**"
+      ],
+      "groupName": "monitoring"
+    },
+    {
+      "description": "Ein Branch pro Dienst: paperless",
+      "matchFileNames": [
+        "ansible/roles/paperless/**"
+      ],
+      "groupName": "paperless"
+    },
+    {
+      "description": "Ein Branch pro Dienst: traefik",
+      "matchFileNames": [
+        "ansible/roles/traefik/**"
+      ],
+      "groupName": "traefik"
+    },
+    {
+      "description": "Ein Branch pro Dienst: vaultwarden",
+      "matchFileNames": [
+        "ansible/roles/vaultwarden/**"
+      ],
+      "groupName": "vaultwarden"
+    },
+    {
+      "description": "Patch und Digest: Automerge nach gruener Pipeline",
+      "matchUpdateTypes": [
+        "patch",
+        "digest"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Minor und Major: nur PR, der Besitzer entscheidet",
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "automerge": false,
+      "labels": [
+        "update-manual"
+      ]
+    },
+    {
+      "description": "Immich-Datenbank nie automatisch (Migrationen, siehe v3)",
+      "matchPackageNames": [
+        "ghcr.io/immich-app/postgres"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Firefly-Tags heissen version-X.Y.Z",
+      "matchPackageNames": [
+        "fireflyiii/core",
+        "fireflyiii/data-importer"
+      ],
+      "versioning": "regex:^version-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "description": "Collabora: Jahr.Monat.Patch.Build.Revision",
+      "matchPackageNames": [
+        "collabora/code"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)\\.(?<revision>\\d+)$"
+    },
+    {
+      "description": "Lokal gebaute Images, keine Registry",
+      "matchPackageNames": [
+        "paperless-proton-bridge",
+        "halcyon-video",
+        "shenxn/protonmail-bridge"
+      ],
+      "enabled": false
+    }
+  ]
+}
