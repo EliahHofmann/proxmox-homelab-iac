@@ -5,10 +5,6 @@
         - docker-ce
         - docker-compose-plugin
         - curl
-        - zip
-        - msmtp
-        - msmtp-mta
-        - mpack
       state: present
       update_cache: yes
 
@@ -37,28 +33,27 @@
     args:
       chdir: '{{ vault_install_path }}'
 
-#Vaultwarden-Backup und Cronjob einrichten
-
-  - name: MSMTP Konfiguration
-    template:
-      src: msmtp.yml.j2
-      dest: /etc/msmtprc
-      owner: root
-      group: root
-      mode: '0600'
-
-  - name: Backup-Skript erstellen
-    template:
-      src: backup-script.yml.j2
-      dest: /usr/local/bin/vaultwarden_backup.sh
-      owner: root
-      group: root
-      mode: '0700'
-
-  - name: Wöchentlichen Cronjob
+# Das woechentliche Mail-Backup ist ersetzt durch das naechtliche PBS-Backup
+# von CT 202. Reste davon auf dem Host entfernen.
+  - name: Alten Backup-Cronjob entfernen
     cron:
       name: "Wöchentliches Vaultwarden Backup"
-      minute: "0"
-      hour: "3"
-      weekday: "1"
-      job: "/usr/local/bin/vaultwarden_backup.sh"
+      state: absent
+
+  - name: Backup-Skript und MSMTP-Konfiguration entfernen
+    file:
+      path: "{{ item }}"
+      state: absent
+    loop:
+      - /usr/local/bin/vaultwarden_backup.sh
+      - /etc/msmtprc
+      - /var/log/msmtp.log
+
+  - name: Pakete des Mail-Backups entfernen
+    apt:
+      name:
+        - zip
+        - msmtp
+        - msmtp-mta
+        - mpack
+      state: absent
