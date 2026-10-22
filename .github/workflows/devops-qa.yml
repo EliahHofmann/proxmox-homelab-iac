@@ -43,8 +43,13 @@ jobs:
           ~/.local/bin/ansible-lint .
 
       - name: Trivy FS Scan (Security)
-        uses: aquasecurity/trivy-action@master
+        # Feste Version statt @master. Kein actions/cache: der Runner ist
+        # self-hosted, die DB bleibt in seinem Home liegen. Der Cache-Upload
+        # der 130-MB-DB zu GitHub blieb am langsamen Upload haengen.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
+          cache: 'false'
+          cache-dir: '/home/github-runner/.cache/trivy'
           scan-type: 'fs'
           format: 'table'
           exit-code: '1'
