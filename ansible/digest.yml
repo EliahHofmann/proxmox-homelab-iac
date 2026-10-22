@@ -1,0 +1,74 @@
+---
+# Wochen-Digest: alles, was auf einen Menschen wartet. Laeuft montags ueber
+# .github/workflows/weekly-digest.yml und landet als Mail beim Besitzer.
+# Kommt die Mail nicht, stimmt etwas nicht (Lebenszeichen).
+- name: Stand der Gaeste sammeln
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft
+  become: yes
+  gather_facts: no
+  ignore_unreachable: true
+  tasks:
+    # Listen sind frisch von unattended-upgrades, hier kein apt-get update
+    - name: Wartende Pakete
+      shell: apt list --upgradable 2>/dev/null | tail -n +2
+      register: digest_upgradable
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Neustart noetig?
+      stat:
+        path: /var/run/reboot-required
+      register: digest_reboot
+
+    - name: Fehler von unattended-upgrades
+      shell: grep -hE "ERROR|WARNING" /var/log/unattended-upgrades/unattended-upgrades.log 2>/dev/null | tail -n 5
+      register: digest_uu_errors
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Neue Nextcloud-Version?
+      command: runuser -u www-data -- php /var/www/nextcloud/occ update:check
+      register: digest_nextcloud
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      when: inventory_hostname == 'Nextcloud'
+
+- name: Proxmox-Nodes abfragen und Digest schreiben
+  hosts: localhost
+  gather_facts: no
+  vars:
+    proxmox_ca_path: "{{ playbook_dir }}/files/pve-root-ca.pem"
+    pve_api: "{{ lookup('env', 'PROXMOX_URL') }}/api2/json"
+    pve_auth: "PVEAPIToken={{ lookup('env', 'PROXMOX_USER') }}!{{ lookup('env', 'PROXMOX_TOKEN_ID') }}={{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
+    digest_hosts: "{{ (groups['proxmox_all_lxc'] | default([])) + (groups['proxmox_all_qemu'] | default([])) }}"
+  tasks:
+    - name: Nodes
+      uri:
+        url: "{{ pve_api }}/nodes"
+        headers:
+          Authorization: "{{ pve_auth }}"
+        ca_path: "{{ proxmox_ca_path }}"
+      register: digest_nodes
+      no_log: true
+
+    # Die Liste pflegt Proxmox selbst (taeglicher pveupdate-Lauf)
+    - name: Wartende Updates je Node
+      uri:
+        url: "{{ pve_api }}/nodes/{{ item.node }}/apt/update"
+        headers:
+          Authorization: "{{ pve_auth }}"
+        ca_path: "{{ proxmox_ca_path }}"
+      loop: "{{ digest_nodes.json.data }}"
+      loop_control:
+        label: "{{ item.node }}"
+      register: digest_node_updates
+      no_log: true
+
+    - name: Digest schreiben
+      template:
+        src: digest.txt.j2
+        dest: /tmp/homelab-digest.txt
+        mode: '0600'

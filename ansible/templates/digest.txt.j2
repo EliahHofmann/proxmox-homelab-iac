@@ -1,0 +1,62 @@
+Homelab Wochen-Digest {{ lookup('pipe', 'date +%Y-%m-%d') }}
+Lebenszeichen: Digest laeuft. Bleibt diese Mail aus, stimmt etwas nicht.
+{% set ns = namespace(reboot=[], waiting=[], errors=[], down=[]) %}
+{% for h in digest_hosts | sort if h in hostvars and h not in ['Kali-Linux-Prax', 'Sandbox', 'Minecraft'] %}
+{%   set hv = hostvars[h] %}
+{%   if hv.digest_reboot is not defined or hv.digest_reboot.unreachable | default(false) %}
+{%     set ns.down = ns.down + [h] %}
+{%   else %}
+{%     if hv.digest_reboot.stat.exists | default(false) %}{% set ns.reboot = ns.reboot + [h] %}{% endif %}
+{%     if hv.digest_upgradable.stdout | default('') | length > 0 %}{% set ns.waiting = ns.waiting + [(h, hv.digest_upgradable.stdout_lines)] %}{% endif %}
+{%     if hv.digest_uu_errors.stdout | default('') | length > 0 %}{% set ns.errors = ns.errors + [(h, hv.digest_uu_errors.stdout_lines)] %}{% endif %}
+{%   endif %}
+{% endfor %}
+
+== Neustart noetig ==
+{% for h in ns.reboot %}
+- {{ h }}
+{% else %}
+- nichts
+{% endfor %}
+
+== Wartende Updates (nicht automatisch, z.B. Docker, Vault) ==
+{% for h, lines in ns.waiting %}
+{{ h }}:
+{% for l in lines %}
+  {{ l }}
+{% endfor %}
+{% else %}
+- nichts
+{% endfor %}
+
+== Fehler unattended-upgrades ==
+{% for h, lines in ns.errors %}
+{{ h }}:
+{% for l in lines %}
+  {{ l }}
+{% endfor %}
+{% else %}
+- nichts
+{% endfor %}
+
+== Proxmox-Nodes ==
+{% for r in digest_node_updates.results %}
+{{ r.item.node }}: {{ r.json.data | length }} Pakete
+{% for p in r.json.data %}
+  {{ p.Package }} {{ p.OldVersion | default('?') }} -> {{ p.Version }}
+{% endfor %}
+{% endfor %}
+
+== Nextcloud ==
+{% if 'Nextcloud' in hostvars and hostvars['Nextcloud'].digest_nextcloud is defined and hostvars['Nextcloud'].digest_nextcloud.stdout is defined %}
+{{ hostvars['Nextcloud'].digest_nextcloud.stdout }}
+{% else %}
+- keine Antwort von Nextcloud
+{% endif %}
+
+== Nicht erreichbar ==
+{% for h in ns.down %}
+- {{ h }}
+{% else %}
+- nichts
+{% endfor %}
