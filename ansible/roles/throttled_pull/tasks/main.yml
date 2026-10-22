@@ -54,7 +54,8 @@
         url: "{{ throttled_pull_api }}"
         headers:
           Authorization: "{{ throttled_pull_auth }}"
-        validate_certs: false
+        validate_certs: true
+        ca_path: "{{ proxmox_ca_path }}"
       register: throttled_pull_conf
       delegate_to: localhost
       become: false
@@ -77,7 +78,8 @@
             body_format: form-urlencoded
             body:
               net0: "{{ throttled_pull_net0 }},rate={{ throttled_pull_rate }}"
-            validate_certs: false
+            validate_certs: true
+            ca_path: "{{ proxmox_ca_path }}"
           delegate_to: localhost
           become: false
           no_log: true
@@ -96,7 +98,8 @@
             body_format: form-urlencoded
             body:
               net0: "{{ throttled_pull_net0 }}"
-            validate_certs: false
+            validate_certs: true
+            ca_path: "{{ proxmox_ca_path }}"
           delegate_to: localhost
           become: false
           no_log: true

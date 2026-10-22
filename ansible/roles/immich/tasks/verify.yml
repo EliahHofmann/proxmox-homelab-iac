@@ -1,0 +1,11 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Container pruefen
+  include_role:
+    name: container_health
+  vars:
+    container_health_dir: "{{ immich_install_path }}"
+
+- name: Immich antwortet mit Version
+  uri:
+    url: http://localhost:2283/api/server/version

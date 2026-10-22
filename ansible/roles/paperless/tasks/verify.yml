@@ -1,0 +1,18 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Container pruefen
+  include_role:
+    name: container_health
+  vars:
+    container_health_dir: "{{ paperless_install_path }}"
+
+- name: Paperless-Login antwortet
+  uri:
+    url: http://localhost:8010/accounts/login/
+
+- name: Keine offenen Paperless-Migrationen
+  command: docker exec paperless-ngx-webserver-1 python3 manage.py showmigrations
+  register: paperless_migrations
+  changed_when: false
+  check_mode: false
+  failed_when: paperless_migrations.rc != 0 or '[ ]' in paperless_migrations.stdout

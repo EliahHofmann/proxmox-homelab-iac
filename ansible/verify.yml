@@ -1,0 +1,104 @@
+---
+# Prueft nach jedem Deploy jeden Dienst wirklich (Container gesund, Soll-Image,
+# Funktions-Check, keine Drossel). Laeuft in der Pipeline nach dem Deploy und
+# von Hand ueber den Ops-Workflow. Rot = Mail an den Besitzer.
+
+- name: Pruefe vaultwarden
+  hosts: tag_vaultwarden
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: vaultwarden pruefen
+      include_role:
+        name: vaultwarden
+        tasks_from: verify
+
+- name: Pruefe traefik
+  hosts: tag_traefik
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: traefik pruefen
+      include_role:
+        name: traefik
+        tasks_from: verify
+
+- name: Pruefe collabora
+  hosts: tag_collabora
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: collabora pruefen
+      include_role:
+        name: collabora
+        tasks_from: verify
+
+- name: Pruefe adguard
+  hosts: tag_adguard
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: adguard pruefen
+      include_role:
+        name: adguard
+        tasks_from: verify
+
+- name: Pruefe cloudflared
+  hosts: tag_cloudflared
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: cloudflared pruefen
+      include_role:
+        name: cloudflared
+        tasks_from: verify
+
+- name: Pruefe monitoring
+  hosts: tag_monitoring
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: monitoring pruefen
+      include_role:
+        name: monitoring
+        tasks_from: verify
+
+- name: Pruefe immich
+  hosts: tag_immich
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: immich pruefen
+      include_role:
+        name: immich
+        tasks_from: verify
+
+- name: Pruefe paperless
+  hosts: tag_paperless
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: paperless pruefen
+      include_role:
+        name: paperless
+        tasks_from: verify
+
+- name: Pruefe finance
+  hosts: tag_actualbudget
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: finance pruefen
+      include_role:
+        name: finance
+        tasks_from: verify
+
+- name: Pruefe jellyfin
+  hosts: tag_jellyfin
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: jellyfin pruefen
+      include_role:
+        name: jellyfin
+        tasks_from: verify

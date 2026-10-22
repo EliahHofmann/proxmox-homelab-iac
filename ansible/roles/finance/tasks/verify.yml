@@ -1,0 +1,21 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Container pruefen
+  include_role:
+    name: container_health
+  vars:
+    container_health_dir: "{{ finance_install_path }}"
+
+# Finance-Ports sind an die LAN-IP gebunden, nicht an localhost
+- name: ntfy ist gesund
+  uri:
+    url: "http://{{ ansible_host }}:8082/v1/health"
+  register: ntfy_health
+  failed_when: ntfy_health.status != 200 or not ntfy_health.json.healthy
+
+- name: Firefly-UI und Webhook antworten
+  uri:
+    url: "http://{{ ansible_host }}:{{ item }}"
+  loop:
+    - 8080/login
+    - 9000/health

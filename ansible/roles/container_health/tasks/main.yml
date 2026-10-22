@@ -1,0 +1,25 @@
+---
+- name: Container gesund, stabil und mit Soll-Image ({{ container_health_dir }})
+  script: container-health.sh {{ container_health_dir }} {{ container_health_wait }}
+  changed_when: false
+  check_mode: false
+
+# Bleibt nach einem abgebrochenen Pull eine Drossel stehen, faellt das hier auf
+- name: Netzwerkkarte des Gastes ist nicht gedrosselt
+  uri:
+    url: "{{ lookup('env', 'PROXMOX_URL') }}/api2/json/nodes/{{ proxmox_node }}/{{ proxmox_vmtype }}/{{ proxmox_vmid }}/config"
+    headers:
+      Authorization: "PVEAPIToken={{ lookup('env', 'PROXMOX_USER') }}!{{ lookup('env', 'PROXMOX_TOKEN_ID') }}={{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
+    validate_certs: true
+    ca_path: "{{ proxmox_ca_path }}"
+  register: container_health_conf
+  delegate_to: localhost
+  become: false
+  no_log: true
+  check_mode: false
+
+- name: Keine Drossel in net0
+  assert:
+    that: "'rate=' not in container_health_conf.json.data.net0"
+    fail_msg: "net0 ist noch gedrosselt - Drossel von Hand entfernen (pct/qm set ... -net0 ohne rate=)"
+    quiet: true

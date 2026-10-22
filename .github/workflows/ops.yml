@@ -1,0 +1,51 @@
+name: Ops (manuell)
+
+# Von Hand starten (nur wer Schreibrechte am Repo hat): Dienste pruefen,
+# Wochen-Digest ziehen oder site.yml gezielt fuer einzelne Hosts laufen lassen.
+on:
+  workflow_dispatch:
+    inputs:
+      playbook:
+        description: Playbook
+        type: choice
+        options: [verify, digest, site]
+        default: verify
+      limit:
+        description: "Nur diese Hosts (ansible --limit), leer = alle"
+        type: string
+        default: ""
+      extra_vars:
+        description: "Extra-Variablen (ansible -e), z.B. throttled_pull_force=true"
+        type: string
+        default: ""
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  ops:
+    if: github.repository == 'EliahHofmann/proxmox-homelab-iac'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Ansible-Umgebung und Secrets
+        uses: ./.github/actions/ansible-env
+
+      # Eingaben nur ueber env, nie direkt in das Skript einsetzen (Injection)
+      - name: Playbook ausfuehren
+        working-directory: ./ansible
+        env:
+          PLAYBOOK: ${{ inputs.playbook }}
+          LIMIT: ${{ inputs.limit }}
+          EXTRA: ${{ inputs.extra_vars }}
+        run: |
+          args=(-i proxmox.yml "$PLAYBOOK.yml" --private-key /tmp/ansible_vault_key)
+          [ -n "$LIMIT" ] && args+=(--limit "$LIMIT")
+          [ -n "$EXTRA" ] && args+=(-e "$EXTRA")
+          ansible-playbook "${args[@]}"
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: rm -f /tmp/ansible_vault_key

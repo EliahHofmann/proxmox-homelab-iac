@@ -116,53 +116,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Upgrade Ansible
-        run: pip3 install --upgrade ansible-core --break-system-packages
-
-      - name: Install Ansible Proxmox Collection
-        run: ansible-galaxy collection install community.proxmox
-
-      - name: Lade Runner Systemvariablen in GitHub ENV
-        run: |
-          echo "VAULT_ADDR=$VAULT_ADDR" >> $GITHUB_ENV
-          echo "VAULT_ROLE_ID=$VAULT_ROLE_ID" >> $GITHUB_ENV
-          echo "VAULT_SECRET_ID=$VAULT_SECRET_ID" >> $GITHUB_ENV
-
-      - name: Fetch Core Secrets from Vault
-        uses: hashicorp/vault-action@v3
-        with:
-          url: ${{ env.VAULT_ADDR }}
-          method: approle
-          roleId: ${{ env.VAULT_ROLE_ID }}
-          secretId: ${{ env.VAULT_SECRET_ID }}
-          exportToken: true
-          secrets: |
-            secret/data/proxmox proxmox_api_url | PROXMOX_URL ;
-            secret/data/proxmox proxmox_api_token_id | PROXMOX_TOKEN_ID ;
-            secret/data/proxmox proxmox_api_token_secret | PROXMOX_TOKEN_SECRET ;
-            secret/data/ssh private_key | ANSIBLE_SSH_KEY_B64
-
-      - name: Set Proxmox Auth for Ansible Inventory
-        run: |
-          FULL_TOKEN="$PROXMOX_TOKEN_ID"
-          echo "PROXMOX_USER=${FULL_TOKEN%%!*}" >> $GITHUB_ENV
-          echo "PROXMOX_TOKEN_ID=${FULL_TOKEN##*!}" >> $GITHUB_ENV
-          echo "PROXMOX_URL=${PROXMOX_URL%/api2/json}" >> $GITHUB_ENV
-
-      - name: Prepare SSH Key & Fetch Service Secrets
-        run: |
-          #SSH Key entschlüsseln und ablegen
-          echo "$ANSIBLE_SSH_KEY_B64" | base64 -d > /tmp/ansible_vault_key
-          chmod 600 /tmp/ansible_vault_key
-
-          #Service Environment Variables laden
-          SERVICES=("adguard" "cloudflared" "collabora" "immich" "jellyfin" "monitoring" "nextcloud" "paperless" "traefik" "vaultwarden" "finance")
-          for SERVICE in "${SERVICES[@]}"; do
-            SECRET_JSON=$(curl -s --header "X-Vault-Token: ${{ env.VAULT_TOKEN }}" ${{ env.VAULT_ADDR }}/v1/secret/data/$SERVICE)
-            if [ "$(echo "$SECRET_JSON" | jq -r '.data')" != "null" ]; then
-              echo "$SECRET_JSON" | jq -r '.data.data | to_entries | .[] | "\(.key | ascii_upcase)=\(.value)"' >> $GITHUB_ENV
-            fi
-          done
+      - name: Ansible-Umgebung und Secrets
+        uses: ./.github/actions/ansible-env
 
       - name: Ansible Check / Dry-Run
         if: github.event_name == 'pull_request'
@@ -173,6 +128,12 @@ jobs:
         if: github.event_name == 'push'
         working-directory: ./ansible
         run: ansible-playbook -i proxmox.yml site.yml --private-key /tmp/ansible_vault_key
+
+      # Gruen heisst hier: jeder Dienst laeuft, mit Soll-Image, und antwortet.
+      - name: Verify (Dienste nach dem Deploy pruefen)
+        if: github.event_name == 'push'
+        working-directory: ./ansible
+        run: ansible-playbook -i proxmox.yml verify.yml --private-key /tmp/ansible_vault_key
 
       - name: Cleanup SSH Key
         if: always()

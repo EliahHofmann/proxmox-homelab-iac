@@ -1,0 +1,81 @@
+name: Ansible-Umgebung
+description: >-
+  Ansible + Proxmox-Collection, Secrets aus Vault (Proxmox, SSH-Key, Dienste,
+  Alarm-Mail) und SSH-Key unter /tmp/ansible_vault_key. Gemeinsam fuer
+  Deploy, Ops und Wochen-Digest.
+runs:
+  using: composite
+  steps:
+    - name: Upgrade Ansible
+      shell: bash
+      run: pip3 install --upgrade ansible-core --break-system-packages
+
+    - name: Install Ansible Proxmox Collection
+      shell: bash
+      run: ansible-galaxy collection install community.proxmox
+
+    - name: Lade Runner Systemvariablen in GitHub ENV
+      shell: bash
+      run: |
+        echo "VAULT_ADDR=$VAULT_ADDR" >> $GITHUB_ENV
+        echo "VAULT_ROLE_ID=$VAULT_ROLE_ID" >> $GITHUB_ENV
+        echo "VAULT_SECRET_ID=$VAULT_SECRET_ID" >> $GITHUB_ENV
+
+    - name: Fetch Core Secrets from Vault
+      uses: hashicorp/vault-action@v3
+      with:
+        url: ${{ env.VAULT_ADDR }}
+        method: approle
+        roleId: ${{ env.VAULT_ROLE_ID }}
+        secretId: ${{ env.VAULT_SECRET_ID }}
+        exportToken: true
+        secrets: |
+          secret/data/proxmox proxmox_api_url | PROXMOX_URL ;
+          secret/data/proxmox proxmox_api_token_id | PROXMOX_TOKEN_ID ;
+          secret/data/proxmox proxmox_api_token_secret | PROXMOX_TOKEN_SECRET ;
+          secret/data/ssh private_key | ANSIBLE_SSH_KEY_B64
+
+    - name: Set Proxmox Auth for Ansible Inventory
+      shell: bash
+      run: |
+        FULL_TOKEN="$PROXMOX_TOKEN_ID"
+        echo "PROXMOX_USER=${FULL_TOKEN%%!*}" >> $GITHUB_ENV
+        echo "PROXMOX_TOKEN_ID=${FULL_TOKEN##*!}" >> $GITHUB_ENV
+        echo "PROXMOX_URL=${PROXMOX_URL%/api2/json}" >> $GITHUB_ENV
+
+    - name: Prepare SSH Key & Fetch Service Secrets
+      shell: bash
+      run: |
+        #SSH Key entschlüsseln und ablegen
+        echo "$ANSIBLE_SSH_KEY_B64" | base64 -d > /tmp/ansible_vault_key
+        chmod 600 /tmp/ansible_vault_key
+
+        #Service Environment Variables laden
+        SERVICES=("adguard" "cloudflared" "collabora" "immich" "jellyfin" "monitoring" "nextcloud" "paperless" "traefik" "vaultwarden" "finance")
+        for SERVICE in "${SERVICES[@]}"; do
+          SECRET_JSON=$(curl -s --header "X-Vault-Token: ${{ env.VAULT_TOKEN }}" ${{ env.VAULT_ADDR }}/v1/secret/data/$SERVICE)
+          if [ "$(echo "$SECRET_JSON" | jq -r '.data')" != "null" ]; then
+            echo "$SECRET_JSON" | jq -r '.data.data | to_entries | .[] | "\(.key | ascii_upcase)=\(.value)"' >> $GITHUB_ENV
+          fi
+        done
+
+    # Fehlt secret/data/alerts noch, laeuft alles weiter - nur ohne Mail.
+    # Die Kopie in ~/.alert-smtp (0600) ist der Fallback fuer die Fehler-Mail,
+    # wenn Vault spaeter versiegelt ist.
+    - name: Alarm-Mail-Zugang laden und auf dem Runner ablegen
+      shell: bash
+      run: |
+        J=$(curl -s --header "X-Vault-Token: ${{ env.VAULT_TOKEN }}" ${{ env.VAULT_ADDR }}/v1/secret/data/alerts)
+        get() { echo "$J" | jq -r ".data.data.$1 // empty"; }
+        U=$(get smtp_user); P=$(get smtp_password); T=$(get mail_to); F=$(get smtp_fingerprint)
+        if [ -z "$U" ] || [ -z "$P" ] || [ -z "$T" ] || [ -z "$F" ]; then
+          echo "secret/data/alerts unvollstaendig - Alarm-Mails aus"; exit 0
+        fi
+        for v in "$U" "$P" "$T"; do echo "::add-mask::$v"; done
+        ( umask 077
+          printf '%s\n' "# aus Vault secret/data/alerts, verwaltet von der Pipeline" \
+            "ALERT_SMTP_HOST=192.168.178.86" "ALERT_SMTP_PORT=1025" \
+            "ALERT_SMTP_USER=$U" "ALERT_SMTP_PASSWORD=$P" "ALERT_MAIL_TO=$T" \
+            "ALERT_SMTP_FINGERPRINT=$F" > "$HOME/.alert-smtp.tmp"
+          mv "$HOME/.alert-smtp.tmp" "$HOME/.alert-smtp" )
+        echo "Alarm-Mail-Zugang aktualisiert"
