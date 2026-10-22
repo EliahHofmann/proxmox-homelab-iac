@@ -23,12 +23,12 @@ services:
       - {{ paperless_proton_data }}:/root
 
   broker:
-    image: docker.io/library/redis:8
+    image: docker.io/library/redis:8.10.2
     restart: unless-stopped
     volumes:
       - redisdata:/data
   db:
-    image: docker.io/library/postgres:15
+    image: docker.io/library/postgres:15.19
     restart: unless-stopped
     volumes:
       - dbdata:/var/lib/postgresql/data

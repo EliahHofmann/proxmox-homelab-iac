@@ -1,6 +1,6 @@
 services:
   firefly-db:
-    image: mariadb:11
+    image: mariadb:11.8.9
     container_name: firefly-db
     restart: unless-stopped
     environment:
@@ -122,7 +122,7 @@ services:
     networks: [finance-net]
 
   ntfy:
-    image: binwiederhier/ntfy:latest
+    image: binwiederhier/ntfy:v2.32.0
     container_name: ntfy
     restart: unless-stopped
     command: serve
