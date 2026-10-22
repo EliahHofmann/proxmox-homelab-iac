@@ -175,6 +175,19 @@
     - { name: "publisher", password: "{{ ntfy_publisher_password }}" }
     - { name: "{{ ntfy_reader_user }}", password: "{{ ntfy_reader_password }}" }
 
+# Vault ist die Quelle: bestehende Benutzer bekommen bei jedem Lauf das
+# Passwort aus Vault, sonst kaeme ein rotiertes Passwort nie an.
+- name: ntfy-Passwoerter aus Vault setzen
+  command: >-
+    docker exec -e NTFY_PASSWORD={{ item.password | quote }} ntfy
+    ntfy user change-pass {{ item.name | quote }}
+  changed_when: false
+  no_log: true
+  when: item.password | length > 0
+  loop:
+    - { name: "publisher", password: "{{ ntfy_publisher_password }}" }
+    - { name: "{{ ntfy_reader_user }}", password: "{{ ntfy_reader_password }}" }
+
 - name: ntfy-Zugriffsrechte auf das Finanz-Topic setzen
   command: docker exec ntfy ntfy access {{ item.name | quote }} finanzen {{ item.recht }}
   register: ntfy_access
@@ -183,6 +196,8 @@
   loop:
     - { name: "publisher", recht: "write-only", password: "{{ ntfy_publisher_password }}" }
     - { name: "{{ ntfy_reader_user }}", recht: "read-only", password: "{{ ntfy_reader_password }}" }
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: ntfy-Zugriffsrechte auf das Kommando-Topic setzen
   command: docker exec ntfy ntfy access {{ item.name | quote }} {{ ntfy_cmd_topic }} {{ item.recht }}
@@ -194,7 +209,5 @@
     - { name: "publisher", recht: "read-only", password: "{{ ntfy_publisher_password }}" }
     # read-write, damit die App das Topic abonnieren kann - beim Abonnieren liest sie.
     - { name: "{{ ntfy_reader_user }}", recht: "read-write", password: "{{ ntfy_reader_password }}" }
-  loop_control:
-    label: "{{ item.name }}"
   loop_control:
     label: "{{ item.name }}"
