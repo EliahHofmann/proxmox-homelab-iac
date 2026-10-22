@@ -1,6 +1,11 @@
 ---
+- name: Compose-Verzeichnis ist ein sauberer absoluter Pfad
+  assert:
+    that: container_health_dir is match('^/[A-Za-z0-9._/-]+$')
+    quiet: true
+
 - name: Container gesund, stabil und mit Soll-Image ({{ container_health_dir }})
-  script: container-health.sh {{ container_health_dir }} {{ container_health_wait }}
+  script: container-health.sh '{{ container_health_dir }}' '{{ container_health_wait | int }}'
   changed_when: false
   check_mode: false
 

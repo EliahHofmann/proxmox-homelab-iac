@@ -31,7 +31,10 @@ done
 want=$(docker compose config --images | sort -u)
 have=$(for c in $names; do docker inspect -f '{{.Config.Image}}' "$c"; done | sort -u)
 missing=$(comm -23 <(echo "$want") <(echo "$have"))
-[ -z "$missing" ] || { echo "FAIL: laufen nicht mit Soll-Image: $missing"; fail=1; }
+extra=$(comm -13 <(echo "$want") <(echo "$have"))
+if [ -n "$missing$extra" ]; then
+  echo "FAIL: Soll/Ist-Images weichen ab (fehlt: ${missing:-nichts} / unerwartet: ${extra:-nichts})"; fail=1
+fi
 
 [ "$fail" = 0 ] && echo "OK: $(echo $names | wc -w) Container in $dir"
 exit $fail

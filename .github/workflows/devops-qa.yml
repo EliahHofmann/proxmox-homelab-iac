@@ -44,7 +44,8 @@ jobs:
 
       # pytest kommt aus dem Debian-Paket des Runners, kein Download
       - name: Unit Tests (tools)
-        run: python3 -m pytest tools -q
+        # Tests brauchen keine Secrets: Vault-Variablen des Runners entfernen
+        run: env -u VAULT_ADDR -u VAULT_ROLE_ID -u VAULT_SECRET_ID python3 -m pytest -p no:cacheprovider tools -q
 
       - name: Trivy FS Scan (Security)
         # Feste Version statt @master. Kein actions/cache: der Runner ist

@@ -158,6 +158,8 @@
     name: unattended-upgrades
     enabled: true
     state: started
+  # Im --check wird das Paket nicht installiert, der Dienst fehlt dann noch
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Installierte Pakete ermitteln
   package_facts:

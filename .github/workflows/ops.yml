@@ -14,17 +14,18 @@ on:
         description: "Nur diese Hosts (ansible --limit), leer = alle"
         type: string
         default: ""
-      extra_vars:
-        description: "Extra-Variablen (ansible -e), z.B. throttled_pull_force=true"
-        type: string
-        default: ""
+      throttled_pull_force:
+        description: "Drossel-Test: Images auch laden, wenn sie schon da sind"
+        type: boolean
+        default: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   ops:
-    if: github.repository == 'EliahHofmann/proxmox-homelab-iac'
+    # Nur Code von main laeuft mit den Vault-Zugangsdaten
+    if: github.repository == 'EliahHofmann/proxmox-homelab-iac' && github.ref == 'refs/heads/main'
     runs-on: self-hosted
     steps:
       - name: Checkout Code
@@ -39,11 +40,12 @@ jobs:
         env:
           PLAYBOOK: ${{ inputs.playbook }}
           LIMIT: ${{ inputs.limit }}
-          EXTRA: ${{ inputs.extra_vars }}
+          FORCE: ${{ inputs.throttled_pull_force }}
         run: |
+          [[ "$LIMIT" =~ ^[A-Za-z0-9_.,:!-]*$ ]] || { echo "ungueltiges limit"; exit 1; }
           args=(-i proxmox.yml "$PLAYBOOK.yml" --private-key /tmp/ansible_vault_key)
           [ -n "$LIMIT" ] && args+=(--limit "$LIMIT")
-          [ -n "$EXTRA" ] && args+=(-e "$EXTRA")
+          [ "$FORCE" = true ] && args+=(-e throttled_pull_force=true)
           ansible-playbook "${args[@]}"
 
       - name: Cleanup SSH Key

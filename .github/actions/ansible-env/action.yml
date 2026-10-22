@@ -17,6 +17,8 @@ runs:
     - name: Lade Runner Systemvariablen in GitHub ENV
       shell: bash
       run: |
+        echo "::add-mask::$VAULT_ROLE_ID"
+        echo "::add-mask::$VAULT_SECRET_ID"
         echo "VAULT_ADDR=$VAULT_ADDR" >> $GITHUB_ENV
         echo "VAULT_ROLE_ID=$VAULT_ROLE_ID" >> $GITHUB_ENV
         echo "VAULT_SECRET_ID=$VAULT_SECRET_ID" >> $GITHUB_ENV
@@ -52,10 +54,18 @@ runs:
 
         #Service Environment Variables laden
         SERVICES=("adguard" "cloudflared" "collabora" "immich" "jellyfin" "monitoring" "nextcloud" "paperless" "traefik" "vaultwarden" "finance")
+        # Jeder Wert wird maskiert und mit zufaelligem Begrenzer geschrieben,
+        # damit ein Wert mit Zeilenumbruch keine weiteren Variablen setzt.
         for SERVICE in "${SERVICES[@]}"; do
-          SECRET_JSON=$(curl -s --header "X-Vault-Token: ${{ env.VAULT_TOKEN }}" ${{ env.VAULT_ADDR }}/v1/secret/data/$SERVICE)
+          SECRET_JSON=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/$SERVICE")
           if [ "$(echo "$SECRET_JSON" | jq -r '.data')" != "null" ]; then
-            echo "$SECRET_JSON" | jq -r '.data.data | to_entries | .[] | "\(.key | ascii_upcase)=\(.value)"' >> $GITHUB_ENV
+            while IFS= read -r KEY; do
+              VALUE=$(echo "$SECRET_JSON" | jq -r --arg k "$KEY" '.data.data[$k] | tostring')
+              # Sehr kurze Werte (z.B. "1") nicht maskieren, sonst wird das Log unlesbar
+              while IFS= read -r line; do [ ${#line} -ge 4 ] && echo "::add-mask::$line"; done <<< "$VALUE"
+              EOF_MARK="EOF_$(openssl rand -hex 12)"
+              { echo "${KEY^^}<<$EOF_MARK"; echo "$VALUE"; echo "$EOF_MARK"; } >> "$GITHUB_ENV"
+            done < <(echo "$SECRET_JSON" | jq -r '.data.data | keys[]')
           fi
         done
 
@@ -65,7 +75,7 @@ runs:
     - name: Alarm-Mail-Zugang laden und auf dem Runner ablegen
       shell: bash
       run: |
-        J=$(curl -s --header "X-Vault-Token: ${{ env.VAULT_TOKEN }}" ${{ env.VAULT_ADDR }}/v1/secret/data/alerts)
+        J=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/alerts")
         get() { echo "$J" | jq -r ".data.data.$1 // empty"; }
         U=$(get smtp_user); P=$(get smtp_password); T=$(get mail_to); F=$(get smtp_fingerprint)
         if [ -z "$U" ] || [ -z "$P" ] || [ -z "$T" ] || [ -z "$F" ]; then

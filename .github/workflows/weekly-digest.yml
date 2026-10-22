@@ -12,7 +12,8 @@ env:
 
 jobs:
   digest:
-    if: github.repository == 'EliahHofmann/proxmox-homelab-iac'
+    # Nur Code von main laeuft mit den Vault-Zugangsdaten
+    if: github.repository == 'EliahHofmann/proxmox-homelab-iac' && github.ref == 'refs/heads/main'
     runs-on: self-hosted
     steps:
       - name: Checkout Code
