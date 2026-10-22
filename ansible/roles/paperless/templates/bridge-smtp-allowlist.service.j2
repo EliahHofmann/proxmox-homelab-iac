@@ -1,0 +1,23 @@
+# Verwaltet von Ansible (paperless). Bridge-SMTP (LAN-IP:1025) nur fuer
+# alert_smtp_allowed. DOCKER-USER sieht den Port nach dem DNAT (25), deshalb
+# Abgleich ueber den urspruenglichen Zielport per conntrack. $$ = systemd-Escape.
+# Docker leert DOCKER-USER nicht, nach einem Reboot setzt diese Unit die
+# Regeln neu.
+[Unit]
+Description=Bridge-SMTP Allow-List (DOCKER-USER)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c '\
+  R="-p tcp -m conntrack --ctorigdstport 1025 --ctdir ORIGINAL"; \
+  iptables -C DOCKER-USER $$R -j DROP 2>/dev/null || iptables -I DOCKER-USER 1 $$R -j DROP; \
+{% for ip in alert_smtp_allowed %}
+  iptables -C DOCKER-USER $$R -s {{ ip }} -j RETURN 2>/dev/null || iptables -I DOCKER-USER 1 $$R -s {{ ip }} -j RETURN; \
+{% endfor %}
+  true'
+
+[Install]
+WantedBy=multi-user.target

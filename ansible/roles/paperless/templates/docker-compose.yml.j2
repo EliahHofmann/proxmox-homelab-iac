@@ -1,6 +1,8 @@
 services:
   # Proton hat kein natives IMAP -> Bridge uebersetzt fuer den Paperless-Mailimport.
-  # Kein Port-Publish: nur der webserver-Container erreicht sie unter proton-bridge:1143.
+  # IMAP nur intern: der webserver-Container erreicht sie unter proton-bridge:1143.
+  # SMTP fuer Homelab-Alarme auf LAN-IP:1025 (socat im Image lauscht auf 25),
+  # Zugriff nur von alert_smtp_allowed - siehe bridge-smtp-allowlist.service.
   # WICHTIG: ganzes /root mounten (nicht nur .config/protonmail) -> sonst geht der
   # pass-Passwortspeicher (~/.password-store) + GPG (~/.gnupg) beim Neustart verloren
   # und die Bridge meldet "no supported password manager".
@@ -19,6 +21,8 @@ services:
     expose:
       - "1143"
       - "1025"
+    ports:
+      - "{{ ansible_host }}:1025:25"
     volumes:
       - {{ paperless_proton_data }}:/root
 

@@ -63,6 +63,26 @@
     src: docker-compose.yml.j2
     dest: "{{ paperless_install_path }}/docker-compose.yml"
 
+# Vor compose up: sonst ist Port 1025 kurz fuer das ganze LAN offen.
+- name: Allow-List fuer das Bridge-SMTP bereitstellen
+  template:
+    src: bridge-smtp-allowlist.service.j2
+    dest: /etc/systemd/system/bridge-smtp-allowlist.service
+    owner: root
+    group: root
+    mode: '0644'
+  register: bridge_allowlist_unit
+
+# restarted statt started, damit neue IPs aus alert_smtp_allowed greifen
+- name: Allow-List fuer das Bridge-SMTP aktivieren
+  systemd:
+    name: bridge-smtp-allowlist
+    daemon_reload: "{{ bridge_allowlist_unit.changed }}"
+    enabled: true
+    state: "{{ 'restarted' if bridge_allowlist_unit.changed else 'started' }}"
+  # Im --check der PR-Pipeline existiert die Unit beim ersten Mal noch nicht
+  ignore_errors: "{{ ansible_check_mode }}"
+
 - name: paperless-ngx Container starten
   command: docker compose up -d --build
   args:
