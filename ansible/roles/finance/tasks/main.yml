@@ -56,6 +56,13 @@
     mode: '0640'         # nur root + Container-User, nicht world-readable
   no_log: true
 
+# Rest des PHP2Shell-Workarounds (2026-10-21), seit Firefly 6.7.9 /
+# Importer 2.3.5 mit PHP 8.5.12 ueberfluessig
+- name: Alte PHP-Haertung entfernen
+  file:
+    path: "{{ finance_install_path }}/php-hardening"
+    state: absent
+
 - name: ntfy-Serverkonfiguration generieren
   template:
     src: ntfy-server.yml.j2

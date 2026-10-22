@@ -1,5 +1,5 @@
 ---
-paperless_version: "latest"
+paperless_version: "3.3.3"
 paperless_install_path: "/opt/paperless-ngx"
 paperless_port: 8010
 paperless_proton_data: "/opt/paperless-ngx/proton-data"

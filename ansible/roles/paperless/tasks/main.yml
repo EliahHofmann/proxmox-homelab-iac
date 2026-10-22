@@ -22,12 +22,24 @@
     mode: '0755'
   loop:
     - "{{ paperless_install_path }}"
+    - "{{ paperless_install_path }}/scripts"
+    - "{{ paperless_proton_data }}"
+
+# Paperless runs as uid/gid 1000 inside the container and must be able to
+# write these mounts (e.g. media/media.lock). The host user paperless-ngx has
+# a different uid, so owning them by it breaks every consume.
+- name: paperless-ngx beschreibbare Ordner fuer den Container-User
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: '0755'
+  loop:
     - "{{ paperless_install_path }}/data"
     - "{{ paperless_install_path }}/media"
     - "{{ paperless_install_path }}/export"
     - "{{ paperless_install_path }}/consume"
-    - "{{ paperless_install_path }}/scripts"
-    - "{{ paperless_proton_data }}"
 
 - name: Python Skript (ai_tagger.py) auf den Server kopieren
   copy:

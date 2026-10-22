@@ -35,6 +35,9 @@ resource "proxmox_vm_qemu" "vms" {
 
   agent   = 1
   os_type = "cloud-init"
+  # Ohne expliziten Wert plant der Provider true -> null (VM startet nach
+  # Node-Reboot nicht mehr von selbst).
+  start_at_node_boot = true
   memory  = each.value.memory
   scsihw  = "virtio-scsi-pci"
 

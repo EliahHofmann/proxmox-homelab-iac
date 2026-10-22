@@ -8,6 +8,21 @@
   timezone:
     name: Europe/Berlin
 
+# Muss vor dem ersten apt-Aufruf liegen, sonst laedt der Lauf ungebremst.
+# Queue-Mode access: eine Verbindung statt einer pro Server, sonst gilt
+# das Limit pro Verbindung und die Summe liegt hoeher.
+- name: apt-Downloads auf 300 KB/s drosseln
+  copy:
+    dest: /etc/apt/apt.conf.d/75-dl-limit
+    content: |
+      // Download-Drossel 300 KB/s, verwaltet von Ansible (common)
+      Acquire::http::Dl-Limit "300";
+      Acquire::https::Dl-Limit "300";
+      Acquire::Queue-Mode "access";
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: Voraussetzungen für das moderne Docker-Setup installieren
   apt:
     name:
