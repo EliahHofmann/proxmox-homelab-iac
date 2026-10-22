@@ -1,0 +1,9 @@
+---
+# Compose-Verzeichnis des Dienstes (Pflicht, setzt die aufrufende Rolle)
+throttled_pull_dir: ""
+# true: auch ziehen, wenn alle Images schon da sind (Test der Drossel)
+throttled_pull_force: false
+# MB/s, wie die Drossel aus den Update-Skripten vom 2026-10-22
+throttled_pull_rate: "0.3"
+throttled_pull_api: "{{ lookup('env', 'PROXMOX_URL') }}/api2/json/nodes/{{ proxmox_node }}/{{ proxmox_vmtype }}/{{ proxmox_vmid }}/config"
+throttled_pull_auth: "PVEAPIToken={{ lookup('env', 'PROXMOX_USER') }}!{{ lookup('env', 'PROXMOX_TOKEN_ID') }}={{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"

@@ -83,7 +83,14 @@
   # Im --check der PR-Pipeline existiert die Unit beim ersten Mal noch nicht
   ignore_errors: "{{ ansible_check_mode }}"
 
+# Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
+- name: Neue Images gedrosselt laden
+  include_role:
+    name: throttled_pull
+  vars:
+    throttled_pull_dir: "{{ paperless_install_path }}"
+
 - name: paperless-ngx Container starten
-  command: docker compose up -d --build
+  command: docker compose up -d --pull never --build
   args:
     chdir: "{{ paperless_install_path }}"
