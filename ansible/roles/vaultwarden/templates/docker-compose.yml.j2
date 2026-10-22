@@ -5,7 +5,8 @@ services:
         restart: always
         environment:
             - WEBSOCKET_ENABLED=true
-            - ADMIN_TOKEN={{ ADMIN_TOKEN }}
+            # Argon2-Hash enthaelt $, Compose wuerde ihn sonst als Variable lesen
+            - ADMIN_TOKEN={{ ADMIN_TOKEN | replace('$', '$$') }}
         volumes:
             - ./vw-data:/data
         ports:
