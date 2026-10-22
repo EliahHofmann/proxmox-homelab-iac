@@ -161,9 +161,10 @@
 # "user add" meldet bei vorhandenem Benutzer einen Fehler - das ist der
 # Normalfall bei jedem weiteren Lauf und wird abgefangen.
 - name: ntfy-Benutzer anlegen
-  command: >-
-    docker exec -e NTFY_PASSWORD={{ item.password | quote }} ntfy
-    ntfy user add --role=user {{ item.name | quote }}
+  # Passwort nur ueber die Umgebung, nicht als Argument (sonst in ps sichtbar)
+  command: docker exec -e NTFY_PASSWORD ntfy ntfy user add --role=user {{ item.name | quote }}
+  environment:
+    NTFY_PASSWORD: "{{ item.password }}"
   register: ntfy_user_add
   changed_when: "'added' in (ntfy_user_add.stdout | lower)"
   failed_when:
@@ -178,9 +179,10 @@
 # Vault ist die Quelle: bestehende Benutzer bekommen bei jedem Lauf das
 # Passwort aus Vault, sonst kaeme ein rotiertes Passwort nie an.
 - name: ntfy-Passwoerter aus Vault setzen
-  command: >-
-    docker exec -e NTFY_PASSWORD={{ item.password | quote }} ntfy
-    ntfy user change-pass {{ item.name | quote }}
+  # Passwort nur ueber die Umgebung, nicht als Argument (sonst in ps sichtbar)
+  command: docker exec -e NTFY_PASSWORD ntfy ntfy user change-pass {{ item.name | quote }}
+  environment:
+    NTFY_PASSWORD: "{{ item.password }}"
   changed_when: false
   no_log: true
   when: item.password | length > 0
