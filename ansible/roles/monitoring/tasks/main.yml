@@ -74,3 +74,13 @@
 - name: Proxmox-Exporter neu starten, wenn sich seine Config geaendert hat
   command: docker restart pve-exporter
   when: pve_config is changed
+
+# GF_SECURITY_ADMIN_PASSWORD gilt nur beim ersten Start. Damit ein rotiertes
+# Passwort aus Vault ankommt, wird es bei jedem Lauf gesetzt (ueber stdin).
+- name: Grafana-Admin-Passwort aus Vault setzen
+  command: docker exec -i grafana grafana cli admin reset-admin-password --password-from-stdin
+  args:
+    stdin: "{{ grafana_admin_password }}"
+  changed_when: false
+  no_log: true
+  when: grafana_admin_password | length > 0
