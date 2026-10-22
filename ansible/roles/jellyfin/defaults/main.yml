@@ -1,5 +1,5 @@
 ---
-jellyfin_version: "12.1"
+jellyfin_version: "12.2"
 halcyon_version: "0.20.2"
 halcyon_image: "halcyon-video:{{ halcyon_version }}-ad72565"
 halcyon_watch_region: "DE"

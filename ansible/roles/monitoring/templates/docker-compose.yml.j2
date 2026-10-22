@@ -4,7 +4,7 @@ networks:
 
 services:
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.7.9
     container_name: loki
     ports:
       - "{{ loki_port }}:3100"
@@ -16,7 +16,7 @@ services:
       - monitoring          
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.15.1
     container_name: prometheus
     ports:
       - "{{ prometheus_port }}:9090"
@@ -33,7 +33,7 @@ services:
       - pve-exporter              
 
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.12.1
     container_name: node-exporter
     restart: unless-stopped
     ports:
@@ -52,7 +52,7 @@ services:
 
 
   pve-exporter:
-    image: prompve/prometheus-pve-exporter:latest 
+    image: prompve/prometheus-pve-exporter:3.10.1
     container_name: pve-exporter
     restart: unless-stopped
     ports:
@@ -64,7 +64,7 @@ services:
 
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.2.4
     container_name: grafana
     ports:
       - "{{ grafana_port }}:3000"
