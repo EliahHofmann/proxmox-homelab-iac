@@ -36,6 +36,7 @@
   template:
     src: pve.yml.j2
     dest: "{{ monitoring_install_path }}/pve.yml"
+  register: pve_config
 
 - name: Grafana-Provisioning + Dashboards (Datasources, Finance-Dashboard) bereitstellen
   copy:
@@ -68,3 +69,8 @@
 - name: Prometheus neu starten, wenn sich die Scrape-Config geaendert hat
   command: docker restart prometheus
   when: prometheus_config is changed
+
+# Gleiches Inode-Problem: ohne Neustart liest der Exporter weiter den alten Token
+- name: Proxmox-Exporter neu starten, wenn sich seine Config geaendert hat
+  command: docker restart pve-exporter
+  when: pve_config is changed
