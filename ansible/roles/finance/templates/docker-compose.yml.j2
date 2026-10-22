@@ -13,7 +13,7 @@ services:
     networks: [finance-net]
 
   firefly-iii:
-    image: fireflyiii/core:version-6
+    image: fireflyiii/core:version-6.7.9   # PHP 8.5.12, PHP2Shell gefixt
     container_name: firefly-iii
     restart: unless-stopped
     depends_on: [firefly-db]
@@ -38,7 +38,7 @@ services:
     networks: [finance-net]
 
   firefly-importer:
-    image: fireflyiii/data-importer:version-2   # Enable Banking erst ab v2.1.0
+    image: fireflyiii/data-importer:version-2.3.5   # Enable Banking erst ab v2.1.0; PHP 8.5.12
     container_name: firefly-importer
     restart: unless-stopped
     depends_on: [firefly-iii]
