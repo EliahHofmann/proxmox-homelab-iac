@@ -1,0 +1,8 @@
+---
+# Compose-Verzeichnis des Dienstes (Pflicht)
+container_health_dir: ""
+# Sekunden, die ein Container nach dem Deploy bis healthy brauchen darf
+container_health_wait: 360
+# Proxmox-Cluster-CA (oeffentliches Zertifikat); die Node-Zertifikate tragen
+# die LAN-IPs als SAN, die API wird also voll geprueft.
+proxmox_ca_path: "{{ playbook_dir }}/files/pve-root-ca.pem"

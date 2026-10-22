@@ -31,25 +31,25 @@
       - gnupg
     state: present
     update_cache: yes
+    cache_valid_time: 86400
 
 #große Hilfe von Reddit: https://www.reddit.com/r/ansible/comments/163x5iy/installing_docker_on_debian_12/
 
 - name: Alte Docker-Repository-Dateien und veraltete Einträge bereinigen
   block:
+    # docker.list bleibt stehen: der Copy-Task unten setzt ihren Inhalt.
+    # Frueher wurde sie hier jedes Mal geloescht und samt apt-Listen neu
+    # geladen - bei naechtlichen Deploys unnoetiger Download.
     - name: Remove all old Docker lines from any sources file
-      shell: find /etc/apt -name "*.list" -o -name "*.sources" | xargs sed -i '/download\.docker\.com/d' || true
+      shell: find /etc/apt \( -name "*.list" -o -name "*.sources" \) ! -path /etc/apt/sources.list.d/docker.list | xargs sed -i '/download\.docker\.com/d' || true
       changed_when: false
     - name: Remove old Docker repo files
       file:
         path: "{{ item }}"
         state: absent
       loop:
-        - /etc/apt/sources.list.d/docker.list
         - /etc/apt/sources.list.d/docker.sources
         - /etc/apt/sources.list.d/docker
-    - name: Clear stale apt cache
-      command: rm -rf /var/lib/apt/lists/*
-      changed_when: false
 
 - name: Prüfen, ob der Docker-Schlüssel bereits existiert
   stat:
@@ -89,6 +89,7 @@
     dest: /etc/apt/sources.list.d/docker.list
     content: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable\n"
     mode: '0644'
+  register: docker_repo
 
 - name: Installiere Docker, Compose und Basis
   apt:
@@ -100,6 +101,8 @@
       - docker-compose-plugin
     state: present
     update_cache: yes
+    # Neues Repo -> Listen sofort neu laden, sonst reicht einmal am Tag
+    cache_valid_time: "{{ 0 if docker_repo.changed else 86400 }}"
 
 - name: Prüfen, ob das Loki Docker Plugin bereits installiert ist
   command: docker plugin ls
@@ -130,26 +133,42 @@
     state: restarted
   when: docker_daemon_config.changed
 
-- name: System-Update und Upgrade
+# OS-Updates laufen nur noch ueber unattended-upgrades (nur Debian-Security,
+# kein Auto-Reboot). Frueher machte jeder Deploy dist-upgrade + Reboot - mit
+# naechtlichen Auto-Deploys haette das z.B. Vault neu gestartet (= versiegelt,
+# danach scheitert jeder Deploy).
+- name: unattended-upgrades installieren
   apt:
-    update_cache: yes
-    upgrade: dist
-    autoremove: yes
-    dpkg_options: 'force-confdef,force-confold'
-  environment:
-    DEBIAN_FRONTEND: noninteractive
-    APT_LISTCHANGES_FRONTEND: none
+    name: unattended-upgrades
+    state: present
 
-- name: Prüfen, ob ein Neustart erforderlich ist
-  stat:
-    path: /var/run/reboot-required
-  register: reboot_required_file
+- name: unattended-upgrades konfigurieren
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/apt/apt.conf.d/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - 20auto-upgrades
+    - 52unattended-upgrades-local
 
-- name: Server neu starten, falls nötig
-  reboot:
-    msg: "Reboot initiiert durch Ansible wegen eines erforderlichen Neustart"
-    connect_timeout: 5
-    reboot_timeout: 300
-    pre_reboot_delay: 0
-    post_reboot_delay: 30
-  when: reboot_required_file.stat.exists
+- name: unattended-upgrades aktivieren
+  service:
+    name: unattended-upgrades
+    enabled: true
+    state: started
+  # Im --check wird das Paket nicht installiert, der Dienst fehlt dann noch
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Installierte Pakete ermitteln
+  package_facts:
+
+# Ein Vault-Upgrade startet den Dienst neu -> versiegelt -> kein Deploy mehr.
+# Debian-Security fasst das HashiCorp-Repo zwar nicht an; der Hold sichert
+# auch gegen ein versehentliches apt upgrade.
+- name: Vault-Paket festhalten
+  dpkg_selections:
+    name: vault
+    selection: hold
+  when: "'vault' in ansible_facts.packages"

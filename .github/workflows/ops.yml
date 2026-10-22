@@ -1,0 +1,53 @@
+name: Ops (manuell)
+
+# Von Hand starten (nur wer Schreibrechte am Repo hat): Dienste pruefen,
+# Wochen-Digest ziehen oder site.yml gezielt fuer einzelne Hosts laufen lassen.
+on:
+  workflow_dispatch:
+    inputs:
+      playbook:
+        description: Playbook
+        type: choice
+        options: [verify, digest, site]
+        default: verify
+      limit:
+        description: "Nur diese Hosts (ansible --limit), leer = alle"
+        type: string
+        default: ""
+      throttled_pull_force:
+        description: "Drossel-Test: Images auch laden, wenn sie schon da sind"
+        type: boolean
+        default: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  ops:
+    # Nur Code von main laeuft mit den Vault-Zugangsdaten
+    if: github.repository == 'EliahHofmann/proxmox-homelab-iac' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Ansible-Umgebung und Secrets
+        uses: ./.github/actions/ansible-env
+
+      # Eingaben nur ueber env, nie direkt in das Skript einsetzen (Injection)
+      - name: Playbook ausfuehren
+        working-directory: ./ansible
+        env:
+          PLAYBOOK: ${{ inputs.playbook }}
+          LIMIT: ${{ inputs.limit }}
+          FORCE: ${{ inputs.throttled_pull_force }}
+        run: |
+          [[ "$LIMIT" =~ ^[A-Za-z0-9_.,:!-]*$ ]] || { echo "ungueltiges limit"; exit 1; }
+          args=(-i proxmox.yml "$PLAYBOOK.yml" --private-key /tmp/ansible_vault_key)
+          [ -n "$LIMIT" ] && args+=(--limit "$LIMIT")
+          [ "$FORCE" = true ] && args+=(-e throttled_pull_force=true)
+          ansible-playbook "${args[@]}"
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: rm -f /tmp/ansible_vault_key

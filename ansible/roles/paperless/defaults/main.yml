@@ -3,6 +3,10 @@ paperless_version: "3.3.3"
 paperless_install_path: "/opt/paperless-ngx"
 paperless_port: 8010
 paperless_proton_data: "/opt/paperless-ngx/proton-data"
+# Wer die Bridge als SMTP-Relay fuer Alarme nutzen darf (Monitoring, Runner)
+alert_smtp_allowed:
+  - "192.168.178.60"
+  - "192.168.178.61"
 PAPERLESS_DBPASS: "{{ lookup('env', 'PAPERLESS_DBPASS') }}"
 PAPERLESS_SECRET_KEY: "{{ lookup('env', 'PAPERLESS_SECRET_KEY') }}"
 PAPERLESS_ADMIN_USER: "{{ lookup('env', 'PAPERLESS_ADMIN_USER') }}"

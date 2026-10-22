@@ -12,7 +12,14 @@
     mode: '0644'
       
 
+# Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
+- name: Neue Images gedrosselt laden
+  include_role:
+    name: throttled_pull
+  vars:
+    throttled_pull_dir: "{{ collabora_install_path }}"
+
 - name: Container starten
-  command: docker compose up -d
+  command: docker compose up -d --pull never
   args:
     chdir: '{{ collabora_install_path }}'

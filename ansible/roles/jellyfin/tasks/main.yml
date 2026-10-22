@@ -15,7 +15,14 @@
     src: docker-compose.yml.j2
     dest: "{{ jellyfin_install_path }}/docker-compose.yml"
 
+# Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
+- name: Neue Images gedrosselt laden
+  include_role:
+    name: throttled_pull
+  vars:
+    throttled_pull_dir: "{{ jellyfin_install_path }}"
+
 - name: Jellyfin Container starten
-  command: docker compose up -d
+  command: docker compose up -d --pull never
   args:
     chdir: "{{ jellyfin_install_path }}"

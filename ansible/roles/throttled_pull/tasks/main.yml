@@ -1,0 +1,105 @@
+---
+# Zieht neue Images nur mit gedrosselter Netzwerkkarte des Gastes (Proxmox
+# net0 rate=...), damit ein Update nicht die ganze Leitung belegt. Die Drossel
+# wird in jedem Fall wieder entfernt (always). Laesst sich die Drossel nicht
+# setzen, scheitert der Host, BEVOR etwas geladen wird.
+- name: Compose-Konfiguration lesen
+  command: docker compose config --format json
+  args:
+    chdir: "{{ throttled_pull_dir }}"
+  register: throttled_pull_cfg
+  changed_when: false
+  check_mode: false
+
+# Selbst gebaute Images (build: oder pull_policy never/build, z.B. Halcyon)
+# kommen nicht aus einer Registry
+- name: Dienste mit Registry-Image bestimmen
+  set_fact:
+    throttled_pull_services: >-
+      {{ (throttled_pull_cfg.stdout | from_json).services | dict2items
+         | rejectattr('value.build', 'defined')
+         | selectattr('value.image', 'defined')
+         | rejectattr('value.pull_policy', 'defined')
+         | list
+         + ((throttled_pull_cfg.stdout | from_json).services | dict2items
+            | rejectattr('value.build', 'defined')
+            | selectattr('value.image', 'defined')
+            | selectattr('value.pull_policy', 'defined')
+            | rejectattr('value.pull_policy', 'in', ['never', 'build'])
+            | list) }}
+
+- name: Pruefen, welche Images lokal fehlen
+  command: docker image inspect {{ item.value.image }}
+  loop: "{{ throttled_pull_services }}"
+  loop_control:
+    label: "{{ item.value.image }}"
+  register: throttled_pull_inspect
+  failed_when: false
+  changed_when: false
+  check_mode: false
+
+- name: Zu ladende Dienste festlegen
+  set_fact:
+    throttled_pull_todo: >-
+      {{ throttled_pull_inspect.results
+         | selectattr('rc', 'ne', 0) | map(attribute='item.key') | list
+         if not (throttled_pull_force | bool)
+         else throttled_pull_services | map(attribute='key') | list }}
+
+- name: Gedrosselt laden
+  when: throttled_pull_todo | length > 0
+  block:
+    - name: Netzwerk-Konfiguration des Gastes lesen
+      uri:
+        url: "{{ throttled_pull_api }}"
+        headers:
+          Authorization: "{{ throttled_pull_auth }}"
+        validate_certs: true
+        ca_path: "{{ proxmox_ca_path }}"
+      register: throttled_pull_conf
+      delegate_to: localhost
+      become: false
+      no_log: true
+      check_mode: false
+
+    - name: Urspruengliche net0 merken (ohne alte Drossel)
+      set_fact:
+        throttled_pull_net0: "{{ throttled_pull_conf.json.data.net0 | regex_replace(',rate=[0-9.]+', '') }}"
+      no_log: true
+
+    - name: Drossel setzen und laden
+      block:
+        - name: Netzwerkkarte auf {{ throttled_pull_rate }} MB/s drosseln
+          uri:
+            url: "{{ throttled_pull_api }}"
+            method: PUT
+            headers:
+              Authorization: "{{ throttled_pull_auth }}"
+            body_format: form-urlencoded
+            body:
+              net0: "{{ throttled_pull_net0 }},rate={{ throttled_pull_rate }}"
+            validate_certs: true
+            ca_path: "{{ proxmox_ca_path }}"
+          delegate_to: localhost
+          become: false
+          no_log: true
+
+        - name: Images laden ({{ throttled_pull_todo | join(', ') }})
+          command: docker compose pull --quiet {{ throttled_pull_todo | join(' ') }}
+          args:
+            chdir: "{{ throttled_pull_dir }}"
+      always:
+        - name: Drossel entfernen
+          uri:
+            url: "{{ throttled_pull_api }}"
+            method: PUT
+            headers:
+              Authorization: "{{ throttled_pull_auth }}"
+            body_format: form-urlencoded
+            body:
+              net0: "{{ throttled_pull_net0 }}"
+            validate_certs: true
+            ca_path: "{{ proxmox_ca_path }}"
+          delegate_to: localhost
+          become: false
+          no_log: true

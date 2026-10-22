@@ -1,0 +1,13 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Container pruefen
+  include_role:
+    name: container_health
+  vars:
+    container_health_dir: "{{ docker_dest }}"
+
+- name: Traefik antwortet
+  uri:
+    url: http://localhost/
+    follow_redirects: none
+    status_code: [200, 301, 302, 308, 404]

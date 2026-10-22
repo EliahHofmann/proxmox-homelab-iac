@@ -1,0 +1,7 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Container pruefen
+  include_role:
+    name: container_health
+  vars:
+    container_health_dir: "{{ collabora_install_path }}"

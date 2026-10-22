@@ -1,0 +1,11 @@
+// Verwaltet von Ansible (common). Nur Debian-Security, kein Auto-Reboot.
+// Docker-, HashiCorp- und andere Fremd-Repos bleiben aussen vor; die meldet
+// der Wochen-Digest. Die Download-Drossel kommt aus 75-dl-limit.
+// #clear: apt haengt Listen sonst an die aus 50unattended-upgrades an
+#clear Unattended-Upgrade::Origins-Pattern;
+Unattended-Upgrade::Origins-Pattern {
+        "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+        "origin=Debian,codename=${distro_codename},label=Debian-Security";
+};
+Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Remove-Unused-Dependencies "false";
