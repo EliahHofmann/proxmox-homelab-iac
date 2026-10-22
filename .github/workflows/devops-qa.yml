@@ -42,6 +42,10 @@ jobs:
           pipx install ansible-lint
           ~/.local/bin/ansible-lint .
 
+      # pytest kommt aus dem Debian-Paket des Runners, kein Download
+      - name: Unit Tests (tools)
+        run: python3 -m pytest tools -q
+
       - name: Trivy FS Scan (Security)
         # Feste Version statt @master. Kein actions/cache: der Runner ist
         # self-hosted, die DB bleibt in seinem Home liegen. Der Cache-Upload
@@ -138,3 +142,30 @@ jobs:
       - name: Cleanup SSH Key
         if: always()
         run: rm -f /tmp/ansible_vault_key
+
+  # STUFE 4: ALARM - jeder rote Deploy auf main schickt eine Mail. GitHubs
+  # eigene Fehler-Mail ginge bei Renovate-Automerges an den Bot, nicht an uns.
+  # Liest nur ~/.alert-smtp, kein Vault: funktioniert auch versiegelt.
+  notify-failure:
+    needs: [qa-checks, terraform-deploy, ansible-deploy]
+    if: failure() && github.event_name == 'push'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Mail senden
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          {
+            echo "Der Deploy auf main ist fehlgeschlagen."
+            echo
+            echo "Commit: ${SHA:0:7}"
+            echo "$COMMIT_MSG" | head -n 1
+            echo
+            echo "Lauf: $RUN_URL"
+          } > /tmp/deploy-rot.txt
+          python3 tools/notify/send_mail.py --subject "Deploy rot: ${SHA:0:7}" --body-file /tmp/deploy-rot.txt
