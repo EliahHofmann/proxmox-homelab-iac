@@ -17,6 +17,7 @@ GRENZE_EINZELBUCHUNG = 150.0     # EUR
 KATEGORIE_TOLERANZ = 1.5         # 50 % ueber dem Vormonat
 GIRO_MINIMUM = 100.0             # EUR
 ABO_TOLERANZ = 1.05              # 5 % teurer zaehlt als Erhoehung
+SYNC_MAX_TAGE = 5                # so lange darf das Giro ohne neue Bankbuchung sein
 STATE_DATEI = os.environ.get("ALARM_STATE", "/opt/finance-stack/metrics-state/alarme.json")
 
 
@@ -96,6 +97,39 @@ def konto_knapp(saldo, minimum=GIRO_MINIMUM, heute=None):
     return [(f"knapp:{monat}", f"Girokonto: nur noch {saldo:.2f} EUR")]
 
 
+def neuestes_bankdatum(antwort):
+    """Datum der neuesten Buchung, die von der Bank importiert wurde.
+
+    antwort: JSON von /accounts/{id}/transactions (neueste zuerst).
+    Manuelle Buchungen haben keine external_id, Belege aus Paperless eine
+    mit "paperless_" - beide sagen nichts darueber, ob der Bank-Sync laeuft.
+    """
+    daten = []
+    for gruppe in antwort.get("data", []):
+        for t in gruppe["attributes"]["transactions"]:
+            ext = t.get("external_id") or ""
+            if ext and not ext.startswith("paperless_"):
+                daten.append(datetime.date.fromisoformat(t["date"][:10]))
+    return max(daten) if daten else None
+
+
+def sync_veraltet(letzte, heute, max_tage=SYNC_MAX_TAGE):
+    """Meldet, wenn der Bank-Import seit max_tage nichts mehr geliefert hat.
+
+    Der Importer meldet auch bei abgelaufener Bank-Zustimmung "Erfolg", deshalb
+    wird hier das Ergebnis geprueft. Schluessel mit Datum: taeglich erneut.
+    """
+    schluessel = f"sync:{heute.isoformat()}"
+    hinweis = "Vermutlich ist die Bank-Zustimmung abgelaufen - im Importer neu verbinden."
+    if letzte is None:
+        return [(schluessel, f"Keine Bankbuchung auf dem Giro gefunden. {hinweis}")]
+    tage = (heute - letzte).days
+    if tage <= max_tage:
+        return []
+    return [(schluessel, f"Seit {tage} Tagen keine neue Bankbuchung "
+                         f"(letzte: {letzte.isoformat()}). {hinweis}")]
+
+
 # ---------- Zusammenbau ----------
 def baue_meldung(gruppen, gemeldet):
     """gruppen: [(ueberschrift, [(schluessel, text)])] -> (text, neue_schluessel).
@@ -119,6 +153,21 @@ def baue_meldung(gruppen, gemeldet):
 
 
 # ---------- Ablauf ----------
+def fetch_giro_bankdatum(base, token, konto="Sparkasse Giro"):
+    import requests
+    h = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+    r = requests.get(f"{base.rstrip('/')}/api/v1/accounts", params={"type": "asset"},
+                     headers=h, timeout=60)
+    r.raise_for_status()
+    konto_id = next((a["id"] for a in r.json()["data"] if a["attributes"]["name"] == konto), None)
+    if konto_id is None:
+        return None
+    r = requests.get(f"{base.rstrip('/')}/api/v1/accounts/{konto_id}/transactions",
+                     params={"limit": 50}, headers=h, timeout=60)
+    r.raise_for_status()
+    return neuestes_bankdatum(r.json())
+
+
 def _empfaenger_summen(posten):
     """[(datum, beschreibung, betrag, kategorie)] -> {beschreibung: groesster Betrag}.
 
@@ -152,6 +201,7 @@ def run(heute=None):
         giro = next((b for n, b in konten if n == "Sparkasse Giro"), None)
 
         gruppen = [
+            ("Bank-Sync:", sync_veraltet(fetch_giro_bankdatum(base, pat), heute)),
             ("Auffaellige Buchungen:",
              hohe_einzelbuchungen([(f"{d}-{b}-{be:.2f}", d, b, be) for d, b, be, _k in posten])),
             ("Kategorien ueber Vormonat:",

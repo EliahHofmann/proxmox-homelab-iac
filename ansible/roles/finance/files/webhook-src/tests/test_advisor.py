@@ -201,3 +201,19 @@ def test_build_report_vormonats_sparquote():
 def test_build_report_ohne_vormonats_einnahmen_ist_none():
     r = build_report_json({"Lebensmittel": 250.0}, {}, "2026-07", einnahmen=1000.0)
     assert r["sparquote_vormonat_prozent"] is None
+
+
+def test_send_ntfy_nimmt_eigenen_titel(monkeypatch):
+    gesendet = {}
+
+    class Antwort:
+        def raise_for_status(self):
+            pass
+
+    def fake_post(url, data, headers, timeout):
+        gesendet.update(headers)
+        return Antwort()
+
+    monkeypatch.setattr(advisor.requests, "post", fake_post)
+    advisor.send_ntfy("x", "http://ntfy/finanzen", user="u", password="p", title="Bank-Sync")
+    assert gesendet["Title"] == "Bank-Sync"
