@@ -96,6 +96,7 @@ def test_every_version_default_has_renovate_comment():
 EXPECTED = {
     ("grafana/loki", "3.7.9"),
     ("prom/prometheus", "v3.15.1"),
+    ("prom/alertmanager", "v0.34.1"),
     ("prom/node-exporter", "v1.12.1"),
     ("prompve/prometheus-pve-exporter", "3.10.1"),
     ("grafana/grafana", "13.2.4"),
