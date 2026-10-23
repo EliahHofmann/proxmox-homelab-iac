@@ -93,3 +93,43 @@ def test_alarm_job_ist_in_den_metriken_registriert():
     # Ohne Eintrag in JOB_SPECS bricht der Job beim Start mit KeyError ab.
     from metrics import JOB_SPECS
     assert "alarme" in JOB_SPECS
+
+
+# ---------- Bank-Sync ----------
+def _gruppe(datum, external_id):
+    return {"attributes": {"transactions": [{"date": f"{datum}T00:00:00+02:00",
+                                              "external_id": external_id}]}}
+
+
+def test_neuestes_bankdatum_ignoriert_manuelle_und_paperless_buchungen():
+    antwort = {"data": [_gruppe("2020-03-09", None),
+                        _gruppe("2020-03-08", "paperless_12"),
+                        _gruppe("2020-03-05", "abc-111"),
+                        _gruppe("2020-03-01", "abc-222")]}
+    assert alarme.neuestes_bankdatum(antwort) == datetime.date(2020, 3, 5)
+
+
+def test_neuestes_bankdatum_ohne_bankbuchung_ist_none():
+    assert alarme.neuestes_bankdatum({"data": [_gruppe("2020-03-09", None)]}) is None
+
+
+def test_veralteter_sync_wird_gemeldet():
+    heute = datetime.date(2020, 3, 20)
+    treffer = alarme.sync_veraltet(datetime.date(2020, 3, 8), heute)
+    assert len(treffer) == 1
+    schluessel, text = treffer[0]
+    assert "12 Tagen" in text
+    assert "2020-03-08" in text
+    # Schluessel mit Datum: solange der Sync steht, kommt die Meldung taeglich
+    assert schluessel == "sync:2020-03-20"
+
+
+def test_aktueller_sync_bleibt_still():
+    heute = datetime.date(2020, 3, 20)
+    assert alarme.sync_veraltet(datetime.date(2020, 3, 16), heute) == []
+
+
+def test_sync_ohne_jede_bankbuchung_wird_gemeldet():
+    treffer = alarme.sync_veraltet(None, datetime.date(2020, 3, 20))
+    assert len(treffer) == 1
+    assert "keine" in treffer[0][1].lower()

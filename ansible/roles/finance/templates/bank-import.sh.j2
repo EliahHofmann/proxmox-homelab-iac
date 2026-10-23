@@ -35,11 +35,15 @@ if [ "$rc" -ne 0 ] || [ "$http_code" -ge 400 ]; then
     5*)  hint="Importer-Fehler - evtl. Enable-Banking-Reconsent (90 Tage)" ;;
     *)   hint="unbekannter Fehler" ;;
   esac
-  curl -sS -o /dev/null \
-    -H 'Title: Bank-Sync fehlgeschlagen' \
-    -H 'Tags: warning' \
-    -d "Bank-Import fehlgeschlagen (rc=$rc, http=$http_code): $hint" \
-    "http://{{ finance_host_ip }}:8082/finanzen" || true
+  # ntfy steht auf deny-all: ohne Anmeldung kommt nichts an (403). Deshalb
+  # ueber send_ntfy im Webhook, der die Publisher-Zugangsdaten hat.
+  docker exec finance-webhook python -c '
+import os, sys
+from advisor import send_ntfy
+send_ntfy(sys.argv[1], os.environ["NTFY_URL"], os.environ.get("NTFY_TOKEN", ""),
+          os.environ.get("NTFY_USER", ""), os.environ.get("NTFY_PASSWORD", ""),
+          title="Bank-Sync fehlgeschlagen")
+' "Bank-Import fehlgeschlagen (rc=$rc, http=$http_code): $hint" >/dev/null 2>&1 || true
 else
   record success
 fi
