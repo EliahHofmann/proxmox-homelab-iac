@@ -1,20 +1,33 @@
 ---
+# Im --check braucht das apt-Modul python3-apt (fehlt z.B. auf der Nextcloud-
+# Appliance). Im echten Lauf installiert Ansible es selbst nach.
+- name: Ist python3-apt vorhanden?
+  ansible.builtin.command: dpkg -s python3-apt
+  register: node_exporter_python_apt
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: yes
     cache_valid_time: 3600
+  when: not ansible_check_mode or node_exporter_python_apt.rc == 0
 
 - name: Install prometheus-node-exporter
   ansible.builtin.apt:
     name: prometheus-node-exporter
     state: present
+  when: not ansible_check_mode or node_exporter_python_apt.rc == 0
 
+# Im --check ist das Paket nur simuliert, den Dienst gibt es dann noch nicht
 - name: Ensure prometheus-node-exporter is enabled and started
   ansible.builtin.systemd:
     name: prometheus-node-exporter
     enabled: true
     state: started
     daemon_reload: true
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Dienste erfassen (fuer die ufw-Pruefung)
   ansible.builtin.service_facts:
