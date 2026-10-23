@@ -52,6 +52,22 @@ services:
       - monitoring               
 
 
+  alertmanager:
+    image: prom/alertmanager:v0.34.1
+    container_name: alertmanager
+    restart: unless-stopped
+    # Nur lokal: Alertmanager hat keine Anmeldung. Prometheus erreicht ihn im Docker-Netz.
+    ports:
+      - "127.0.0.1:9093:9093"
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - '{{ monitoring_install_path }}/alertmanager:/etc/alertmanager:ro'
+      - '{{ monitoring_install_path }}/alertmanager-data:/alertmanager'
+    networks:
+      - monitoring
+
   pve-exporter:
     image: prompve/prometheus-pve-exporter:3.10.1
     container_name: pve-exporter

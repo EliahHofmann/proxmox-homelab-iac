@@ -222,3 +222,15 @@
     - { name: "{{ ntfy_reader_user }}", recht: "read-write", password: "{{ ntfy_reader_password }}" }
   loop_control:
     label: "{{ item.name }}"
+
+# Homelab-Alarme vom Alertmanager (Monitoring-VM): Publisher schreibt, die App liest.
+- name: ntfy-Zugriffsrechte auf das Alarm-Topic setzen
+  command: docker exec ntfy ntfy access {{ item.name | quote }} homelab-alarme {{ item.recht }}
+  register: ntfy_access_alarm
+  changed_when: ntfy_access_alarm.rc == 0
+  when: item.password | length > 0
+  loop:
+    - { name: "publisher", recht: "write-only", password: "{{ ntfy_publisher_password }}" }
+    - { name: "{{ ntfy_reader_user }}", recht: "read-only", password: "{{ ntfy_reader_password }}" }
+  loop_control:
+    label: "{{ item.name }}"

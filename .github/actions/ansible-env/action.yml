@@ -53,7 +53,7 @@ runs:
         chmod 600 /tmp/ansible_vault_key
 
         #Service Environment Variables laden
-        SERVICES=("adguard" "cloudflared" "collabora" "immich" "jellyfin" "monitoring" "nextcloud" "paperless" "traefik" "vaultwarden" "finance")
+        SERVICES=("adguard" "cloudflared" "collabora" "immich" "jellyfin" "monitoring" "nextcloud" "paperless" "traefik" "vaultwarden" "finance" "alerts")
         # Jeder Wert wird maskiert und mit zufaelligem Begrenzer geschrieben,
         # damit ein Wert mit Zeilenumbruch keine weiteren Variablen setzt.
         for SERVICE in "${SERVICES[@]}"; do

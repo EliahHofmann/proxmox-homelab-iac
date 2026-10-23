@@ -1,0 +1,41 @@
+# Alertmanager: jede Meldung per Mail ueber die Proton Bridge, kritische
+# zusaetzlich als ntfy-Push. Passwoerter liegen in eigenen 0600-Dateien.
+global:
+  smtp_smarthost: '192.168.178.86:1025'
+  smtp_from: '{{ alert_smtp_user }}'
+  smtp_auth_username: '{{ alert_smtp_user }}'
+  smtp_auth_password_file: /etc/alertmanager/secrets/smtp_password
+  smtp_require_tls: true
+
+route:
+  receiver: mail
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - receiver: ntfy
+      matchers: ['severity="critical"']
+      continue: true
+    - receiver: mail
+
+receivers:
+  - name: mail
+    email_configs:
+      - to: '{{ alert_mail_to }}'
+        send_resolved: true
+        # Nur genau dem Bridge-Zertifikat vertrauen (selbstsigniert, CN/SAN 127.0.0.1)
+        tls_config:
+          ca_file: /etc/alertmanager/proton-bridge-ca.pem
+          server_name: '127.0.0.1'
+        headers:
+          Subject: '{% raw %}[homelab] {{ if eq .Status "firing" }}ALARM{{ else }}behoben{{ end }}: {{ .CommonLabels.alertname }}{{ with .CommonAnnotations.summary }} - {{ . }}{{ end }}{% endraw %}'
+
+  - name: ntfy
+    webhook_configs:
+      - url: '{{ alertmanager_ntfy_url }}'
+        send_resolved: true
+        http_config:
+          basic_auth:
+            username: publisher
+            password_file: /etc/alertmanager/secrets/ntfy_password

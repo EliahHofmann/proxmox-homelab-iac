@@ -8,4 +8,9 @@ grafana_admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PASSWORD') }}"
 grafana_port: '3000'
 loki_port: '3100'
 prometheus_port: '9090'
-proxmox_api_token: "{{ lookup('env', 'PROXMOX_API_TOKEN') }}"
+proxmox_api_token: "{{ lookup('env', 'PROXMOX_API_TOKEN') }}"# Alarm-Mail (Vault secret/alerts) und ntfy-Publisher (Vault secret/finance)
+alert_smtp_user: "{{ lookup('env', 'SMTP_USER') }}"
+alert_smtp_password: "{{ lookup('env', 'SMTP_PASSWORD') }}"
+alert_mail_to: "{{ lookup('env', 'MAIL_TO') }}"
+alert_ntfy_password: "{{ lookup('env', 'NTFY_PUBLISHER_PASSWORD') }}"
+alertmanager_ntfy_url: "http://192.168.178.87:8082/homelab-alarme?template=alertmanager"

@@ -23,3 +23,14 @@
   until: loki_ready.status == 200
   retries: 24
   delay: 5
+
+- name: Alertmanager ist bereit
+  uri:
+    url: http://localhost:9093/-/ready
+
+- name: Prometheus kennt den Alertmanager
+  uri:
+    url: http://localhost:9090/api/v1/alertmanagers
+    return_content: true
+  register: prom_am
+  failed_when: prom_am.json.data.activeAlertmanagers | length < 1
