@@ -1,4 +1,5 @@
 ---
+# renovate: datasource=docker depName=ghcr.io/paperless-ngx/paperless-ngx
 paperless_version: "3.3.3"
 paperless_install_path: "/opt/paperless-ngx"
 paperless_port: 8010
