@@ -70,7 +70,7 @@ runs:
         done
 
     # Fehlt secret/data/alerts noch, laeuft alles weiter - nur ohne Mail.
-    # Die Kopie in ~/.alert-smtp (0600) ist der Fallback fuer die Fehler-Mail,
+    # Die Kopie in /home/github-runner/.alert-smtp (0600) ist der Fallback fuer die Fehler-Mail,
     # wenn Vault spaeter versiegelt ist.
     - name: Alarm-Mail-Zugang laden und auf dem Runner ablegen
       shell: bash
@@ -82,10 +82,12 @@ runs:
           echo "secret/data/alerts unvollstaendig - Alarm-Mails aus"; exit 0
         fi
         for v in "$U" "$P" "$T"; do echo "::add-mask::$v"; done
+        # Gleicher fester Pfad wie in tools/notify/send_mail.py (HOME ist im Job leer)
+        CACHE=/home/github-runner/.alert-smtp
         ( umask 077
           printf '%s\n' "# aus Vault secret/data/alerts, verwaltet von der Pipeline" \
             "ALERT_SMTP_HOST=192.168.178.86" "ALERT_SMTP_PORT=1025" \
             "ALERT_SMTP_USER=$U" "ALERT_SMTP_PASSWORD=$P" "ALERT_MAIL_TO=$T" \
-            "ALERT_SMTP_FINGERPRINT=$F" > "$HOME/.alert-smtp.tmp"
-          mv "$HOME/.alert-smtp.tmp" "$HOME/.alert-smtp" )
+            "ALERT_SMTP_FINGERPRINT=$F" > "$CACHE.tmp"
+          mv "$CACHE.tmp" "$CACHE" )
         echo "Alarm-Mail-Zugang aktualisiert"

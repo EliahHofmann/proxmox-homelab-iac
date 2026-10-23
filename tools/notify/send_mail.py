@@ -2,7 +2,7 @@
 """Schickt eine Alarm-Mail ueber die Proton-Bridge (SMTP mit STARTTLS).
 
 Zugangsdaten kommen aus der Umgebung (Pipeline, aus Vault) und fallen auf
-eine Kopie auf dem Runner zurueck (~/.alert-smtp, 0600). So geht die Mail
+eine Kopie auf dem Runner zurueck (/home/github-runner/.alert-smtp, 0600). So geht die Mail
 auch raus, wenn Vault versiegelt ist und die Pipeline deshalb scheitert.
 
 Das Bridge-Zertifikat ist selbstsigniert. Statt es blind zu akzeptieren,
@@ -25,7 +25,8 @@ from typing import Mapping
 
 KEYS = ("ALERT_SMTP_HOST", "ALERT_SMTP_PORT", "ALERT_SMTP_USER",
         "ALERT_SMTP_PASSWORD", "ALERT_MAIL_TO", "ALERT_SMTP_FINGERPRINT")
-DEFAULT_CACHE = Path.home() / ".alert-smtp"
+# Fester Pfad: der Runner-Dienst hat kein HOME, ~ waere je nach Aufrufer verschieden
+DEFAULT_CACHE = Path("/home/github-runner/.alert-smtp")
 
 
 class ConfigError(Exception):

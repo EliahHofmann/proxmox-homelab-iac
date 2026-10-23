@@ -146,3 +146,12 @@ def test_cli_output_never_shows_recipient(tmp_path, clean_env, capsys):
     out = capsys.readouterr()
     assert rc == 0
     assert "example.org" not in out.out + out.err
+
+
+def test_standard_cache_haengt_nicht_an_home(monkeypatch):
+    # Der Runner-Dienst hat kein HOME; Schreiber (Action) und Leser muessen
+    # trotzdem dieselbe Datei meinen.
+    import importlib
+    monkeypatch.setenv("HOME", "")
+    neu = importlib.reload(send_mail)
+    assert neu.DEFAULT_CACHE == Path("/home/github-runner/.alert-smtp")

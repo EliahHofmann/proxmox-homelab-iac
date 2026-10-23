@@ -148,7 +148,7 @@ jobs:
 
   # STUFE 4: ALARM - jeder rote Deploy auf main schickt eine Mail. GitHubs
   # eigene Fehler-Mail ginge bei Renovate-Automerges an den Bot, nicht an uns.
-  # Liest nur ~/.alert-smtp, kein Vault: funktioniert auch versiegelt.
+  # Liest nur /home/github-runner/.alert-smtp, kein Vault: funktioniert auch versiegelt.
   notify-failure:
     needs: [qa-checks, terraform-deploy, ansible-deploy]
     if: failure() && github.event_name == 'push'
