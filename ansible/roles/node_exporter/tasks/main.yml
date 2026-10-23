@@ -16,9 +16,12 @@
     state: started
     daemon_reload: true
 
+- name: Dienste erfassen (fuer die ufw-Pruefung)
+  ansible.builtin.service_facts:
+
 - name: Allow node-exporter port in ufw (if ufw is active)
   ansible.builtin.ufw:
     rule: allow
     port: "9100"
     proto: tcp
-  when: ansible_facts.services["ufw.service"] is defined
+  when: ansible_facts.services is defined and 'ufw.service' in ansible_facts.services

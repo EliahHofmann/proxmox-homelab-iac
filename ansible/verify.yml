@@ -102,3 +102,13 @@
       include_role:
         name: jellyfin
         tasks_from: verify
+
+- name: Pruefe Node-Exporter
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft, !tag_monitoring
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: node-exporter pruefen
+      include_role:
+        name: node_exporter
+        tasks_from: verify
