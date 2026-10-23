@@ -3,6 +3,7 @@
 Faellt ein neues image:-Feld oder eine *_version-Variable durchs Raster,
 wuerde sie nie aktualisiert - ohne dass es jemand merkt.
 """
+import fnmatch
 import json
 import re
 from pathlib import Path
@@ -24,9 +25,12 @@ def managers():
 
 
 def repo_files():
+    ignoriert = CONFIG.get("ignorePaths", [])
     for p in ROOT.rglob("*"):
         if p.is_file() and ".git" not in p.parts:
-            yield p.relative_to(ROOT).as_posix()
+            rel = p.relative_to(ROOT).as_posix()
+            if not any(fnmatch.fnmatch(rel, g) for g in ignoriert):
+                yield rel
 
 
 def matches():
@@ -96,6 +100,7 @@ def test_every_version_default_has_renovate_comment():
 EXPECTED = {
     ("grafana/loki", "3.7.9"),
     ("prom/prometheus", "v3.15.1"),
+    ("prom/alertmanager", "v0.34.1"),
     ("prom/node-exporter", "v1.12.1"),
     ("prompve/prometheus-pve-exporter", "3.10.1"),
     ("grafana/grafana", "13.2.4"),
@@ -140,3 +145,12 @@ def test_patch_automerge_minor_major_never():
     assert CONFIG.get("automerge") is not True
     assert CONFIG["schedule"] == ["after 1am and before 5am"]
     assert CONFIG["timezone"] == "Europe/Berlin" or ":timezone(Europe/Berlin)" in CONFIG["extends"]
+
+
+def test_keine_lookarounds_fuer_re2():
+    # Renovate prueft Muster mit RE2: Lookaheads/-behinds machen die ganze
+    # Konfiguration ungueltig, Renovate stellt dann alle PRs ein.
+    verboten = ("(?!", "(?=", "(?<!", "(?<=")
+    for m in CONFIG["customManagers"]:
+        for muster in m["managerFilePatterns"] + m["matchStrings"]:
+            assert not any(v in muster for v in verboten), muster

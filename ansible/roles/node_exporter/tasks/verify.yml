@@ -1,0 +1,5 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Node-Exporter liefert Metriken
+  ansible.builtin.uri:
+    url: http://localhost:9100/metrics

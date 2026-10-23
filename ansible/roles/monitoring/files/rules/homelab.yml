@@ -1,0 +1,104 @@
+# Alarmregeln fuer das Homelab. Getestet mit homelab.test.yml (promtool test rules),
+# der Deploy bricht ab, wenn Pruefung oder Tests rot sind.
+# severity: warning -> Mail, critical -> Mail + ntfy-Push.
+groups:
+  - name: speicher
+    rules:
+      # Belegung je Speicher. Geteilte Speicher (PBS) haengen an beiden Knoten
+      # und werden ueber den Namen zusammengefasst, lokale bleiben je Knoten.
+      - record: homelab:speicher_belegt:ratio
+        expr: |
+          max by (speicher) (
+            label_replace(
+              (pve_disk_usage_bytes{id=~"storage/.*"} / pve_disk_size_bytes)
+                and on (id) (max by (id) (pve_storage_shared) == 1),
+              "speicher", "$1", "id", "storage/[^/]+/(.*)")
+            or
+            label_replace(
+              (pve_disk_usage_bytes{id=~"storage/.*"} / pve_disk_size_bytes)
+                and on (id) (max by (id) (pve_storage_shared) == 0),
+              "speicher", "$1", "id", "storage/(.*)")
+          )
+
+      - alert: SpeicherFastVoll
+        expr: homelab:speicher_belegt:ratio > 0.85 and homelab:speicher_belegt:ratio <= 0.95
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Speicher {{ $labels.speicher }} ist zu {{ $value | humanizePercentage | reReplaceAll "\\.[0-9]+" "" | reReplaceAll "%" " %" }} belegt'
+
+      - alert: SpeicherVoll
+        expr: homelab:speicher_belegt:ratio > 0.95
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Speicher {{ $labels.speicher }} ist zu {{ $value | humanizePercentage | reReplaceAll "\\.[0-9]+" "" | reReplaceAll "%" " %" }} belegt'
+
+      - alert: DateisystemFastVoll
+        expr: |
+          (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"}
+            / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"}) < 0.15
+          and
+          (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"}
+            / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"}) >= 0.05
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ $labels.instance }}: {{ $labels.mountpoint }} hat nur noch {{ $value | humanizePercentage | reReplaceAll "\\.[0-9]+" "" | reReplaceAll "%" " %" }} frei'
+
+      - alert: DateisystemVoll
+        expr: |
+          (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"}
+            / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"}) < 0.05
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: '{{ $labels.instance }}: {{ $labels.mountpoint }} hat nur noch {{ $value | humanizePercentage | reReplaceAll "\\.[0-9]+" "" | reReplaceAll "%" " %" }} frei'
+
+  - name: erreichbarkeit
+    rules:
+      - alert: ProxmoxNichtErreichbar
+        expr: up{job="proxmox"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Proxmox {{ $labels.instance }} antwortet nicht'
+
+      - alert: ZielNichtErreichbar
+        expr: up{job!="proxmox"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ $labels.instance }} ({{ $labels.job }}) antwortet nicht'
+
+      # Nur Gaeste, die mit dem Knoten starten sollen (onboot). Beide Knoten
+      # werden abgefragt, daher max by (id) gegen doppelte Reihen.
+      - alert: GastGestoppt
+        expr: |
+          (max by (id) (pve_up{id=~"(lxc|qemu)/.*"}) == 0)
+          and on (id) (max by (id) (pve_onboot_status) == 1)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Gast {{ $labels.id }} ist gestoppt, soll aber laufen'
+
+  - name: finance
+    rules:
+      - alert: FinanceJobVeraltet
+        expr: |
+          time() - label_replace(
+            {__name__=~"finance_last_successful_(bank_import|categorize|dedupe|alarme)_timestamp"},
+            "finance_job", "$1", "__name__", "finance_last_successful_(.*)_timestamp"
+          ) > 26 * 3600
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Finance-Job {{ $labels.finance_job }} lief seit ueber 26 Stunden nicht erfolgreich'

@@ -25,6 +25,8 @@
     - { dir: 'grafana-data', uid: '472' }
     - { dir: 'loki-data', uid: '10001' }
     - { dir: 'prometheus-data', uid: '65534' }
+    - { dir: 'rules', uid: '65534' }
+    - { dir: 'alertmanager-data', uid: '65534' }
 
 - name: Prometheus Konfiguration generieren
   template:
@@ -37,6 +39,60 @@
     src: pve.yml.j2
     dest: "{{ monitoring_install_path }}/pve.yml"
   register: pve_config
+
+# Fehlen die Alarm-Zugangsdaten, bricht nur dieser Host ab - mit klarer Meldung
+- name: Alarm-Zugangsdaten sind vorhanden
+  assert:
+    that:
+      - alert_smtp_user | length > 0
+      - alert_smtp_password | length > 0
+      - alert_mail_to | length > 0
+      - alert_ntfy_password | length > 0
+    fail_msg: "Vault secret/alerts oder ntfy_publisher_password fehlt - Alertmanager kann nicht melden"
+    quiet: true
+  no_log: true
+
+- name: Alertmanager-Ordner (Container laeuft als nobody/65534)
+  file:
+    path: "{{ monitoring_install_path }}/{{ item }}"
+    state: directory
+    owner: '65534'
+    group: '65534'
+    mode: '0750'
+  loop:
+    - alertmanager
+    - alertmanager/secrets
+
+- name: Alertmanager-Konfiguration
+  template:
+    src: alertmanager.yml.j2
+    dest: "{{ monitoring_install_path }}/alertmanager/alertmanager.yml"
+    owner: '65534'
+    group: '65534'
+    mode: '0640'
+  register: alertmanager_config
+
+- name: Bridge-Zertifikat fuer Alertmanager
+  copy:
+    src: proton-bridge-ca.pem
+    dest: "{{ monitoring_install_path }}/alertmanager/proton-bridge-ca.pem"
+    mode: '0644'
+  register: alertmanager_ca
+
+- name: Alertmanager-Passwoerter
+  copy:
+    content: "{{ item.wert }}"
+    dest: "{{ monitoring_install_path }}/alertmanager/secrets/{{ item.datei }}"
+    owner: '65534'
+    group: '65534'
+    mode: '0600'
+  loop:
+    - { datei: smtp_password, wert: "{{ alert_smtp_password }}" }
+    - { datei: ntfy_password, wert: "{{ alert_ntfy_password }}" }
+  loop_control:
+    label: "{{ item.datei }}"
+  no_log: true
+  register: alertmanager_secrets
 
 - name: Grafana-Provisioning + Dashboards (Datasources, Finance-Dashboard) bereitstellen
   copy:
@@ -56,6 +112,46 @@
   vars:
     throttled_pull_dir: "{{ monitoring_install_path }}"
 
+# Regeln vor dem Einsatz pruefen und testen, mit dem Prometheus-Image aus der
+# compose-Datei. Laeuft auch im --check (eigener Pruefordner), damit kaputte
+# Regeln schon im PR auffallen.
+- name: Alarmregeln in den Pruefordner kopieren
+  copy:
+    src: rules/
+    dest: "{{ monitoring_install_path }}/rules-check/"
+    mode: '0644'
+  check_mode: false
+
+- name: Alarmregeln pruefen und testen (promtool)
+  shell: |
+    set -e
+    img=$(grep -oE 'prom/prometheus:[^ "]+' docker-compose.yml | head -1)
+    docker run --rm --log-driver none --entrypoint promtool -v {{ monitoring_install_path }}/rules-check:/r:ro "$img" check rules /r/homelab.yml
+    docker run --rm --log-driver none --entrypoint promtool -v {{ monitoring_install_path }}/rules-check:/r:ro "$img" test rules /r/homelab.test.yml
+  args:
+    chdir: "{{ monitoring_install_path }}"
+    executable: /bin/bash
+  changed_when: false
+  check_mode: false
+
+- name: Alarmregeln fuer Prometheus bereitstellen
+  copy:
+    src: rules/homelab.yml
+    dest: "{{ monitoring_install_path }}/rules/homelab.yml"
+    mode: '0644'
+  register: prometheus_rules
+
+- name: Alertmanager-Konfiguration pruefen (amtool)
+  shell: |
+    set -e
+    img=$(grep -oE 'prom/alertmanager:[^ "]+' docker-compose.yml | head -1)
+    docker run --rm --log-driver none --entrypoint amtool -v {{ monitoring_install_path }}/alertmanager:/etc/alertmanager:ro "$img" check-config /etc/alertmanager/alertmanager.yml
+  args:
+    chdir: "{{ monitoring_install_path }}"
+    executable: /bin/bash
+  changed_when: false
+  when: not ansible_check_mode
+
 - name: Monitoring Stack (Grafana, Loki, Prometheus, Node-Exporter) starten
   command: docker compose up -d --pull never
   args:
@@ -66,9 +162,13 @@
 # atomar (neuer Inode), der laufende Container haengt aber am alten Inode und wuerde
 # die alte Config neu laden. Daher den Container neu starten -> re-bindet den
 # aktuellen Host-Inode UND laedt die Config neu. Nur wenn sich die Config aenderte.
-- name: Prometheus neu starten, wenn sich die Scrape-Config geaendert hat
+- name: Prometheus neu starten, wenn sich Scrape-Config oder Regeln geaendert haben
   command: docker restart prometheus
-  when: prometheus_config is changed
+  when: prometheus_config is changed or prometheus_rules is changed
+
+- name: Alertmanager neu starten, wenn sich Konfiguration oder Passwoerter geaendert haben
+  command: docker restart alertmanager
+  when: alertmanager_config is changed or alertmanager_ca is changed or alertmanager_secrets is changed
 
 # Gleiches Inode-Problem: ohne Neustart liest der Exporter weiter den alten Token
 - name: Proxmox-Exporter neu starten, wenn sich seine Config geaendert hat

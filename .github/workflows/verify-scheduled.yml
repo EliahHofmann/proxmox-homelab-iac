@@ -1,0 +1,45 @@
+name: Dienst-Pruefung (alle 4 Stunden)
+
+# Prueft alle Dienste wie nach einem Deploy (Container gesund, keine Neustarts,
+# Soll-Image, Funktions-Check). So fallen haengende Container auf, auch wenn
+# niemand deployt. Rot = Mail an den Besitzer.
+on:
+  schedule:
+    - cron: '17 */4 * * *'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  verify:
+    # Nur Code von main laeuft mit den Vault-Zugangsdaten
+    if: github.repository == 'EliahHofmann/proxmox-homelab-iac' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Ansible-Umgebung und Secrets
+        uses: ./.github/actions/ansible-env
+
+      - name: Dienste pruefen
+        working-directory: ./ansible
+        run: ansible-playbook -i proxmox.yml verify.yml --private-key /tmp/ansible_vault_key
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: rm -f /tmp/ansible_vault_key
+
+      # Liest nur /home/github-runner/.alert-smtp, kein Vault: geht auch versiegelt.
+      - name: Mail bei roter Pruefung
+        if: failure()
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "Die regelmaessige Dienst-Pruefung ist fehlgeschlagen."
+            echo
+            echo "Lauf: $RUN_URL"
+          } > /tmp/pruefung-rot.txt
+          python3 tools/notify/send_mail.py --subject "Dienst-Pruefung rot" --body-file /tmp/pruefung-rot.txt
