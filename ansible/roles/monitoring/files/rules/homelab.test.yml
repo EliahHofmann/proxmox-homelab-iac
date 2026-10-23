@@ -1,0 +1,131 @@
+# Unit-Tests fuer homelab.yml: promtool test rules homelab.test.yml
+# Nur Beispielwerte; IDs und Labels wie im echten pve-exporter.
+rule_files:
+  - homelab.yml
+evaluation_interval: 1m
+
+tests:
+  # Gestoppter Spiel-Server (onboot 0) meldet nie, ein gestoppter Dienst-Gast
+  # auf dem zweiten Knoten (onboot nur von dort bekannt) meldet sehr wohl.
+  - interval: 1m
+    input_series:
+      - series: 'pve_up{id="lxc/210",instance="192.168.178.10",job="proxmox"}'
+        values: '0x15'
+      - series: 'pve_onboot_status{id="lxc/210",instance="192.168.178.10",job="proxmox"}'
+        values: '0x15'
+      - series: 'pve_up{id="lxc/101",instance="192.168.178.10",job="proxmox"}'
+        values: '0x15'
+      - series: 'pve_up{id="lxc/101",instance="192.168.178.11",job="proxmox"}'
+        values: '0x15'
+      - series: 'pve_onboot_status{id="lxc/101",instance="192.168.178.11",job="proxmox"}'
+        values: '1x15'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: GastGestoppt
+        exp_alerts:
+          - exp_labels: {severity: critical, id: lxc/101}
+            exp_annotations:
+              summary: "Gast lxc/101 ist gestoppt, soll aber laufen"
+
+  # PBS haengt an beiden Knoten: genau eine Meldung mit Speichername.
+  # Lokaler Speicher bleibt pro Knoten getrennt.
+  - interval: 1m
+    input_series:
+      - series: 'pve_disk_usage_bytes{id="storage/a/PBS-Speicher",instance="192.168.178.10",job="proxmox"}'
+        values: '90x20'
+      - series: 'pve_disk_size_bytes{id="storage/a/PBS-Speicher",instance="192.168.178.10",job="proxmox"}'
+        values: '100x20'
+      - series: 'pve_storage_shared{id="storage/a/PBS-Speicher",instance="192.168.178.10",job="proxmox"}'
+        values: '1x20'
+      - series: 'pve_disk_usage_bytes{id="storage/b/PBS-Speicher",instance="192.168.178.10",job="proxmox"}'
+        values: '90x20'
+      - series: 'pve_disk_size_bytes{id="storage/b/PBS-Speicher",instance="192.168.178.10",job="proxmox"}'
+        values: '100x20'
+      - series: 'pve_storage_shared{id="storage/b/PBS-Speicher",instance="192.168.178.10",job="proxmox"}'
+        values: '1x20'
+      - series: 'pve_disk_usage_bytes{id="storage/b/local",instance="192.168.178.10",job="proxmox"}'
+        values: '97x20'
+      - series: 'pve_disk_size_bytes{id="storage/b/local",instance="192.168.178.10",job="proxmox"}'
+        values: '100x20'
+      - series: 'pve_storage_shared{id="storage/b/local",instance="192.168.178.10",job="proxmox"}'
+        values: '0x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: SpeicherFastVoll
+        exp_alerts:
+          - exp_labels: {severity: warning, speicher: PBS-Speicher}
+            exp_annotations:
+              summary: "Speicher PBS-Speicher ist zu 90 % belegt"
+      - eval_time: 16m
+        alertname: SpeicherVoll
+        exp_alerts:
+          - exp_labels: {severity: critical, speicher: b/local}
+            exp_annotations:
+              summary: "Speicher b/local ist zu 97 % belegt"
+
+  # Dateisystem: 10 % frei warnt, 3 % frei ist kritisch, tmpfs zaehlt nicht.
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{instance="192.0.2.10:9100",job="homelab-nodes",mountpoint="/",fstype="ext4"}'
+        values: '10x20'
+      - series: 'node_filesystem_size_bytes{instance="192.0.2.10:9100",job="homelab-nodes",mountpoint="/",fstype="ext4"}'
+        values: '100x20'
+      - series: 'node_filesystem_avail_bytes{instance="192.0.2.11:9100",job="homelab-nodes",mountpoint="/",fstype="ext4"}'
+        values: '3x20'
+      - series: 'node_filesystem_size_bytes{instance="192.0.2.11:9100",job="homelab-nodes",mountpoint="/",fstype="ext4"}'
+        values: '100x20'
+      - series: 'node_filesystem_avail_bytes{instance="192.0.2.10:9100",job="homelab-nodes",mountpoint="/run",fstype="tmpfs"}'
+        values: '1x20'
+      - series: 'node_filesystem_size_bytes{instance="192.0.2.10:9100",job="homelab-nodes",mountpoint="/run",fstype="tmpfs"}'
+        values: '100x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: DateisystemFastVoll
+        exp_alerts:
+          - exp_labels: {severity: warning, instance: "192.0.2.10:9100", job: homelab-nodes, mountpoint: /, fstype: ext4}
+            exp_annotations:
+              summary: "192.0.2.10:9100: / hat nur noch 10 % frei"
+      - eval_time: 16m
+        alertname: DateisystemVoll
+        exp_alerts:
+          - exp_labels: {severity: critical, instance: "192.0.2.11:9100", job: homelab-nodes, mountpoint: /, fstype: ext4}
+            exp_annotations:
+              summary: "192.0.2.11:9100: / hat nur noch 3 % frei"
+
+  # Erreichbarkeit: Proxmox-Knoten kritisch, normale Ziele Warnung.
+  - interval: 1m
+    input_series:
+      - series: 'up{instance="192.168.178.10",job="proxmox"}'
+        values: '0x10'
+      - series: 'up{instance="192.0.2.10:9100",job="homelab-nodes"}'
+        values: '0x10'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ProxmoxNichtErreichbar
+        exp_alerts:
+          - exp_labels: {severity: critical, instance: "192.168.178.10", job: proxmox}
+            exp_annotations:
+              summary: "Proxmox 192.168.178.10 antwortet nicht"
+      - eval_time: 6m
+        alertname: ZielNichtErreichbar
+        exp_alerts:
+          - exp_labels: {severity: warning, instance: "192.0.2.10:9100", job: homelab-nodes}
+            exp_annotations:
+              summary: "192.0.2.10:9100 (homelab-nodes) antwortet nicht"
+
+  # Finance-Job seit ueber 26 h nicht erfolgreich. time() beginnt im Test bei 0,
+  # der letzte Erfolg liegt also 100000 s (knapp 28 h) davor. Der zweite Job
+  # war vor 1000 s erfolgreich und bleibt still.
+  - interval: 1m
+    input_series:
+      - series: 'finance_last_successful_bank_import_timestamp{instance="192.0.2.87:9000",job="finance-webhook"}'
+        values: '-100000x40'
+      - series: 'finance_last_successful_categorize_timestamp{instance="192.0.2.87:9000",job="finance-webhook"}'
+        values: '-1000x40'
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: FinanceJobVeraltet
+        exp_alerts:
+          - exp_labels: {severity: warning, finance_job: bank_import, instance: "192.0.2.87:9000", job: finance-webhook}
+            exp_annotations:
+              summary: "Finance-Job bank_import lief seit ueber 26 Stunden nicht erfolgreich"
