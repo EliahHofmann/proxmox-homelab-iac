@@ -15,12 +15,13 @@
   "prHourlyLimit": 1,
   "separateMinorPatch": true,
   "platformAutomerge": false,
+  "ignorePaths": ["ansible/roles/nextcloud/**"],
   "customManagers": [
     {
-      "description": "image:-Zeilen in den Compose-Vorlagen der Rollen (ohne die ungenutzte nextcloud-Rolle)",
+      "description": "image:-Zeilen in den Compose-Vorlagen der Rollen (die ungenutzte nextcloud-Rolle steht in ignorePaths)",
       "customType": "regex",
       "managerFilePatterns": [
-        "/^ansible/roles/(?!nextcloud/)[^/]+/templates/[^/]*compose[^/]*\\.j2$/"
+        "/^ansible/roles/[^/]+/templates/[^/]*compose[^/]*\\.j2$/"
       ],
       "matchStrings": [
         "image:\\s*(?<depName>[^\\s:@{]+):(?<currentValue>[^\\s@{#]+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?"
