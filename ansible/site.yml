@@ -43,6 +43,12 @@
   roles:
     - cloudflared
 
+- name: Setup Tailscale Subnet-Router
+  hosts: tag_tailscale
+  become: yes
+  roles:
+    - tailscale
+
 - name: Setup Monitoring Dienst
   hosts: tag_monitoring
   become: yes

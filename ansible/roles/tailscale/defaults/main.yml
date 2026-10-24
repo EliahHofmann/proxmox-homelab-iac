@@ -1,0 +1,7 @@
+---
+tailscale_install_path: '/opt/tailscale'
+# Einmal-Schluessel (vorab freigegeben, mit Tag) aus Vault secret/tailscale.
+# Wird nur fuer die erste Anmeldung gebraucht, danach reicht der Zustand.
+tailscale_authkey: "{{ lookup('env', 'TAILSCALE_AUTHKEY') }}"
+tailscale_routes: "192.168.178.0/24"
+tailscale_tag: "tag:homelab"

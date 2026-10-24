@@ -104,6 +104,13 @@
       "groupName": "traefik"
     },
     {
+      "description": "Ein Branch pro Dienst: tailscale",
+      "matchFileNames": [
+        "ansible/roles/tailscale/**"
+      ],
+      "groupName": "tailscale"
+    },
+    {
       "description": "Ein Branch pro Dienst: vaultwarden",
       "matchFileNames": [
         "ansible/roles/vaultwarden/**"
