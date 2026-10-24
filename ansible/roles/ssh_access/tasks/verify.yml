@@ -1,0 +1,16 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Wirksame sshd-Einstellungen lesen
+  command: /usr/sbin/sshd -T
+  register: ssh_access_effective
+  changed_when: false
+  check_mode: false
+
+- name: SSH nur mit Schluessel
+  assert:
+    that:
+      - "'passwordauthentication no' in ssh_access_effective.stdout_lines"
+      - "'kbdinteractiveauthentication no' in ssh_access_effective.stdout_lines"
+      - "'permitrootlogin without-password' in ssh_access_effective.stdout_lines"
+    fail_msg: "sshd erlaubt noch Passwort-Anmeldung"
+    quiet: true

@@ -1,0 +1,6 @@
+---
+# Besitzer- und Pipeline-Schluessel, eine Zeile pro Schluessel (Vault secret/proxmox ssh_public_key)
+ssh_access_keys_raw: "{{ lookup('env', 'SSH_AUTHORIZED_KEYS') }}"
+# Privater Schluessel, mit dem dieser Lauf verbindet (daraus wird der Pipeline-Schluessel bestimmt)
+ssh_access_private_key: /tmp/ansible_vault_key
+ssh_access_runner_ip: "192.168.178.61"

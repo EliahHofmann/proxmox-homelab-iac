@@ -1,0 +1,5 @@
+---
+- name: sshd neu laden
+  service:
+    name: ssh
+    state: reloaded
