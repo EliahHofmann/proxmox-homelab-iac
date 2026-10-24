@@ -55,6 +55,19 @@ lxc_configs = {
     nameserver = "1.1.1.1"
     tags       = "cloudflared"
   },
+  "tailscale" = {
+    vmid       = 103
+    target_node = "dell-optiplex-melchior"
+    hostname   = "tailscale"
+    ip         = "192.168.178.33/24"
+    cpu        = 1
+    memory     = 512
+    gw         = "192.168.178.1"
+    size       = "4G"
+    storage    = "local-lvm"
+    nameserver = "1.1.1.1"
+    tags       = "tailscale"
+  },
   "collabora" = {
     vmid       = 201
     target_node = "hp-server-balthasar" 
