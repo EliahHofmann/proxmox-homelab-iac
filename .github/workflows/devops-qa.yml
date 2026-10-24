@@ -31,10 +31,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Terraform Security Scan (tfsec)
-        uses: aquasecurity/tfsec-action@v1.0.0
+      # tfsec ist in Trivy aufgegangen; die tfsec-Action braucht Docker, Trivy
+      # nicht - der Runner soll ohne Docker-Rechte auskommen.
+      - name: Terraform Security Scan (Trivy config)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          working_directory: ./terraform
+          cache: 'false'
+          cache-dir: '/home/github-runner/.cache/trivy'
+          scan-type: 'config'
+          scan-ref: './terraform'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
 
       - name: Install & Run Ansible Lint
         working-directory: ./ansible

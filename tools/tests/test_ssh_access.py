@@ -12,8 +12,8 @@ spec = importlib.util.spec_from_file_location("ssh_access_keys", ROLE / "filter_
 plugin = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(plugin)
 
-OWNER = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOwnerExampleKey0000000000000000000000000 owner"
-PIPE = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPipelineExampleKey00000000000000000000000 pipeline"
+OWNER = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOwnerExampleKeyAbcdefghAbcdefghAbcdefgh owner"
+PIPE = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPipelineExampleKeyAbcdefghAbcdefghAbcdefgh pipeline"
 PIPE_BODY = " ".join(PIPE.split()[:2])
 
 

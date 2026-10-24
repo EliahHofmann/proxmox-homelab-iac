@@ -6,9 +6,15 @@ description: >-
 runs:
   using: composite
   steps:
+    # Ins Home des Runner-Benutzers statt systemweit: der Runner braucht dafuer
+    # kein root. Fester Pfad, weil HOME im Job leer sein kann.
     - name: Upgrade Ansible
       shell: bash
-      run: pip3 install --upgrade ansible-core --break-system-packages
+      run: |
+        export PYTHONUSERBASE=/home/github-runner/.local
+        echo "PYTHONUSERBASE=$PYTHONUSERBASE" >> "$GITHUB_ENV"
+        echo "$PYTHONUSERBASE/bin" >> "$GITHUB_PATH"
+        pip3 install --user --upgrade ansible-core --break-system-packages
 
     - name: Install Ansible Proxmox Collection
       shell: bash
@@ -35,7 +41,8 @@ runs:
           secret/data/proxmox proxmox_api_url | PROXMOX_URL ;
           secret/data/proxmox proxmox_api_token_id | PROXMOX_TOKEN_ID ;
           secret/data/proxmox proxmox_api_token_secret | PROXMOX_TOKEN_SECRET ;
-          secret/data/ssh private_key | ANSIBLE_SSH_KEY_B64
+          secret/data/ssh private_key | ANSIBLE_SSH_KEY_B64 ;
+          secret/data/proxmox ssh_public_key | SSH_AUTHORIZED_KEYS
 
     - name: Set Proxmox Auth for Ansible Inventory
       shell: bash
