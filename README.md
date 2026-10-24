@@ -27,7 +27,8 @@ Das primäre Ziel dieses Projekts ist es, die Bereitstellung von Servern und Die
 ### Security & CI/CD
 * **Secrets Management:** HashiCorp Vault
 * **Automation:** GitHub Actions (Runner wird lokal gehostet)
-* **Netzwerk:** Netbird (Wireguard VPN), Cloudflare Tunnels
+* **Netzwerk:** Tailscale (Subnet-Router für den Fernzugriff), Cloudflare Tunnels
+* **Zugang:** SSH nur mit Schlüssel; die Pipeline hat einen eigenen Schlüssel, der nur vom Runner aus gilt, und der Runner läuft ohne root
 
 ### Gehostete Core-Services
 * **Traefik:** Zentraler Reverse Proxy & Zertifikatsverwaltung

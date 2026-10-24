@@ -1,0 +1,4 @@
+---
+# Nur echte Fehler (Syntax, nicht ladbare Rollen/Module) brechen die Pipeline.
+# Die Stil-Regeln (FQCN, yes/true, Namen) folgen in einer eigenen Aufraeumrunde.
+profile: min
