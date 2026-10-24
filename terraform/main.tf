@@ -62,9 +62,11 @@ resource "proxmox_vm_qemu" "vms" {
   }
 
   network {
-    id     = 0
-    model  = "virtio"
-    bridge = "vmbr0"
+    id       = 0
+    model    = "virtio"
+    bridge   = "vmbr0"
+    # Ohne diesen Schalter greift die Gast-Firewall an der Karte nicht
+    firewall = true
   }
 
   serial {

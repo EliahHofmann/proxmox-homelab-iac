@@ -147,6 +147,16 @@ jobs:
         working-directory: ./ansible
         run: ansible-playbook -i proxmox.yml site.yml --private-key /tmp/ansible_vault_key
 
+      # Netztrennung (firewall/policy.yml) ueber die Proxmox-API:
+      # im PR nur anzeigen, auf main anwenden
+      - name: Firewall pro Gast (Trockenlauf)
+        if: github.event_name == 'pull_request'
+        run: python3 tools/firewall/pve_firewall.py
+
+      - name: Firewall pro Gast anwenden
+        if: github.event_name == 'push'
+        run: python3 tools/firewall/pve_firewall.py --apply
+
       # Gruen heisst hier: jeder Dienst laeuft, mit Soll-Image, und antwortet.
       - name: Verify (Dienste nach dem Deploy pruefen)
         if: github.event_name == 'push'
