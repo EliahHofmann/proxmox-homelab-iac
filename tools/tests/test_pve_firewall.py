@@ -128,7 +128,11 @@ def test_quellen_passen_in_die_api_grenze():
 
 
 class FakeApi:
-    """Proxmox-API im Speicher. POST ohne pos fuegt oben ein wie PVE."""
+    """Proxmox-API im Speicher.
+
+    Wie PVE 9.2 (live beobachtet 2026-10-24): POST auf rules setzt die neue
+    Regel immer ganz oben ein, ein mitgeschicktes pos wird ignoriert.
+    """
 
     def __init__(self, guests):
         self.guests = guests                      # vmid -> (node, kind)
@@ -166,8 +170,8 @@ class FakeApi:
         g, rest = self._write("POST", path, data)
         if rest == ["rules"]:
             d = dict(data)
-            pos = int(d.pop("pos", 0))
-            g["rules"].insert(pos, d)
+            d.pop("pos", None)
+            g["rules"].insert(0, d)
         elif rest == ["ipset"]:
             g["ipsets"][data["name"]] = []
         else:
@@ -251,3 +255,21 @@ def test_fehlender_gast_meldet_fehler_und_rest_laeuft(capsys):
     assert rc == 1
     assert "nicht gefunden" in capsys.readouterr().out
     assert api.fw[205]["rules"]
+
+
+class AppendingApi(FakeApi):
+    """Eine API, die neue Regeln unten anhaengt - anders als PVE."""
+
+    def post(self, path, data):
+        g, rest = self._guest(path)
+        if rest == ["rules"]:
+            self.writes.append(("POST", path, dict(data)))
+            g["rules"].append({k: v for k, v in data.items() if k != "pos"})
+        else:
+            super().post(path, data)
+
+
+def test_falsche_reihenfolge_nach_dem_schreiben_faellt_auf():
+    api = AppendingApi({205: ("n1", "lxc")})
+    with pytest.raises(RuntimeError, match="Reihenfolge"):
+        fw.sync_guest(api, "n1", "lxc", 205, fw.render_guest(POLICY, "qwen3"), apply=True)

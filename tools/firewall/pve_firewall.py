@@ -199,9 +199,14 @@ def sync_guest(api, node, kind, vmid, desired, apply):
                 api.put(f"{base}/options", {"policy_in": "ACCEPT"})
             for r in reversed(current):
                 api.delete(f"{base}/rules/{r['pos']}")
-            # Feste Position: unabhaengig davon, wo die API ohne pos einfuegt
-            for i, r in enumerate(desired["rules"]):
-                api.post(f"{base}/rules", {**r, "pos": i})
+            # PVE setzt jede neue Regel ganz oben ein (pos wird beim Anlegen
+            # ignoriert) - deshalb von hinten nach vorn anlegen
+            for r in reversed(desired["rules"]):
+                api.post(f"{base}/rules", r)
+            # Gegenprobe: die Reihenfolge entscheidet, was greift
+            written = sorted(api.get(f"{base}/rules"), key=lambda r: int(r["pos"]))
+            if [normalize_rule(r) for r in written] != desired["rules"]:
+                raise RuntimeError("Regel-Reihenfolge nach dem Schreiben falsch")
 
     cur = normalize_options(api.get(f"{base}/options"))
     diff = {k: v for k, v in desired["options"].items() if cur.get(k) != v}
