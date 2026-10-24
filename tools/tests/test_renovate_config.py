@@ -3,7 +3,6 @@
 Faellt ein neues image:-Feld oder eine *_version-Variable durchs Raster,
 wuerde sie nie aktualisiert - ohne dass es jemand merkt.
 """
-import fnmatch
 import json
 import re
 from pathlib import Path
@@ -25,11 +24,11 @@ def managers():
 
 
 def repo_files():
-    ignoriert = CONFIG.get("ignorePaths", [])
+    # Ausnahme fest im Test, nicht aus der geprueften Konfiguration gelesen
     for p in ROOT.rglob("*"):
         if p.is_file() and ".git" not in p.parts:
             rel = p.relative_to(ROOT).as_posix()
-            if not any(fnmatch.fnmatch(rel, g) for g in ignoriert):
+            if not rel.startswith(UNUSED_ROLE):
                 yield rel
 
 
@@ -147,10 +146,29 @@ def test_patch_automerge_minor_major_never():
     assert CONFIG["timezone"] == "Europe/Berlin" or ":timezone(Europe/Berlin)" in CONFIG["extends"]
 
 
+def regex_werte(obj, schluessel=""):
+    """Alle Werte, die Renovate als Regex liest: matchStrings und /.../-Muster."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from regex_werte(v, k)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from regex_werte(v, schluessel)
+    elif isinstance(obj, str):
+        if schluessel == "matchStrings" or (len(obj) > 2 and obj.startswith("/") and obj.endswith("/")):
+            yield schluessel, obj
+
+
 def test_keine_lookarounds_fuer_re2():
-    # Renovate prueft Muster mit RE2: Lookaheads/-behinds machen die ganze
-    # Konfiguration ungueltig, Renovate stellt dann alle PRs ein.
-    verboten = ("(?!", "(?=", "(?<!", "(?<=")
-    for m in CONFIG["customManagers"]:
-        for muster in m["managerFilePatterns"] + m["matchStrings"]:
-            assert not any(v in muster for v in verboten), muster
+    # Renovate prueft Muster mit RE2: Lookaheads/-behinds und Rueckverweise machen
+    # die ganze Konfiguration ungueltig, Renovate stellt dann alle PRs ein.
+    verboten = ("(?!", "(?=", "(?<!", "(?<=", "\\1")
+    werte = list(regex_werte(CONFIG))
+    assert werte, "keine Regex-Werte gefunden"
+    for k, muster in werte:
+        assert not any(v in muster for v in verboten), f"{k}: {muster}"
+
+
+def test_ignorepaths_ist_bewusst_gesetzt():
+    # Jede Erweiterung von ignorePaths muss hier bewusst eingetragen werden.
+    assert set(CONFIG.get("ignorePaths", [])) == {UNUSED_ROLE + "**"}
