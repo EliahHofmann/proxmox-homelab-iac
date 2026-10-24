@@ -20,14 +20,18 @@
     state: present
   when: not ansible_check_mode or node_exporter_python_apt.rc == 0
 
-# Im --check ist das Paket nur simuliert, den Dienst gibt es dann noch nicht
+# Im --check ist das Paket nur simuliert, den Dienst gibt es dann noch nicht.
+# Nur genau dieser Fehler wird dort toleriert, jeder andere bleibt rot.
 - name: Ensure prometheus-node-exporter is enabled and started
   ansible.builtin.systemd:
     name: prometheus-node-exporter
     enabled: true
     state: started
     daemon_reload: true
-  ignore_errors: "{{ ansible_check_mode }}"
+  register: node_exporter_service
+  failed_when: >-
+    node_exporter_service is failed and not (ansible_check_mode and
+    'Could not find the requested service' in (node_exporter_service.msg | default('')))
 
 - name: Dienste erfassen (fuer die ufw-Pruefung)
   ansible.builtin.service_facts:
