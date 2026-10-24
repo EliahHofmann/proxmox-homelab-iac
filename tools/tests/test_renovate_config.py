@@ -120,6 +120,7 @@ EXPECTED = {
     ("ghcr.io/immich-app/immich-server", "v3.3.5"),
     ("ghcr.io/paperless-ngx/paperless-ngx", "3.3.3"),
     ("jellyfin/jellyfin", "12.2"),
+    ("tailscale/tailscale", "v1.104.2"),
 }
 
 

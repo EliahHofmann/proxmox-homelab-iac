@@ -1,0 +1,42 @@
+---
+- name: Tailscale-Zustand vorhanden?
+  stat:
+    path: "{{ tailscale_install_path }}/state/tailscaled.state"
+  register: tailscale_state
+
+# Ohne Schluessel und ohne Zustand wuerde der Knoten auf eine Anmeldung von
+# Hand warten - dann lieber hier klar scheitern.
+- name: Anmeldeschluessel oder bestehende Anmeldung vorhanden
+  assert:
+    that: tailscale_authkey | length > 0 or tailscale_state.stat.exists
+    fail_msg: "Kein Tailscale-Schluessel: Vault secret/tailscale, Key tailscale_authkey eintragen"
+    quiet: true
+
+- name: Tailscale Verzeichnisse erstellen
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ tailscale_install_path }}", mode: '0755' }
+    - { path: "{{ tailscale_install_path }}/state", mode: '0700' }
+
+# Enthaelt den Schluessel, deshalb ohne Diff im Log
+- name: Tailscale docker-compose.yml erstellen
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ tailscale_install_path }}/docker-compose.yml"
+    mode: '0600'
+  no_log: true
+
+# Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
+- name: Neue Images gedrosselt laden
+  include_role:
+    name: throttled_pull
+  vars:
+    throttled_pull_dir: "{{ tailscale_install_path }}"
+
+- name: Tailscale starten
+  command: docker compose up -d --pull never
+  args:
+    chdir: "{{ tailscale_install_path }}"

@@ -1,0 +1,26 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.104.2
+    container_name: tailscale
+    restart: unless-stopped
+    # Userspace-Modus (Standard im Image): kein /dev/net/tun, keine Zusatzrechte
+    network_mode: host
+    environment:
+      - TS_AUTHKEY={{ tailscale_authkey }}
+      # Nur anmelden, wenn noch nicht angemeldet - der Einmal-Schluessel ist danach verbraucht
+      - TS_AUTH_ONCE=true
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_HOSTNAME=tailscale
+      - TS_ROUTES={{ tailscale_routes }}
+      - TS_EXTRA_ARGS=--advertise-tags={{ tailscale_tag }}
+      # Health-Endpunkt nur lokal, nicht im LAN
+      - TS_ENABLE_HEALTH_CHECK=true
+      - TS_LOCAL_ADDR_PORT=127.0.0.1:9002
+    volumes:
+      - {{ tailscale_install_path }}/state:/var/lib/tailscale
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9002/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

@@ -53,6 +53,16 @@
         name: cloudflared
         tasks_from: verify
 
+- name: Pruefe tailscale
+  hosts: tag_tailscale
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: tailscale pruefen
+      include_role:
+        name: tailscale
+        tasks_from: verify
+
 - name: Pruefe monitoring
   hosts: tag_monitoring
   become: yes

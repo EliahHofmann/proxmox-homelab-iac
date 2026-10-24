@@ -1,0 +1,21 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Container pruefen
+  include_role:
+    name: container_health
+  vars:
+    container_health_dir: "{{ tailscale_install_path }}"
+
+- name: Tailscale-Status lesen
+  command: docker exec tailscale tailscale status --json
+  register: tailscale_status
+  changed_when: false
+  check_mode: false
+
+- name: Angemeldet und Route freigegeben
+  assert:
+    that:
+      - (tailscale_status.stdout | from_json).BackendState == 'Running'
+      - tailscale_routes in ((tailscale_status.stdout | from_json).Self.PrimaryRoutes | default([]))
+    fail_msg: "Tailscale nicht angemeldet oder Route {{ tailscale_routes }} nicht freigegeben (autoApprovers in der Tailnet-Policy pruefen)"
+    quiet: true
