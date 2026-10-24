@@ -1,0 +1,77 @@
+# Netztrennung (Schritt 6): wer darf welchen Gast erreichen.
+# Abgeglichen von tools/firewall/pve_firewall.py ueber die Proxmox-API
+# (PR: nur Diff, main: anwenden). Ports ohne Eintrag sind zu.
+#
+# mode: observe = nichts wird geblockt, was geblockt wuerde, landet im Log
+#                 (/var/log/pve-firewall.log auf dem Knoten)
+#       enforce = Eingang standardmaessig zu, Absender-Adressen gefiltert
+lan: 192.168.178.0/24
+router: 192.168.178.1
+nodes: [192.168.178.10, 192.168.178.11]
+# Gestoppte Gaeste: zaehlen nicht als Geraete des Besitzers
+reserved: [192.168.178.91, 192.168.178.178]
+
+guests:
+  adguard:     {vmid: 100, ip: 192.168.178.30, mode: observe}
+  traefik:     {vmid: 101, ip: 192.168.178.31, mode: observe}
+  cloudflared: {vmid: 102, ip: 192.168.178.32, mode: observe}
+  # Leitet die Verbindungen der Besitzer-Geraete ins LAN weiter
+  tailscale:   {vmid: 103, ip: 192.168.178.33, mode: observe, owner_proxy: true}
+  nextcloud:   {vmid: 200, ip: 192.168.178.80, mode: observe}
+  collabora:   {vmid: 201, ip: 192.168.178.81, mode: observe}
+  vaultwarden: {vmid: 202, ip: 192.168.178.82, mode: observe}
+  immich:      {vmid: 204, ip: 192.168.178.84, mode: observe}
+  qwen3:       {vmid: 205, ip: 192.168.178.85, mode: observe}
+  paperless:   {vmid: 206, ip: 192.168.178.86, mode: observe}
+  finance:     {vmid: 207, ip: 192.168.178.87, mode: observe}
+  jellyfin:    {vmid: 208, ip: 192.168.178.88, mode: observe}
+  monitoring:  {vmid: 400, ip: 192.168.178.60, mode: observe, kind: qemu}
+  runner:      {vmid: 401, ip: 192.168.178.61, mode: observe}
+  vault:       {vmid: 402, ip: 192.168.178.62, mode: observe}
+
+# Fuer jeden Gast: SSH vom Besitzer und vom Runner, Node-Exporter vom Monitoring
+common_in:
+  - {port: 22, from: [owner, runner]}
+  - {port: 9100, from: [monitoring]}
+  - {proto: icmp, from: [owner, monitoring]}
+
+# Ausgang zu den Proxmox-Knoten (UI/API 8006) nur fuer diese Gaeste
+node_access:
+  - {guest: monitoring, port: 8006}   # pve-exporter
+  - {guest: runner, port: 8006}       # Terraform, Inventory, Drossel
+
+# Absender: owner, lan, nodes oder Gast-Namen
+in:
+  adguard:
+    - {port: 53, proto: [tcp, udp], from: [lan]}
+    - {port: "80,8080", from: [owner]}
+  traefik:
+    # Haustuer: die Dienste dahinter melden selbst an
+    - {port: "80,443", from: [lan]}
+  tailscale:
+    - {proto: udp, from: [owner]}
+  monitoring:
+    - {port: 3100, from: [guests]}
+    - {port: "3000,9090", from: [owner]}
+  vault:
+    - {port: 8200, from: [owner, runner]}
+  nextcloud:
+    - {port: "80,443", from: [owner, traefik]}
+  collabora:
+    - {port: 9980, from: [owner, traefik, nextcloud]}
+  vaultwarden:
+    - {port: 8080, from: [owner, traefik]}
+  immich:
+    - {port: 2283, from: [owner, traefik]}
+  qwen3:
+    - {port: 11434, from: [owner, paperless, finance]}
+  paperless:
+    - {port: 8010, from: [owner, traefik, finance]}
+    # SMTP der Proton-Bridge: Alarm-Mails und Proxmox-Benachrichtigungen
+    - {port: 1025, from: [monitoring, runner, nodes]}
+  finance:
+    - {port: "8080,8081,8082", from: [owner, traefik]}
+    - {port: 8082, from: [monitoring]}
+    - {port: 9000, from: [owner, paperless, monitoring]}
+  jellyfin:
+    - {port: 8096, from: [owner, traefik]}
