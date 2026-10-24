@@ -125,3 +125,129 @@ def test_quellen_passen_in_die_api_grenze():
     for name in POLICY["guests"]:
         for r in fw.render_guest(policy(**{name: "enforce"}), name)["rules"]:
             assert len(r.get("source", "")) <= 512 and len(r.get("dest", "")) <= 512
+
+
+class FakeApi:
+    """Proxmox-API im Speicher. POST ohne pos fuegt oben ein wie PVE."""
+
+    def __init__(self, guests):
+        self.guests = guests                      # vmid -> (node, kind)
+        self.fw = {v: {"options": {}, "rules": [], "ipsets": {}} for v in guests}
+        self.writes = []
+
+    def _guest(self, path):
+        parts = path.strip("/").split("/")        # nodes/<n>/<kind>/<vmid>/firewall/...
+        return self.fw[int(parts[3])], parts[5:]
+
+    def get(self, path):
+        if path.startswith("/cluster/resources"):
+            return [{"vmid": v, "node": n, "type": k} for v, (n, k) in self.guests.items()]
+        g, rest = self._guest(path)
+        if rest == ["options"]:
+            return dict(g["options"])
+        if rest == ["rules"]:
+            return [dict(r, pos=i, digest="x", ipversion=4) for i, r in enumerate(g["rules"])]
+        if rest == ["ipset"]:
+            return [{"name": n} for n in g["ipsets"]]
+        if rest[0] == "ipset":
+            return [dict(e) for e in g["ipsets"][rest[1]]]
+        raise KeyError(path)
+
+    def _write(self, op, path, data=None):
+        self.writes.append((op, path, dict(data or {})))
+        g, rest = self._guest(path)
+        return g, rest
+
+    def put(self, path, data):
+        g, rest = self._write("PUT", path, data)
+        g["options"].update(data)
+
+    def post(self, path, data):
+        g, rest = self._write("POST", path, data)
+        if rest == ["rules"]:
+            d = dict(data)
+            pos = int(d.pop("pos", 0))
+            g["rules"].insert(pos, d)
+        elif rest == ["ipset"]:
+            g["ipsets"][data["name"]] = []
+        else:
+            e = {"cidr": data["cidr"]}
+            if data.get("nomatch"):
+                e["nomatch"] = 1
+            g["ipsets"][rest[1]].append(e)
+
+    def delete(self, path):
+        g, rest = self._write("DELETE", path)
+        if rest[0] == "rules":
+            del g["rules"][int(rest[1])]
+        else:
+            g["ipsets"][rest[1]] = [e for e in g["ipsets"][rest[1]] if e["cidr"] != fw.unquote(rest[2])]
+
+
+BASE = "/nodes/n1/lxc/205/firewall"
+
+
+def synced(desired, apply=True):
+    api = FakeApi({205: ("n1", "lxc")})
+    fw.sync_guest(api, "n1", "lxc", 205, desired, apply=apply)
+    return api
+
+
+def test_abgleich_setzt_alles_in_richtiger_reihenfolge():
+    desired = fw.render_guest(POLICY, "qwen3")
+    api = synced(desired)
+    stored = api.fw[205]
+    assert [fw.normalize_rule(r) for r in stored["rules"]] == desired["rules"]
+    assert fw.normalize_options(stored["options"]) == desired["options"]
+    assert {(e["cidr"], bool(e.get("nomatch"))) for e in stored["ipsets"]["owner"]} == set(desired["ipsets"]["owner"])
+    # IP-Sets vor den Regeln, die sie benutzen
+    first_rule = next(i for i, w in enumerate(api.writes) if w[1].endswith("/rules"))
+    assert all(not w[1].startswith(BASE + "/rules") for w in api.writes[:first_rule])
+    assert any(w[1] == BASE + "/ipset" for w in api.writes[:first_rule])
+
+
+def test_zweiter_lauf_aendert_nichts():
+    desired = fw.render_guest(POLICY, "qwen3")
+    api = synced(desired)
+    api.writes.clear()
+    changes = fw.sync_guest(api, "n1", "lxc", 205, desired, apply=True)
+    assert changes == [] and api.writes == []
+
+
+def test_trockenlauf_schreibt_nichts():
+    api = FakeApi({205: ("n1", "lxc")})
+    changes = fw.sync_guest(api, "n1", "lxc", 205, fw.render_guest(POLICY, "qwen3"), apply=False)
+    assert changes and api.writes == []
+
+
+def test_scharfer_gast_ist_beim_regeltausch_nie_ohne_regeln_zu():
+    on = fw.render_guest(policy(qwen3="enforce"), "qwen3")
+    api = synced(on)
+    api.writes.clear()
+    changed = copy.deepcopy(on)
+    changed["rules"].insert(0, {"type": "in", "action": "ACCEPT", "source": "+owner", "proto": "tcp",
+                                "dport": "1", "log": "nolog", "enable": 1, "comment": "neu"})
+    fw.sync_guest(api, "n1", "lxc", 205, changed, apply=True)
+    ops = api.writes
+    first_delete = next(i for i, w in enumerate(ops) if w[0] == "DELETE")
+    assert ops[first_delete - 1] == ("PUT", BASE + "/options", {"policy_in": "ACCEPT"})
+    assert ops[-1][0] == "PUT" and ops[-1][2]["policy_in"] == "DROP"
+    assert [fw.normalize_rule(r) for r in api.fw[205]["rules"]] == changed["rules"]
+
+
+def test_ipset_eintraege_werden_ersetzt():
+    desired = fw.render_guest(POLICY, "qwen3")
+    api = synced(desired)
+    api.fw[205]["ipsets"]["owner"].append({"cidr": "192.168.178.250", "nomatch": 1})
+    api.writes.clear()
+    fw.sync_guest(api, "n1", "lxc", 205, desired, apply=True)
+    assert {(e["cidr"], bool(e.get("nomatch"))) for e in api.fw[205]["ipsets"]["owner"]} == set(desired["ipsets"]["owner"])
+    assert not any(w[1].endswith("/rules") for w in api.writes)
+
+
+def test_fehlender_gast_meldet_fehler_und_rest_laeuft(capsys):
+    api = FakeApi({205: ("n1", "lxc")})
+    rc = fw.run(api, policy(), apply=True)
+    assert rc == 1
+    assert "nicht gefunden" in capsys.readouterr().out
+    assert api.fw[205]["rules"]
