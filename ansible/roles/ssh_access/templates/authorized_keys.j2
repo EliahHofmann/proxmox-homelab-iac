@@ -1,0 +1,6 @@
+# Verwaltet von Ansible (ssh_access) - Aenderungen von Hand werden ueberschrieben.
+# Der Pipeline-Schluessel gilt nur vom Runner aus.
+{% for k in ssh_access_keys %}
+{% if k.body == ssh_access_pipeline_body %}from="{{ ssh_access_runner_ip }}",no-agent-forwarding,no-port-forwarding,no-X11-forwarding {% endif %}{{ k.body }}{% if k.comment %} {{ k.comment }}{% endif %}
+
+{% endfor %}

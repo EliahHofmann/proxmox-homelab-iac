@@ -91,7 +91,7 @@ resource "proxmox_vm_qemu" "vms" {
   # Bis Provider/State sauber sind: Disks nicht anfassen.
   # startup_shutdown taucht nur als Provider-Drift auf, wird hier nie gesetzt.
   lifecycle {
-    ignore_changes = [disk, startup_shutdown]
+    ignore_changes = [disk, startup_shutdown, sshkeys]
   }
 }
 
@@ -130,5 +130,12 @@ resource "proxmox_lxc" "containers" {
 
   features {
     nesting = true
+  }
+
+  # ssh_public_keys ist im Provider ForceNew: ein neuer Schluessel in Vault
+  # wuerde sonst JEDEN Container loeschen und neu anlegen. Der Schluessel wird
+  # nur beim Anlegen gebraucht, danach verwaltet ihn Ansible (ssh_access).
+  lifecycle {
+    ignore_changes = [ssh_public_keys]
   }
 }

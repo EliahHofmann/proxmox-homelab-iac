@@ -5,6 +5,13 @@
   roles:
     - common
 
+# Wer sich per SSH anmelden darf, fuer jeden erreichbaren Server (Nextcloud dabei)
+- name: SSH-Zugang
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft
+  become: yes
+  roles:
+    - ssh_access
+
 # Metriken fuer Prometheus auf jedem Server. Nextcloud ist dabei (TurnKey, sonst
 # ausserhalb von site.yml); die Monitoring-VM hat ihren eigenen Exporter-Container.
 - name: Node-Exporter

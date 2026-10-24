@@ -122,3 +122,13 @@
       include_role:
         name: node_exporter
         tasks_from: verify
+
+- name: Pruefe SSH-Zugang
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: ssh_access pruefen
+      include_role:
+        name: ssh_access
+        tasks_from: verify
