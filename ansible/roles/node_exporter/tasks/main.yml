@@ -37,7 +37,7 @@
   ansible.builtin.service_facts:
 
 - name: Allow node-exporter port in ufw (if ufw is active)
-  ansible.builtin.ufw:
+  community.general.ufw:
     rule: allow
     port: "9100"
     proto: tcp

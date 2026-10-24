@@ -5,7 +5,7 @@
     state: absent
 
 - name: Zeitzone auf Europa/Berlin setzen
-  timezone:
+  community.general.timezone:
     name: Europe/Berlin
 
 # Muss vor dem ersten apt-Aufruf liegen, sonst laedt der Lauf ungebremst.
