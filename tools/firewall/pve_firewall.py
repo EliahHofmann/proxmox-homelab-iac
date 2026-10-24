@@ -102,6 +102,12 @@ def render_guest(policy, name):
                           "dport": str(a["port"]), "comment": "Proxmox-API"})
     rules.append({"type": "out", **block, "dest": nodes, "comment": "keine Knoten"})
     if not g.get("owner_proxy"):
+        # Router wie Tailscale stehen im owner-Set, sind aber selbst Gaeste:
+        # dorthin entscheidet ihre eigene Eingangs-Firewall
+        proxies = [p["ip"] for p in policy["guests"].values() if p.get("owner_proxy")]
+        if proxies:
+            rules.append({"type": "out", "action": "ACCEPT", "dest": ",".join(proxies),
+                          "comment": "Gaeste mit owner_proxy"})
         rules.append({"type": "out", **block, "dest": "+owner", "comment": "keine Besitzer-Geraete"})
     for r in rules:
         r.setdefault("log", "nolog")
