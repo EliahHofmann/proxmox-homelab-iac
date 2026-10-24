@@ -79,7 +79,8 @@ def test_beobachten_blockt_nie():
     assert all(r["action"] == "ACCEPT" for r in g["rules"])
     last_in = rules(g, "in")[-1]
     assert last_in.get("log") == "info" and "source" not in last_in and "dport" not in last_in
-    assert all(r.get("log") == "info" for r in rules(g, "out") if "dport" not in r)
+    blocking = [r for r in rules(g, "out") if r.get("dest") in ("+owner", "192.168.178.10,192.168.178.11") and "dport" not in r]
+    assert len(blocking) == 2 and all(r.get("log") == "info" for r in blocking)
 
 
 def test_scharf_blockt_und_filtert_absender():
@@ -99,7 +100,7 @@ def test_knotenzugang_nur_fuer_monitoring_und_runner():
         assert out[0]["action"] == "ACCEPT" and out[0]["dport"] == "8006"
         assert out[1]["action"] == "DROP" and out[1]["dest"] == "192.168.178.10,192.168.178.11"
     out = rules(fw.render_guest(policy(qwen3="enforce"), "qwen3"), "out")
-    assert not any(r["action"] == "ACCEPT" for r in out)
+    assert not any(r["action"] == "ACCEPT" and r.get("dest") == "192.168.178.10,192.168.178.11" for r in out)
 
 
 def test_tailscale_darf_zu_besitzer_geraeten():
@@ -273,3 +274,14 @@ def test_falsche_reihenfolge_nach_dem_schreiben_faellt_auf():
     api = AppendingApi({205: ("n1", "lxc")})
     with pytest.raises(RuntimeError, match="Reihenfolge"):
         fw.sync_guest(api, "n1", "lxc", 205, fw.render_guest(POLICY, "qwen3"), apply=True)
+
+
+def test_gaeste_erreichen_den_tailscale_router():
+    # .33 steht im owner-Set (reicht Besitzer-Geraete durch); die Sperre
+    # "keine Besitzer-Geraete" darf ihn als Ziel trotzdem nicht treffen,
+    # sonst kommen Monitoring (9100) und Runner (SSH) nicht mehr hin
+    for name in ("monitoring", "runner", "paperless"):
+        out = rules(fw.render_guest(policy(**{name: "enforce"}), name), "out")
+        owner_drop = next(i for i, r in enumerate(out) if r.get("dest") == "+owner")
+        proxy = [i for i, r in enumerate(out) if r["action"] == "ACCEPT" and r.get("dest") == "192.168.178.33"]
+        assert proxy and proxy[0] < owner_drop, name
