@@ -1,0 +1,13 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: IPv6-Zustand lesen
+  command: cat /proc/sys/net/ipv6/conf/all/disable_ipv6
+  register: ipv6_off_state
+  changed_when: false
+  check_mode: false
+
+- name: IPv6 ist aus
+  assert:
+    that: ipv6_off_state.stdout == '1'
+    fail_msg: "IPv6 ist noch an - ipfilter wuerde IPv6-Verkehr des Gastes verwerfen"
+    quiet: true

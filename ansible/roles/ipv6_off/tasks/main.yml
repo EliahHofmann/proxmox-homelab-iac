@@ -1,0 +1,20 @@
+---
+# Die Server brauchen kein IPv6 (Internet ueber IPv4 der FritzBox). Ohne IPv6
+# kann die Proxmox-Firewall die Absender-Adresse jedes Gastes festnageln
+# (ipfilter) - das wechselnde IPv6-Praefix des Anbieters liesse sich dort
+# nicht eintragen.
+- name: IPv6 abschalten (dauerhaft)
+  copy:
+    dest: /etc/sysctl.d/60-ipv6-aus.conf
+    content: |
+      # Verwaltet von Ansible (ipv6_off)
+      net.ipv6.conf.all.disable_ipv6 = 1
+      net.ipv6.conf.default.disable_ipv6 = 1
+    owner: root
+    group: root
+    mode: '0644'
+  register: ipv6_off_conf
+
+- name: IPv6 sofort abschalten
+  command: sysctl -p /etc/sysctl.d/60-ipv6-aus.conf
+  when: ipv6_off_conf.changed and not ansible_check_mode
