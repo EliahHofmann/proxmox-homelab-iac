@@ -21,7 +21,7 @@ guests:
   collabora:   {vmid: 201, ip: 192.168.178.81, mode: observe}
   vaultwarden: {vmid: 202, ip: 192.168.178.82, mode: observe}
   immich:      {vmid: 204, ip: 192.168.178.84, mode: observe}
-  qwen3:       {vmid: 205, ip: 192.168.178.85, mode: observe}
+  qwen3:       {vmid: 205, ip: 192.168.178.85, mode: enforce}
   paperless:   {vmid: 206, ip: 192.168.178.86, mode: observe}
   finance:     {vmid: 207, ip: 192.168.178.87, mode: observe}
   jellyfin:    {vmid: 208, ip: 192.168.178.88, mode: observe}
