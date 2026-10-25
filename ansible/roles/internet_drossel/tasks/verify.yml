@@ -1,7 +1,7 @@
 ---
 # Pruefung nach dem Deploy, aufgerufen von verify.yml
 - name: Drossel-Filter lesen
-  command: tc filter show dev {{ internet_drossel_dev }} parent ffff:
+  command: "tc filter show dev {{ internet_drossel_dev }} parent ffff:"
   register: internet_drossel_filter
   changed_when: false
   check_mode: false
