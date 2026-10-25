@@ -1,0 +1,16 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Drossel-Filter lesen
+  command: "tc filter show dev {{ internet_drossel_dev }} parent ffff:"
+  register: internet_drossel_filter
+  changed_when: false
+  check_mode: false
+
+- name: Internet-Downloads sind gebremst, LAN nicht
+  assert:
+    that:
+      - "'police' in internet_drossel_filter.stdout"
+      - "(internet_drossel_rate | upper) in (internet_drossel_filter.stdout | upper)"
+      - "'c0a8b200/ffffff00' in internet_drossel_filter.stdout"
+    fail_msg: "Internet-Drossel fehlt - Downloads koennten die Leitung fuellen"
+    quiet: true
