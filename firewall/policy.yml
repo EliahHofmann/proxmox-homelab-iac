@@ -12,19 +12,19 @@ nodes: [192.168.178.10, 192.168.178.11]
 reserved: [192.168.178.178]
 
 guests:
-  adguard:     {vmid: 100, ip: 192.168.178.30, mode: observe}
+  adguard:     {vmid: 100, ip: 192.168.178.30, mode: enforce}
   traefik:     {vmid: 101, ip: 192.168.178.31, mode: observe}
-  cloudflared: {vmid: 102, ip: 192.168.178.32, mode: observe}
+  cloudflared: {vmid: 102, ip: 192.168.178.32, mode: enforce}
   # Leitet die Verbindungen der Besitzer-Geraete ins LAN weiter
-  tailscale:   {vmid: 103, ip: 192.168.178.33, mode: observe, owner_proxy: true}
+  tailscale:   {vmid: 103, ip: 192.168.178.33, mode: enforce, owner_proxy: true}
   nextcloud:   {vmid: 200, ip: 192.168.178.80, mode: observe}
-  collabora:   {vmid: 201, ip: 192.168.178.81, mode: observe}
-  vaultwarden: {vmid: 202, ip: 192.168.178.82, mode: observe}
-  immich:      {vmid: 204, ip: 192.168.178.84, mode: observe}
+  collabora:   {vmid: 201, ip: 192.168.178.81, mode: enforce}
+  vaultwarden: {vmid: 202, ip: 192.168.178.82, mode: enforce}
+  immich:      {vmid: 204, ip: 192.168.178.84, mode: enforce}
   qwen3:       {vmid: 205, ip: 192.168.178.85, mode: enforce}
   paperless:   {vmid: 206, ip: 192.168.178.86, mode: observe}
   finance:     {vmid: 207, ip: 192.168.178.87, mode: observe}
-  jellyfin:    {vmid: 208, ip: 192.168.178.88, mode: observe}
+  jellyfin:    {vmid: 208, ip: 192.168.178.88, mode: enforce}
   # Freunde spielen ueber Tailscale auf dem Gast selbst: er kommt nicht ins LAN
   minecraft:   {vmid: 210, ip: 192.168.178.91, mode: enforce, isolated: true}
   monitoring:  {vmid: 400, ip: 192.168.178.60, mode: observe, kind: qemu}
@@ -37,10 +37,12 @@ common_in:
   - {port: 9100, from: [monitoring]}
   - {proto: icmp, from: [owner, monitoring]}
 
-# Ausgang zu den Proxmox-Knoten (UI/API 8006) nur fuer diese Gaeste
+# Ausgang zu den Proxmox-Knoten nur fuer diese Gaeste
 node_access:
   - {guest: monitoring, port: 8006}   # pve-exporter
   - {guest: runner, port: 8006}       # Terraform, Inventory, Drossel
+  # Besitzer unterwegs: Proxmox-UI, PBS-UI und SSH laufen ueber den Router
+  - {guest: tailscale, port: "22,8006,8007"}
 
 # Absender: owner, lan, nodes, guests oder Gast-Namen
 in:
@@ -76,7 +78,8 @@ in:
     - {port: 8082, from: [monitoring]}
     - {port: 9000, from: [owner, paperless, monitoring]}
   jellyfin:
-    - {port: 8096, from: [owner, traefik]}
+    # Jellyfin und Halcyon
+    - {port: "8096,1420", from: [owner, traefik]}
   minecraft:
     # Freunde kommen ueber Tailscale im Gast, nicht ueber diese Firewall
     - {port: 25565, from: [owner]}
