@@ -1,0 +1,7 @@
+---
+# Daten aus dem Internet werden auf diese Rate gebremst (2400kbit = 300 KB/s),
+# Verkehr aus dem LAN bleibt ungebremst. Die Leitung ist schmal und geteilt.
+internet_drossel_lan: "192.168.178.0/24"
+internet_drossel_rate: "2400kbit"
+internet_drossel_burst: "64k"
+internet_drossel_dev: "{{ ansible_default_ipv4.interface | default('eth0') }}"

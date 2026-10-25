@@ -1,0 +1,14 @@
+# Verwaltet von Ansible (internet_drossel)
+[Unit]
+Description=Downloads aus dem Internet bremsen (LAN ungebremst)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/internet-drossel
+ExecStop=/sbin/tc qdisc del dev {{ internet_drossel_dev }} ingress
+
+[Install]
+WantedBy=multi-user.target

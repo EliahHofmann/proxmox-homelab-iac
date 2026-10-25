@@ -1,0 +1,6 @@
+---
+- name: Internet-Drossel neu setzen
+  systemd:
+    name: internet-drossel
+    state: restarted
+    daemon_reload: yes
