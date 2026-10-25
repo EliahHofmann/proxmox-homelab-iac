@@ -50,9 +50,6 @@ def _sources(policy, names):
     """Absender-Namen -> Liste von source-Werten (IP-Set-Verweis oder IP-Liste)."""
     ipset, ips = [], []
     for n in names:
-        if n == "any":
-            # Ohne source passt die Regel auf jeden Absender
-            return [None]
         if n == "owner":
             ipset.append("+owner")
         elif n == "lan":
@@ -76,9 +73,7 @@ def _in_rules(policy, entries):
         label = f"{port or '/'.join(protos)} von {', '.join(e['from'])}"
         for src in _sources(policy, e["from"]):
             for proto in protos:
-                r = {"type": "in", "action": "ACCEPT", "proto": proto}
-                if src:
-                    r["source"] = src
+                r = {"type": "in", "action": "ACCEPT", "source": src, "proto": proto}
                 if port:
                     r["dport"] = port
                 r["comment"] = label
