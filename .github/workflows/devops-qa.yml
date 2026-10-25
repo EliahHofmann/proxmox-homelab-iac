@@ -66,6 +66,9 @@ jobs:
         with:
           cache: 'false'
           cache-dir: '/home/github-runner/.cache/trivy'
+          # Die DB kommt einmal am Tag neu; ueber die langsame Leitung
+          # reichen die voreingestellten 5 Minuten dafuer nicht immer
+          timeout: '20m'
           scan-type: 'fs'
           format: 'table'
           exit-code: '1'
