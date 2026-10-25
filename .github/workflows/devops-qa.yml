@@ -36,6 +36,9 @@ jobs:
       - name: Terraform Security Scan (Trivy config)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
+          # Trivy liegt fest auf dem Runner (/usr/local/bin); sonst laedt jeder
+          # Lauf das Programm zweimal neu und legt die schmale Leitung lahm
+          skip-setup-trivy: 'true'
           cache: 'false'
           cache-dir: '/home/github-runner/.cache/trivy'
           scan-type: 'config'
@@ -64,6 +67,9 @@ jobs:
         # der 130-MB-DB zu GitHub blieb am langsamen Upload haengen.
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
+          # Trivy liegt fest auf dem Runner (/usr/local/bin); sonst laedt jeder
+          # Lauf das Programm zweimal neu und legt die schmale Leitung lahm
+          skip-setup-trivy: 'true'
           cache: 'false'
           cache-dir: '/home/github-runner/.cache/trivy'
           # Die DB kommt einmal am Tag neu; ueber die langsame Leitung
