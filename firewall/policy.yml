@@ -9,7 +9,7 @@ lan: 192.168.178.0/24
 router: 192.168.178.1
 nodes: [192.168.178.10, 192.168.178.11]
 # Gestoppte Gaeste: zaehlen nicht als Geraete des Besitzers
-reserved: [192.168.178.91, 192.168.178.178]
+reserved: [192.168.178.178]
 
 guests:
   adguard:     {vmid: 100, ip: 192.168.178.30, mode: observe}
@@ -25,6 +25,8 @@ guests:
   paperless:   {vmid: 206, ip: 192.168.178.86, mode: observe}
   finance:     {vmid: 207, ip: 192.168.178.87, mode: observe}
   jellyfin:    {vmid: 208, ip: 192.168.178.88, mode: observe}
+  # Per Portfreigabe aus dem Internet erreichbar: kommt selbst nicht ins LAN
+  minecraft:   {vmid: 210, ip: 192.168.178.91, mode: enforce, isolated: true}
   monitoring:  {vmid: 400, ip: 192.168.178.60, mode: observe, kind: qemu}
   runner:      {vmid: 401, ip: 192.168.178.61, mode: observe}
   vault:       {vmid: 402, ip: 192.168.178.62, mode: observe}
@@ -40,7 +42,7 @@ node_access:
   - {guest: monitoring, port: 8006}   # pve-exporter
   - {guest: runner, port: 8006}       # Terraform, Inventory, Drossel
 
-# Absender: owner, lan, nodes oder Gast-Namen
+# Absender: owner, lan, nodes, guests, any (auch Internet) oder Gast-Namen
 in:
   adguard:
     - {port: 53, proto: [tcp, udp], from: [lan]}
@@ -75,3 +77,5 @@ in:
     - {port: 9000, from: [owner, paperless, monitoring]}
   jellyfin:
     - {port: 8096, from: [owner, traefik]}
+  minecraft:
+    - {port: 25565, from: [any]}

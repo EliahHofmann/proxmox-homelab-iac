@@ -50,6 +50,9 @@ def _sources(policy, names):
     """Absender-Namen -> Liste von source-Werten (IP-Set-Verweis oder IP-Liste)."""
     ipset, ips = [], []
     for n in names:
+        if n == "any":
+            # Ohne source passt die Regel auf jeden Absender
+            return [None]
         if n == "owner":
             ipset.append("+owner")
         elif n == "lan":
@@ -73,7 +76,9 @@ def _in_rules(policy, entries):
         label = f"{port or '/'.join(protos)} von {', '.join(e['from'])}"
         for src in _sources(policy, e["from"]):
             for proto in protos:
-                r = {"type": "in", "action": "ACCEPT", "source": src, "proto": proto}
+                r = {"type": "in", "action": "ACCEPT", "proto": proto}
+                if src:
+                    r["source"] = src
                 if port:
                     r["dport"] = port
                 r["comment"] = label
@@ -100,8 +105,11 @@ def render_guest(policy, name):
         if a["guest"] == name:
             rules.append({"type": "out", "action": "ACCEPT", "dest": nodes, "proto": "tcp",
                           "dport": str(a["port"]), "comment": "Proxmox-API"})
-    rules.append({"type": "out", **block, "dest": nodes, "comment": "keine Knoten"})
-    if not g.get("owner_proxy"):
+    if g.get("isolated"):
+        rules.append({"type": "out", **block, "dest": policy["lan"], "comment": "kein LAN"})
+    else:
+        rules.append({"type": "out", **block, "dest": nodes, "comment": "keine Knoten"})
+    if not g.get("owner_proxy") and not g.get("isolated"):
         # Router wie Tailscale stehen im owner-Set, sind aber selbst Gaeste:
         # dorthin entscheidet ihre eigene Eingangs-Firewall
         proxies = [p["ip"] for p in policy["guests"].values() if p.get("owner_proxy")]

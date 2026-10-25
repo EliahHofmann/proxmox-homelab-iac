@@ -285,3 +285,21 @@ def test_gaeste_erreichen_den_tailscale_router():
         owner_drop = next(i for i, r in enumerate(out) if r.get("dest") == "+owner")
         proxy = [i for i, r in enumerate(out) if r["action"] == "ACCEPT" and r.get("dest") == "192.168.178.33"]
         assert proxy and proxy[0] < owner_drop, name
+
+
+def test_absender_any_braucht_keine_quelle():
+    g = fw.render_guest(POLICY, "minecraft")
+    open_rules = [r for r in rules(g, "in") if r.get("dport") == "25565"]
+    assert open_rules and all("source" not in r for r in open_rules)
+    assert {r["proto"] for r in open_rules} == {"tcp"}
+
+
+def test_isolierter_gast_erreicht_kein_lan():
+    # Aus dem Internet erreichbar: darf selbst nichts im LAN aufmachen,
+    # auch nicht den Tailscale-Router
+    out = rules(fw.render_guest(POLICY, "minecraft"), "out")
+    assert out[-1]["action"] == "DROP" and out[-1]["dest"] == "192.168.178.0/24"
+    assert not any(r["action"] == "ACCEPT" for r in out)
+    # Nicht isolierte Gaeste behalten den Weg zum Tailscale-Router
+    assert any(r["action"] == "ACCEPT" and r.get("dest") == "192.168.178.33"
+               for r in rules(fw.render_guest(POLICY, "qwen3"), "out"))
