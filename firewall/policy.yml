@@ -13,17 +13,17 @@ reserved: [192.168.178.178]
 
 guests:
   adguard:     {vmid: 100, ip: 192.168.178.30, mode: enforce}
-  traefik:     {vmid: 101, ip: 192.168.178.31, mode: observe}
+  traefik:     {vmid: 101, ip: 192.168.178.31, mode: enforce}
   cloudflared: {vmid: 102, ip: 192.168.178.32, mode: enforce}
   # Leitet die Verbindungen der Besitzer-Geraete ins LAN weiter
   tailscale:   {vmid: 103, ip: 192.168.178.33, mode: enforce, owner_proxy: true}
-  nextcloud:   {vmid: 200, ip: 192.168.178.80, mode: observe}
+  nextcloud:   {vmid: 200, ip: 192.168.178.80, mode: enforce}
   collabora:   {vmid: 201, ip: 192.168.178.81, mode: enforce}
   vaultwarden: {vmid: 202, ip: 192.168.178.82, mode: enforce}
   immich:      {vmid: 204, ip: 192.168.178.84, mode: enforce}
   qwen3:       {vmid: 205, ip: 192.168.178.85, mode: enforce}
-  paperless:   {vmid: 206, ip: 192.168.178.86, mode: observe}
-  finance:     {vmid: 207, ip: 192.168.178.87, mode: observe}
+  paperless:   {vmid: 206, ip: 192.168.178.86, mode: enforce}
+  finance:     {vmid: 207, ip: 192.168.178.87, mode: enforce}
   jellyfin:    {vmid: 208, ip: 192.168.178.88, mode: enforce}
   # Freunde spielen ueber Tailscale auf dem Gast selbst: er kommt nicht ins LAN
   minecraft:   {vmid: 210, ip: 192.168.178.91, mode: enforce, isolated: true}
