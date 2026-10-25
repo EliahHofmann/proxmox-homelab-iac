@@ -311,3 +311,9 @@ def test_besitzer_kommen_unterwegs_ueber_tailscale_an_die_knoten():
     assert out[0]["action"] == "ACCEPT" and out[0]["dest"] == "192.168.178.10,192.168.178.11"
     assert set(out[0]["dport"].split(",")) == {"22", "8006", "8007"}
     assert out[1]["action"] == "DROP" and out[1]["dest"] == "192.168.178.10,192.168.178.11"
+
+
+def test_besitzer_fragt_loki_direkt_ab():
+    g = fw.render_guest(POLICY, "monitoring")
+    assert allows(g, "+owner", 3100)
+    assert allows(g, "192.168.178.86", 3100)
