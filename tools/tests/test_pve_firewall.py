@@ -298,3 +298,16 @@ def test_isolierter_gast_erreicht_kein_lan():
     # Nicht isolierte Gaeste behalten den Weg zum Tailscale-Router
     assert any(r["action"] == "ACCEPT" and r.get("dest") == "192.168.178.33"
                for r in rules(fw.render_guest(POLICY, "qwen3"), "out"))
+
+
+def test_halcyon_ueber_traefik_erreichbar():
+    g = fw.render_guest(POLICY, "jellyfin")
+    assert allows(g, "192.168.178.31", 1420) and allows(g, "+owner", 1420)
+
+
+def test_besitzer_kommen_unterwegs_ueber_tailscale_an_die_knoten():
+    # Proxmox-UI, PBS-UI und SSH der Knoten laufen unterwegs ueber den Router
+    out = rules(fw.render_guest(policy(tailscale="enforce"), "tailscale"), "out")
+    assert out[0]["action"] == "ACCEPT" and out[0]["dest"] == "192.168.178.10,192.168.178.11"
+    assert set(out[0]["dport"].split(",")) == {"22", "8006", "8007"}
+    assert out[1]["action"] == "DROP" and out[1]["dest"] == "192.168.178.10,192.168.178.11"
