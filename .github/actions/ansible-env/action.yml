@@ -26,6 +26,9 @@ runs:
         echo "::add-mask::$VAULT_ROLE_ID"
         echo "::add-mask::$VAULT_SECRET_ID"
         echo "VAULT_ADDR=$VAULT_ADDR" >> $GITHUB_ENV
+        # Vault spricht HTTPS mit eigener CA (oeffentliches Zertifikat im Repo)
+        echo "VAULT_CACERT=$GITHUB_WORKSPACE/ansible/files/vault-ca.pem" >> $GITHUB_ENV
+        echo "VAULT_CA_B64=$(base64 -w0 "$GITHUB_WORKSPACE/ansible/files/vault-ca.pem")" >> $GITHUB_ENV
         echo "VAULT_ROLE_ID=$VAULT_ROLE_ID" >> $GITHUB_ENV
         echo "VAULT_SECRET_ID=$VAULT_SECRET_ID" >> $GITHUB_ENV
 
@@ -33,6 +36,7 @@ runs:
       uses: hashicorp/vault-action@v3
       with:
         url: ${{ env.VAULT_ADDR }}
+        caCertificate: ${{ env.VAULT_CA_B64 }}
         method: approle
         roleId: ${{ env.VAULT_ROLE_ID }}
         secretId: ${{ env.VAULT_SECRET_ID }}
@@ -64,7 +68,7 @@ runs:
         # Jeder Wert wird maskiert und mit zufaelligem Begrenzer geschrieben,
         # damit ein Wert mit Zeilenumbruch keine weiteren Variablen setzt.
         for SERVICE in "${SERVICES[@]}"; do
-          SECRET_JSON=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/$SERVICE")
+          SECRET_JSON=$(curl -s --cacert "$VAULT_CACERT" --header "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/$SERVICE")
           if [ "$(echo "$SECRET_JSON" | jq -r '.data')" != "null" ]; then
             while IFS= read -r KEY; do
               VALUE=$(echo "$SECRET_JSON" | jq -r --arg k "$KEY" '.data.data[$k] | tostring')
@@ -82,7 +86,7 @@ runs:
     - name: Alarm-Mail-Zugang laden und auf dem Runner ablegen
       shell: bash
       run: |
-        J=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/alerts")
+        J=$(curl -s --cacert "$VAULT_CACERT" --header "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/alerts")
         get() { echo "$J" | jq -r ".data.data.$1 // empty"; }
         U=$(get smtp_user); P=$(get smtp_password); T=$(get mail_to); F=$(get smtp_fingerprint)
         if [ -z "$U" ] || [ -z "$P" ] || [ -z "$T" ] || [ -z "$F" ]; then

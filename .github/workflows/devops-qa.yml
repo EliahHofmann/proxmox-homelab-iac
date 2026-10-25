@@ -90,6 +90,8 @@ jobs:
           echo "::add-mask::$VAULT_ROLE_ID"
           echo "::add-mask::$VAULT_SECRET_ID"
           echo "VAULT_ADDR=$VAULT_ADDR" >> $GITHUB_ENV
+          # Vault spricht HTTPS mit eigener CA (oeffentliches Zertifikat im Repo)
+          echo "VAULT_CA_B64=$(base64 -w0 "$GITHUB_WORKSPACE/ansible/files/vault-ca.pem")" >> $GITHUB_ENV
           echo "VAULT_ROLE_ID=$VAULT_ROLE_ID" >> $GITHUB_ENV
           echo "VAULT_SECRET_ID=$VAULT_SECRET_ID" >> $GITHUB_ENV
 
@@ -97,6 +99,7 @@ jobs:
         uses: hashicorp/vault-action@v3
         with:
           url: ${{ env.VAULT_ADDR }}
+          caCertificate: ${{ env.VAULT_CA_B64 }}
           method: approle
           roleId: ${{ env.VAULT_ROLE_ID }}
           secretId: ${{ env.VAULT_SECRET_ID }}
