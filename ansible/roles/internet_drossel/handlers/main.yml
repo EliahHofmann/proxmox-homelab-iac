@@ -4,3 +4,5 @@
     name: internet-drossel
     state: restarted
     daemon_reload: yes
+  # Im --check gibt es den Dienst noch nicht
+  ignore_errors: "{{ ansible_check_mode }}"
