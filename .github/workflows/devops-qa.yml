@@ -115,12 +115,16 @@ jobs:
             secret/data/scaleway ACCESS_KEY | AWS_ACCESS_KEY_ID ;
             secret/data/scaleway SECRET_KEY | AWS_SECRET_ACCESS_KEY ;
 
-      - name: Terraform Setup
-        uses: hashicorp/setup-terraform@v3
-
+      # Terraform liegt fest auf dem Runner (/usr/local/bin), der Provider im
+      # Zwischenspeicher: sonst laedt jeder Lauf beides neu ueber die schmale
+      # Leitung. Versionen kommen aus .terraform.lock.hcl (kein -upgrade).
       - name: Terraform Init
         working-directory: ./terraform
-        run: terraform init -upgrade
+        env:
+          TF_PLUGIN_CACHE_DIR: /home/github-runner/.terraform.d/plugin-cache
+        run: |
+          terraform version
+          terraform init
 
       - name: Terraform Plan
         if: github.event_name == 'pull_request'
