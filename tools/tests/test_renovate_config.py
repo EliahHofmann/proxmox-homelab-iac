@@ -96,31 +96,33 @@ def test_every_version_default_has_renovate_comment():
     assert not missed, "Ohne '# renovate:'-Kommentar:\n" + "\n".join(missed)
 
 
+# Nur die Namen: die Versionen aendert Renovate selbst, sonst bricht jeder
+# Update-PR an diesem Test.
 EXPECTED = {
-    ("grafana/loki", "3.7.9"),
-    ("prom/prometheus", "v3.15.1"),
-    ("prom/alertmanager", "v0.34.1"),
-    ("prom/node-exporter", "v1.12.1"),
-    ("prompve/prometheus-pve-exporter", "3.10.1"),
-    ("grafana/grafana", "13.2.4"),
-    ("traefik", "v3.7.16"),
-    ("favonia/cloudflare-ddns", "1.17.1"),
-    ("mariadb", "11.8.9"),
-    ("fireflyiii/core", "version-6.7.9"),
-    ("fireflyiii/data-importer", "version-2.3.5"),
-    ("binwiederhier/ntfy", "v2.32.0"),
-    ("docker.io/library/redis", "8.10.2"),
-    ("docker.io/library/postgres", "15.19"),
-    ("docker.io/valkey/valkey", "9"),
-    ("ghcr.io/immich-app/postgres", "14-vectorchord0.4.3-pgvectors0.2.0"),
-    ("collabora/code", "26.04.5.1.1"),
-    ("vaultwarden/server", "1.37.4"),
-    ("cloudflare/cloudflared", "2026.10.3"),
-    ("adguard/adguardhome", "v0.107.79"),
-    ("ghcr.io/immich-app/immich-server", "v3.3.5"),
-    ("ghcr.io/paperless-ngx/paperless-ngx", "3.3.3"),
-    ("jellyfin/jellyfin", "12.2"),
-    ("tailscale/tailscale", "v1.104.2"),
+    "grafana/loki",
+    "prom/prometheus",
+    "prom/alertmanager",
+    "prom/node-exporter",
+    "prompve/prometheus-pve-exporter",
+    "grafana/grafana",
+    "traefik",
+    "favonia/cloudflare-ddns",
+    "mariadb",
+    "fireflyiii/core",
+    "fireflyiii/data-importer",
+    "binwiederhier/ntfy",
+    "docker.io/library/redis",
+    "docker.io/library/postgres",
+    "docker.io/valkey/valkey",
+    "ghcr.io/immich-app/postgres",
+    "collabora/code",
+    "vaultwarden/server",
+    "cloudflare/cloudflared",
+    "adguard/adguardhome",
+    "ghcr.io/immich-app/immich-server",
+    "ghcr.io/paperless-ngx/paperless-ngx",
+    "jellyfin/jellyfin",
+    "tailscale/tailscale",
 }
 
 
@@ -129,7 +131,9 @@ def test_expected_dependencies():
                 for n in r.get("matchPackageNames", [])}
     found = {(m["depName"], m["currentValue"]) for rel, m in matches()
              if not rel.startswith(UNUSED_ROLE) and m["depName"] not in disabled}
-    assert found == EXPECTED
+    assert {name for name, _ in found} == EXPECTED
+    # Jede gefundene Version ist fest gepinnt, kein leerer Wert und kein "latest"
+    assert all(v and v != "latest" for _, v in found), sorted(found)
     assert "paperless-proton-bridge" in disabled
     digests = {m["depName"] for rel, m in matches() if m.groupdict().get("currentDigest")}
     assert {"docker.io/valkey/valkey", "ghcr.io/immich-app/postgres"} <= digests
