@@ -27,7 +27,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -89,7 +89,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Lade Runner Systemvariablen in GitHub ENV
         run: |
@@ -100,7 +100,7 @@ jobs:
           echo "VAULT_SECRET_ID=$VAULT_SECRET_ID" >> $GITHUB_ENV
 
       - name: Fetch Proxmox Secrets from Vault
-        uses: hashicorp/vault-action@v3
+        uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b # v3
         with:
           url: ${{ env.VAULT_ADDR }}
           method: approle
@@ -145,7 +145,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Ansible-Umgebung und Secrets
         uses: ./.github/actions/ansible-env
@@ -189,7 +189,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Mail senden
         env:
