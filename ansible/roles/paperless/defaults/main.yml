@@ -13,3 +13,10 @@ PAPERLESS_SECRET_KEY: "{{ lookup('env', 'PAPERLESS_SECRET_KEY') }}"
 PAPERLESS_ADMIN_USER: "{{ lookup('env', 'PAPERLESS_ADMIN_USER') }}"
 PAPERLESS_ADMIN_PASSWORD: "{{ lookup('env', 'PAPERLESS_ADMIN_PASSWORD') }}"
 PAPERLESS_API_TOKEN: "{{ lookup('env', 'PAPERLESS_API_TOKEN') }}"
+# Alarm-Sortierer: Mails mit diesem Betreff-Praefix wandern aus dem Posteingang
+# in den Ordner. Zugangsdaten kommen aus dem gleichnamigen Paperless-Mailkonto.
+paperless_alarm_konto: "Proton Mail"
+paperless_alarm_praefix: "[homelab]"
+paperless_alarm_ordner: "Folders/Alerts"
+# Derselbe Zertifikats-Fingerabdruck wie beim Alarm-SMTP (Vault secret/alerts)
+paperless_alarm_fingerprint: "{{ lookup('env', 'SMTP_FINGERPRINT') }}"
