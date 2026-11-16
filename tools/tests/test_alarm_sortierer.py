@@ -1,4 +1,5 @@
 """Tests fuer ansible/roles/paperless/files/alarm_sortierer.py (nur Beispielwerte)."""
+import hashlib
 import io
 import sys
 from pathlib import Path
@@ -7,18 +8,35 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ansible" / "roles"
 
 import alarm_sortierer  # noqa: E402
 
+CERT = b"bridge-cert"
+FP = hashlib.sha256(CERT).hexdigest()
+
+
+class FakeSock:
+    def __init__(self, der):
+        self.der = der
+
+    def getpeercert(self, binary_form=False):
+        return self.der
+
 
 class FakeImap:
     """IMAP-Server im Speicher: uid -> Betreff, merkt sich alle Aufrufe."""
 
-    def __init__(self, mails, move=True, ordner_fehlt=False):
+    def __init__(self, mails, move=True, ordner_fehlt=False, uidplus=False):
         self.mails = dict(mails)
-        self.capabilities = ("IMAP4REV1", "MOVE") if move else ("IMAP4REV1",)
+        self.capabilities = ("IMAP4REV1",) + (("MOVE",) if move else ()) + (("UIDPLUS",) if uidplus else ())
         self.ordner_fehlt = ordner_fehlt
         self.calls = []
         self.logged_in = None
+        self.sock = FakeSock(CERT)
+
+    def starttls(self, ssl_context=None):
+        self.calls.append(("starttls",))
+        return "OK", [b""]
 
     def login(self, user, pw):
+        self.calls.append(("login",))
         self.logged_in = (user, pw)
         return "OK", [b""]
 
@@ -42,7 +60,7 @@ class FakeImap:
             if self.ordner_fehlt:
                 return "NO", [b"no such mailbox"]
             return "OK", [b""]
-        if cmd == "STORE":
+        if cmd in ("STORE", "EXPUNGE"):
             return "OK", [b""]
         raise AssertionError(cmd)
 
@@ -70,11 +88,26 @@ def test_kodierter_betreff_wird_erkannt():
     assert alarm_sortierer.sortiere(fake, "[homelab]", "Folders/Alerts") == 1
 
 
-def test_ohne_move_faehigkeit_copy_und_loeschen():
-    fake = FakeImap({4: "[homelab] ALARM: Beispiel"}, move=False)
+def test_ohne_move_copy_und_nur_die_eigenen_mails_loeschen():
+    fake = FakeImap({4: "[homelab] ALARM: Beispiel"}, move=False, uidplus=True)
     assert alarm_sortierer.sortiere(fake, "[homelab]", "Folders/Alerts") == 1
-    cmds = [c[:2] for c in fake.calls if c[0] in ("uid", "expunge")]
-    assert cmds == [("uid", "SEARCH"), ("uid", "FETCH"), ("uid", "COPY"), ("uid", "STORE"), ("expunge",)]
+    cmds = [c[:3] for c in fake.calls if c[0] in ("uid", "expunge")]
+    assert cmds == [("uid", "SEARCH", None), ("uid", "FETCH", "4"), ("uid", "COPY", "4"),
+                    ("uid", "STORE", "4"), ("uid", "EXPUNGE", "4")]
+
+
+def test_ohne_move_und_uidplus_abbruch_statt_doppelter_kopien():
+    # Ein normales EXPUNGE wuerde auch fremde, nur markierte Mails endgueltig loeschen,
+    # COPY ohne Loeschen wuerde alle 2 Minuten eine weitere Kopie anlegen
+    fake = FakeImap({4: "[homelab] ALARM: Beispiel"}, move=False, uidplus=False)
+    try:
+        alarm_sortierer.sortiere(fake, "[homelab]", "Folders/Alerts")
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("kein Fehler")
+    assert ("expunge",) not in fake.calls
+    assert moved(fake) == []
 
 
 def test_nichts_zu_tun_verschiebt_nichts():
@@ -101,15 +134,31 @@ def test_fehlender_zielordner_ist_fehler():
 
 def test_zugangsdaten_kommen_von_stdin():
     fake = FakeImap({})
-    rc = alarm_sortierer.main(["--host", "h"], stdin=io.StringIO("user@example.org\ngeheim\n"), connect=lambda h, p: fake)
+    rc = alarm_sortierer.main(["--host", "h", "--fingerprint", FP],
+                              stdin=io.StringIO("user@example.org\ngeheim\n"), connect=lambda h, p: fake)
     assert rc == 0
     assert fake.logged_in == ("user@example.org", "geheim")
+    assert fake.calls[:2] == [("starttls",), ("login",)]
+
+
+def test_falsches_zertifikat_kein_login():
+    fake = FakeImap({})
+    fake.sock = FakeSock(b"fremdes-cert")
+    rc = alarm_sortierer.main(["--fingerprint", FP], stdin=io.StringIO("u\np\n"), connect=lambda h, p: fake)
+    assert rc == 3
+    assert fake.logged_in is None
+
+
+def test_ohne_fingerabdruck_keine_verbindung():
+    def connect(h, p):
+        raise AssertionError("darf nicht verbinden")
+    assert alarm_sortierer.main(["--fingerprint", ""], stdin=io.StringIO("u\np\n"), connect=connect) == 2
 
 
 def test_leere_zugangsdaten_brechen_ab_ohne_verbindung():
     def connect(h, p):
         raise AssertionError("darf nicht verbinden")
-    assert alarm_sortierer.main([], stdin=io.StringIO("\n"), connect=connect) == 2
+    assert alarm_sortierer.main(["--fingerprint", FP], stdin=io.StringIO("\n"), connect=connect) == 2
 
 
 def test_trockenlauf_zaehlt_ohne_zu_verschieben():

@@ -97,6 +97,12 @@
 
 # Proton-Filter greifen nicht bei Mails, die das Konto selbst verschickt -
 # Alertmanager sendet aber ueber die eigene Bridge. Darum sortiert ein Timer.
+- name: Fingerabdruck der Bridge fuer den Alarm-Sortierer vorhanden
+  assert:
+    that:
+      - (paperless_alarm_fingerprint | replace(':', '') | length) == 64
+    fail_msg: "SMTP_FINGERPRINT fehlt (Vault secret/alerts smtp_fingerprint)"
+
 - name: Alarm-Sortierer (alarm_sortierer.py) auf den Server kopieren
   copy:
     src: alarm_sortierer.py

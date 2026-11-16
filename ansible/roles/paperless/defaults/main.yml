@@ -18,3 +18,5 @@ PAPERLESS_API_TOKEN: "{{ lookup('env', 'PAPERLESS_API_TOKEN') }}"
 paperless_alarm_konto: "Proton Mail"
 paperless_alarm_praefix: "[homelab]"
 paperless_alarm_ordner: "Folders/Alerts"
+# Derselbe Zertifikats-Fingerabdruck wie beim Alarm-SMTP (Vault secret/alerts)
+paperless_alarm_fingerprint: "{{ lookup('env', 'SMTP_FINGERPRINT') }}"
