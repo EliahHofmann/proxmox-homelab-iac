@@ -40,25 +40,6 @@
   retries: 12
   delay: 5
 
-# Diagnose: rechnet den Hash der Waechter-Datei mit dem Vault-Passwort nach.
-# Gibt nur "passt"/"passt-nicht" aus, nie das Passwort.
-- name: Diagnose - Hash der Waechter-Datei passt zum Vault-Passwort
-  shell: |
-    h=$(cut -d: -f2- {{ monitoring_install_path }}/loki-gateway/htpasswd)
-    s=$(echo "$h" | cut -d'$' -f3)
-    n=$(openssl passwd -6 -salt "$s" -stdin)
-    if [ "$n" = "$h" ]; then echo passt; else echo passt-nicht; fi
-  args:
-    executable: /bin/bash
-    stdin: "{{ loki_push_password }}"
-  register: loki_hash_diag
-  changed_when: false
-  no_log: true
-
-- name: Diagnose-Ergebnis
-  debug:
-    msg: "Waechter-Hash {{ loki_hash_diag.stdout }}, Passwortlaenge {{ loki_push_password | length }}"
-
 # curl statt uri: Loki verlangt den Zeitstempel als String, Ansible wuerde ihn
 # in eine Zahl umwandeln (-> 400). Zugangsdaten per stdin, nie in argv.
 - name: Loki-Waechter nimmt Logs mit Passwort an

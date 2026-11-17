@@ -173,8 +173,7 @@
     mode: '0640'
   loop:
     - { datei: nginx.conf, inhalt: "{{ lookup('template', 'loki-gateway.conf.j2') }}" }
-    - { datei: htpasswd, inhalt: "{{ loki_push_user }}:{{ loki_push_hash.stdout }}
-" }
+    - { datei: htpasswd, inhalt: "{{ loki_push_user }}:{{ loki_push_hash.stdout }}\n" }
   loop_control:
     label: "{{ item.datei }}"
   no_log: true
