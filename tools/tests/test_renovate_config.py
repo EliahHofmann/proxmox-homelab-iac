@@ -100,6 +100,7 @@ def test_every_version_default_has_renovate_comment():
 # Update-PR an diesem Test.
 EXPECTED = {
     "grafana/loki",
+    "nginx",
     "prom/prometheus",
     "prom/alertmanager",
     "prom/node-exporter",

@@ -24,6 +24,36 @@
   retries: 24
   delay: 5
 
+# Waechter: ohne Passwort keine Lieferung, Lesen von aussen gesperrt
+- name: Loki-Waechter ist bereit und sperrt ohne Passwort
+  uri:
+    url: "http://localhost:{{ loki_gateway_port }}{{ item.pfad }}"
+    method: "{{ item.methode }}"
+    status_code: "{{ item.status }}"
+  loop:
+    - { pfad: /ready, methode: GET, status: 200 }
+    - { pfad: /loki/api/v1/push, methode: POST, status: 401 }
+    - { pfad: /loki/api/v1/query, methode: GET, status: 403 }
+  register: loki_gw
+  until: loki_gw.status == item.status
+  retries: 12
+  delay: 5
+
+- name: Loki-Waechter nimmt Logs mit Passwort an
+  uri:
+    url: "http://localhost:{{ loki_gateway_port }}/loki/api/v1/push"
+    method: POST
+    url_username: "{{ loki_push_user }}"
+    url_password: "{{ loki_push_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      streams:
+        - stream: { job: verify, source: loki-gateway }
+          values: [["{{ (lookup('pipe', 'date +%s') | int) * 1000000000 }}", "verify: Waechter nimmt mit Passwort an"]]
+    status_code: 204
+  no_log: true
+
 # Nach einem Neustart brauchen beide ein paar Sekunden
 - name: Alertmanager ist bereit
   uri:

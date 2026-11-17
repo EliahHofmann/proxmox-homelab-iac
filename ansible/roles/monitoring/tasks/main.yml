@@ -100,6 +100,48 @@
     dest: "{{ monitoring_install_path }}/grafana/"
     mode: '0644'
 
+- name: Loki-Passwort aus Vault vorhanden
+  assert:
+    that:
+      - loki_push_password | length >= 20
+    fail_msg: "LOKI_PUSH_PASSWORD fehlt oder ist zu kurz (Vault secret/monitoring loki_push_password)"
+    quiet: true
+
+- name: Ordner fuer den Loki-Waechter
+  file:
+    path: "{{ monitoring_install_path }}/loki-gateway"
+    state: directory
+    owner: root
+    group: '101'
+    mode: '0750'
+
+# Fester Salt je Host, damit der Hash nur bei neuem Passwort wechselt.
+# Passwort ueber stdin, nie in der Prozessliste.
+- name: Passwort-Hash fuer den Loki-Waechter berechnen
+  command: openssl passwd -6 -salt {{ 'loki' ~ (inventory_hostname | hash('md5'))[:12] }} -stdin
+  args:
+    stdin: "{{ loki_push_password }}"
+  register: loki_push_hash
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Loki-Waechter Konfiguration und Zugangsdaten
+  copy:
+    content: "{{ item.inhalt }}"
+    dest: "{{ monitoring_install_path }}/loki-gateway/{{ item.datei }}"
+    owner: root
+    group: '101'
+    mode: '0640'
+  loop:
+    - { datei: nginx.conf, inhalt: "{{ lookup('template', 'loki-gateway.conf.j2') }}" }
+    - { datei: htpasswd, inhalt: "{{ loki_push_user }}:{{ loki_push_hash.stdout }}
+" }
+  loop_control:
+    label: "{{ item.datei }}"
+  no_log: true
+  register: loki_gateway_config
+
 - name: Monitoring docker-compose.yml generieren
   template:
     src: docker-compose.yml.j2
@@ -174,6 +216,10 @@
 - name: Proxmox-Exporter neu starten, wenn sich seine Config geaendert hat
   command: docker restart pve-exporter
   when: pve_config is changed
+
+- name: Loki-Waechter neu starten, wenn sich Konfiguration oder Passwort geaendert haben
+  command: docker restart loki-gateway
+  when: loki_gateway_config is changed and not ansible_check_mode
 
 # GF_SECURITY_ADMIN_PASSWORD gilt nur beim ersten Start. Damit ein rotiertes
 # Passwort aus Vault ankommt, wird es bei jedem Lauf gesetzt (ueber stdin).
