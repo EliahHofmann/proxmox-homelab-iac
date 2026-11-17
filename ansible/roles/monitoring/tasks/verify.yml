@@ -27,7 +27,8 @@
 # Waechter: ohne Passwort keine Lieferung, Lesen von aussen gesperrt
 - name: Loki-Waechter ist bereit und sperrt ohne Passwort
   uri:
-    url: "http://localhost:{{ loki_gateway_port }}{{ item.pfad }}"
+    url: "https://{{ ansible_host }}:{{ loki_gateway_port }}{{ item.pfad }}"
+    ca_path: "{{ monitoring_install_path }}/loki-gateway-tls/ca.pem"
     method: "{{ item.methode }}"
     status_code: "{{ item.status }}"
   loop:
@@ -39,19 +40,18 @@
   retries: 12
   delay: 5
 
+# curl statt uri: Loki verlangt den Zeitstempel als String, Ansible wuerde ihn
+# in eine Zahl umwandeln (-> 400). Zugangsdaten per stdin, nie in argv.
 - name: Loki-Waechter nimmt Logs mit Passwort an
-  uri:
-    url: "http://localhost:{{ loki_gateway_port }}/loki/api/v1/push"
-    method: POST
-    url_username: "{{ loki_push_user }}"
-    url_password: "{{ loki_push_password }}"
-    force_basic_auth: true
-    body_format: json
-    body:
-      streams:
-        - stream: { job: verify, source: loki-gateway }
-          values: [["{{ (lookup('pipe', 'date +%s') | int) * 1000000000 }}", "verify: Waechter nimmt mit Passwort an"]]
-    status_code: 204
+  shell: |
+    ts="$(date +%s)000000000"
+    curl -sS -o /dev/null -w '%{http_code}' -K -       --cacert {{ monitoring_install_path }}/loki-gateway-tls/ca.pem       -H 'Content-Type: application/json'       -d "{\"streams\":[{\"stream\":{\"job\":\"verify\",\"source\":\"loki-gateway\"},\"values\":[[\"$ts\",\"verify: Waechter nimmt mit Passwort an\"]]}]}"       https://{{ ansible_host }}:{{ loki_gateway_port }}/loki/api/v1/push
+  args:
+    executable: /bin/bash
+    stdin: 'user = "{{ loki_push_user }}:{{ loki_push_password }}"'
+  register: loki_gw_push
+  changed_when: false
+  failed_when: loki_gw_push.stdout != '204'
   no_log: true
 
 # Nach einem Neustart brauchen beide ein paar Sekunden

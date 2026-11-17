@@ -107,6 +107,44 @@
     fail_msg: "LOKI_PUSH_PASSWORD fehlt oder ist zu kurz (Vault secret/monitoring loki_push_password)"
     quiet: true
 
+# Schluessel und Zertifikat legt man einmal von Hand an (der Schluessel verlaesst
+# den Host nie, die Homelab-CA auf dem Vault-Host unterschreibt nur die Anfrage):
+#   openssl ecparam -name prime256v1 -genkey -noout -out loki-gateway-tls/tls.key
+#   openssl req -new -key loki-gateway-tls/tls.key -subj /CN=loki-gateway  -> auf Vault:
+#   openssl x509 -req -CA ca.pem -CAkey ca.key -days 1825 (SAN IP der Monitoring-VM)
+- name: TLS-Schluessel und -Zertifikat des Loki-Waechters vorhanden
+  stat:
+    path: "{{ monitoring_install_path }}/loki-gateway-tls/{{ item }}"
+  loop: [tls.key, tls.pem]
+  register: loki_gateway_tls
+  check_mode: false
+
+- name: Ohne TLS-Dateien kein Waechter
+  assert:
+    that: loki_gateway_tls.results | map(attribute='stat.exists') | min
+    fail_msg: "loki-gateway-tls/tls.key oder tls.pem fehlt - siehe Kommentar oben"
+    quiet: true
+
+# Nur root und der nginx-Benutzer im Container (gid 101) duerfen den Schluessel lesen
+- name: Rechte der TLS-Dateien des Loki-Waechters
+  file:
+    path: "{{ monitoring_install_path }}/loki-gateway-tls{{ item.pfad }}"
+    owner: root
+    group: '101'
+    mode: "{{ item.modus }}"
+  loop:
+    - { pfad: '', modus: '0750' }
+    - { pfad: /tls.key, modus: '0640' }
+    - { pfad: /tls.pem, modus: '0640' }
+
+- name: Homelab-CA fuer die Pruefung des Waechters
+  copy:
+    src: "{{ playbook_dir }}/files/vault-ca.pem"
+    dest: "{{ monitoring_install_path }}/loki-gateway-tls/ca.pem"
+    owner: root
+    group: '101'
+    mode: '0640'
+
 - name: Ordner fuer den Loki-Waechter
   file:
     path: "{{ monitoring_install_path }}/loki-gateway"

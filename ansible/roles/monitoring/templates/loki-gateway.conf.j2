@@ -14,7 +14,11 @@ http {
     client_max_body_size 16m;
 
     server {
-        listen 8080;
+        # Zertifikat von der Homelab-CA, Schluessel bleibt auf dem Host
+        listen 8080 ssl;
+        ssl_certificate /etc/nginx/tls/tls.pem;
+        ssl_certificate_key /etc/nginx/tls/tls.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
 
         location = /loki/api/v1/push {
             limit_except POST { deny all; }
