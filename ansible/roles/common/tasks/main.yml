@@ -128,7 +128,9 @@
   register: loki_plugin_id
   changed_when: false
   check_mode: false
-  failed_when: false
+  # Ohne gueltige Plugin-ID keine CA im Plugin -> lieber abbrechen als
+  # eine https-URL mit Passwort ohne pruefbare CA ausrollen
+  failed_when: loki_plugin_id.rc != 0 or loki_plugin_id.stdout is not match('^[0-9a-f]{64}$')
 
 - name: Homelab-CA ins Loki-Plugin legen
   copy:
@@ -137,7 +139,7 @@
     owner: root
     group: root
     mode: '0644'
-  when: loki_plugin_id.rc == 0 and loki_plugin_id.stdout | length == 64
+  register: loki_plugin_ca
 
 # Enthaelt das Loki-Passwort -> nur root, nie im Log
 - name: Docker daemon.json für globales Loki-Logging erstellen
