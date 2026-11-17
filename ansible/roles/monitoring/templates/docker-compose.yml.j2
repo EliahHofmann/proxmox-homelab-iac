@@ -26,6 +26,7 @@ services:
     volumes:
       # Ordner statt Einzeldateien, sonst sieht der Container neue Inodes nicht
       - '{{ monitoring_install_path }}/loki-gateway:/etc/nginx/loki:ro'
+      - '{{ monitoring_install_path }}/loki-gateway-tls:/etc/nginx/tls:ro'
     networks:
       - monitoring
     depends_on:

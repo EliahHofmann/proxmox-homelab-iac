@@ -27,7 +27,8 @@
 # Waechter: ohne Passwort keine Lieferung, Lesen von aussen gesperrt
 - name: Loki-Waechter ist bereit und sperrt ohne Passwort
   uri:
-    url: "http://localhost:{{ loki_gateway_port }}{{ item.pfad }}"
+    url: "https://192.168.178.60:{{ loki_gateway_port }}{{ item.pfad }}"
+    ca_path: "{{ monitoring_install_path }}/loki-gateway-tls/ca.pem"
     method: "{{ item.methode }}"
     status_code: "{{ item.status }}"
   loop:
@@ -41,7 +42,8 @@
 
 - name: Loki-Waechter nimmt Logs mit Passwort an
   uri:
-    url: "http://localhost:{{ loki_gateway_port }}/loki/api/v1/push"
+    url: "https://192.168.178.60:{{ loki_gateway_port }}/loki/api/v1/push"
+    ca_path: "{{ monitoring_install_path }}/loki-gateway-tls/ca.pem"
     method: POST
     url_username: "{{ loki_push_user }}"
     url_password: "{{ loki_push_password }}"
