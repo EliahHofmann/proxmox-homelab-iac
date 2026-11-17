@@ -1,0 +1,5 @@
+---
+# Docker-Logs gehen ueber den Loki-Waechter (Monitoring), nur mit Passwort
+loki_push_user: "homelab"
+loki_push_password: "{{ lookup('env', 'LOKI_PUSH_PASSWORD') }}"
+loki_push_host: "192.168.178.60:3101"
