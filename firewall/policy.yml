@@ -57,6 +57,8 @@ in:
   monitoring:
     # Logs: alle Gaeste schicken, der Besitzer fragt direkt ab
     - {port: 3100, from: [guests, owner]}
+    # Loki-Waechter: Log-Lieferung nur mit Passwort (loesst 3100 ab)
+    - {port: 3101, from: [guests]}
     - {port: "3000,9090", from: [owner]}
   vault:
     - {port: 8200, from: [owner, runner]}
