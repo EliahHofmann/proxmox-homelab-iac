@@ -55,9 +55,8 @@ in:
   tailscale:
     - {proto: udp, from: [owner]}
   monitoring:
-    # Logs: alle Gaeste schicken, der Besitzer fragt direkt ab
-    - {port: 3100, from: [guests, owner]}
-    # Loki-Waechter: Log-Lieferung nur mit Passwort (loesst 3100 ab)
+    # Logs nur ueber den Loki-Waechter (HTTPS + Passwort); Loki selbst ist
+    # nur auf der VM erreichbar (Grafana, Pruefungen, Fehlersuche per SSH)
     - {port: 3101, from: [guests]}
     - {port: "3000,9090", from: [owner]}
   vault:

@@ -6,8 +6,9 @@ services:
   loki:
     image: grafana/loki:3.7.9
     container_name: loki
+    # Nur lokal: von aussen kommen Logs ausschliesslich ueber loki-gateway
     ports:
-      - "{{ loki_port }}:3100"
+      - "127.0.0.1:{{ loki_port }}:3100"
     restart: unless-stopped
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
