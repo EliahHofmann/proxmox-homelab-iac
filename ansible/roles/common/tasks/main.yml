@@ -113,25 +113,52 @@
   command: docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
   when: "'loki' not in docker_plugins.stdout"
 
+- name: Loki-Passwort aus Vault vorhanden
+  assert:
+    that:
+      - loki_push_password is match('^[A-Za-z0-9]{20,}$')
+    fail_msg: "LOKI_PUSH_PASSWORD fehlt, ist zu kurz oder enthaelt Sonderzeichen (Vault secret/monitoring)"
+    quiet: true
+
+# Enthaelt das Loki-Passwort -> nur root, nie im Log
 - name: Docker daemon.json für globales Loki-Logging erstellen
   copy:
     dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: '0600'
     content: |
       {
         "log-driver": "loki",
         "log-opts": {
-          "loki-url": "http://192.168.178.60:3100/loki/api/v1/push",
+          "loki-url": "http://{{ loki_push_user }}:{{ loki_push_password }}@{{ loki_push_host }}/loki/api/v1/push",
           "loki-retries": "5",
           "loki-batch-size": "400"
         }
       }
   register: docker_daemon_config
+  no_log: true
 
 - name: Docker Dienst neu starten
   service:
     name: docker
     state: restarted
   when: docker_daemon_config.changed
+
+# Laufende Container behalten ihr altes Log-Ziel bis zur Neuerstellung
+- name: Umstell-Skript fuer das Loki-Ziel bereitstellen
+  copy:
+    src: loki-umstellen.sh
+    dest: /usr/local/sbin/loki-umstellen
+    owner: root
+    group: root
+    mode: '0750'
+
+- name: Container mit altem Loki-Ziel neu erstellen
+  command: /usr/local/sbin/loki-umstellen
+  register: loki_umstellen
+  changed_when: "'neu erstellt' in loki_umstellen.stdout"
+  when: not ansible_check_mode
 
 # OS-Updates laufen nur noch ueber unattended-upgrades (nur Debian-Security,
 # kein Auto-Reboot). Frueher machte jeder Deploy dist-upgrade + Reboot - mit
