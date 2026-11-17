@@ -120,6 +120,25 @@
     fail_msg: "LOKI_PUSH_PASSWORD fehlt, ist zu kurz oder enthaelt Sonderzeichen (Vault secret/monitoring)"
     quiet: true
 
+# Das Loki-Plugin sieht keine Host-Dateien, nur sein eigenes Dateisystem.
+# Die Homelab-CA muss deshalb dort liegen; nach einem Plugin-Update (neue ID)
+# legt dieser Schritt sie wieder ab.
+- name: ID des Loki-Plugins ermitteln
+  command: docker plugin inspect loki -f '{{ '{{' }}.Id{{ '}}' }}'
+  register: loki_plugin_id
+  changed_when: false
+  check_mode: false
+  failed_when: false
+
+- name: Homelab-CA ins Loki-Plugin legen
+  copy:
+    src: "{{ playbook_dir }}/files/vault-ca.pem"
+    dest: "/var/lib/docker/plugins/{{ loki_plugin_id.stdout }}/rootfs/etc/homelab-ca.pem"
+    owner: root
+    group: root
+    mode: '0644'
+  when: loki_plugin_id.rc == 0 and loki_plugin_id.stdout | length == 64
+
 # Enthaelt das Loki-Passwort -> nur root, nie im Log
 - name: Docker daemon.json für globales Loki-Logging erstellen
   copy:
@@ -131,7 +150,8 @@
       {
         "log-driver": "loki",
         "log-opts": {
-          "loki-url": "http://{{ loki_push_user }}:{{ loki_push_password }}@{{ loki_push_host }}/loki/api/v1/push",
+          "loki-url": "https://{{ loki_push_user }}:{{ loki_push_password }}@{{ loki_push_host }}/loki/api/v1/push",
+          "loki-tls-ca-file": "/etc/homelab-ca.pem",
           "loki-retries": "5",
           "loki-batch-size": "400"
         }
