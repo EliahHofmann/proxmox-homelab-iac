@@ -48,7 +48,9 @@
     curl -sS -o /dev/null -w '%{http_code}' -K -       --cacert {{ monitoring_install_path }}/loki-gateway-tls/ca.pem       -H 'Content-Type: application/json'       -d "{\"streams\":[{\"stream\":{\"job\":\"verify\",\"source\":\"loki-gateway\"},\"values\":[[\"$ts\",\"verify: Waechter nimmt mit Passwort an\"]]}]}"       https://{{ ansible_host }}:{{ loki_gateway_port }}/loki/api/v1/push
   args:
     executable: /bin/bash
-    stdin: 'user = "{{ loki_push_user }}:{{ loki_push_password }}"'
+    # Fertiger Basic-Auth-Kopf: Base64 hat keine Zeichen, die curl umdeutet
+    stdin: >-
+      header = "Authorization: Basic {{ (loki_push_user ~ ':' ~ loki_push_password) | b64encode }}"
   register: loki_gw_push
   changed_when: false
   failed_when: loki_gw_push.stdout != '204'

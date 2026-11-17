@@ -103,8 +103,8 @@
 - name: Loki-Passwort aus Vault vorhanden
   assert:
     that:
-      - loki_push_password | length >= 20
-    fail_msg: "LOKI_PUSH_PASSWORD fehlt oder ist zu kurz (Vault secret/monitoring loki_push_password)"
+      - loki_push_password is match('^[A-Za-z0-9]{20,}$')
+    fail_msg: "LOKI_PUSH_PASSWORD fehlt, ist zu kurz oder enthaelt Sonderzeichen/Leerzeichen (Vault secret/monitoring loki_push_password, nur A-Za-z0-9)"
     quiet: true
 
 # Schluessel und Zertifikat legt man einmal von Hand an (der Schluessel verlaesst
