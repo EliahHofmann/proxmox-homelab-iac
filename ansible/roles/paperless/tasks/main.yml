@@ -94,3 +94,48 @@
   command: docker compose up -d --pull never --build
   args:
     chdir: "{{ paperless_install_path }}"
+
+# Proton-Filter greifen nicht bei Mails, die das Konto selbst verschickt -
+# Alertmanager sendet aber ueber die eigene Bridge. Darum sortiert ein Timer.
+- name: Fingerabdruck der Bridge fuer den Alarm-Sortierer vorhanden
+  assert:
+    that:
+      - (paperless_alarm_fingerprint | replace(':', '') | length) == 64
+    fail_msg: "SMTP_FINGERPRINT fehlt (Vault secret/alerts smtp_fingerprint)"
+
+- name: Alarm-Sortierer (alarm_sortierer.py) auf den Server kopieren
+  copy:
+    src: alarm_sortierer.py
+    dest: "{{ paperless_install_path }}/scripts/alarm_sortierer.py"
+    owner: paperless-ngx
+    group: paperless-ngx
+    mode: '0644'
+
+- name: Alarm-Sortierer Aufruf bereitstellen
+  template:
+    src: alarm-sortierer.j2
+    dest: /usr/local/sbin/alarm-sortierer
+    owner: root
+    group: root
+    mode: '0750'
+
+- name: Alarm-Sortierer systemd-Units bereitstellen
+  template:
+    src: "alarm-sortierer.{{ item }}.j2"
+    dest: "/etc/systemd/system/alarm-sortierer.{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - service
+    - timer
+  register: alarm_sortierer_units
+
+- name: Alarm-Sortierer Timer aktivieren
+  systemd:
+    name: alarm-sortierer.timer
+    daemon_reload: "{{ alarm_sortierer_units.changed }}"
+    enabled: true
+    state: started
+  # Im --check der PR-Pipeline existiert die Unit beim ersten Mal noch nicht
+  ignore_errors: "{{ ansible_check_mode }}"

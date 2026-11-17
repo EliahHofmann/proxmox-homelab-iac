@@ -1,4 +1,13 @@
 ---
+# Zuerst: Downloads aus dem Internet bremsen, damit schon die folgenden
+# Rollen die schmale Leitung nicht fuellen. Tailscale und Cloudflared nicht:
+# ueber sie kommen die Zugriffe des Besitzers von unterwegs herein.
+- name: Internet-Drossel
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft, !tag_tailscale, !tag_cloudflared
+  become: yes
+  roles:
+    - internet_drossel
+
 - name: Basis-Konfiguration für alle Server
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax, !Sandbox, !Minecraft
   become: yes

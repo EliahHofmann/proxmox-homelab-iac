@@ -142,3 +142,13 @@
       include_role:
         name: ipv6_off
         tasks_from: verify
+
+- name: Pruefe Internet-Drossel
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft, !tag_tailscale, !tag_cloudflared
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: internet_drossel pruefen
+      include_role:
+        name: internet_drossel
+        tasks_from: verify

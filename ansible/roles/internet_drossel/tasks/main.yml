@@ -1,0 +1,32 @@
+---
+# Muss vor allen anderen Rollen laufen: schon das erste Plugin- oder
+# Image-Laden auf einem neuen Server soll gebremst sein.
+- name: Skript fuer die Drossel
+  template:
+    src: internet-drossel.sh.j2
+    dest: /usr/local/sbin/internet-drossel
+    owner: root
+    group: root
+    mode: '0755'
+  notify: Internet-Drossel neu setzen
+
+- name: Dienst fuer die Drossel (setzt sie bei jedem Start)
+  template:
+    src: internet-drossel.service.j2
+    dest: /etc/systemd/system/internet-drossel.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Internet-Drossel neu setzen
+
+- name: Drossel aktiv und beim Start an
+  systemd:
+    name: internet-drossel
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  # Im --check ist die Unit noch nicht geschrieben, den Dienst gibt es dann nicht
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Neue Regeln sofort setzen, nicht erst am Ende des Plays
+  meta: flush_handlers

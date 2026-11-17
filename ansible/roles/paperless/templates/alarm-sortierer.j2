@@ -1,0 +1,14 @@
+#!/bin/bash
+# Verschiebt Homelab-Alarm-Mails aus dem Posteingang in den Alarm-Ordner,
+# verwaltet von Ansible (paperless). Zugangsdaten = Paperless-Mailkonto
+# "{{ paperless_alarm_konto }}", nur ueber stdin weitergereicht (nie argv/env).
+# Login erst nach STARTTLS und Abgleich mit dem Fingerabdruck der Bridge.
+# Aufruf: alarm-sortierer [--trocken]
+set -euo pipefail
+{
+  echo "select username from paperless_mail_mailaccount where name = '{{ paperless_alarm_konto }}';"
+  echo "select password from paperless_mail_mailaccount where name = '{{ paperless_alarm_konto }}';"
+} | docker exec -i paperless-ngx-db-1 sh -c 'psql -U "${POSTGRES_USER:-paperless}" -d "${POSTGRES_DB:-paperless}" -At -v ON_ERROR_STOP=1' \
+  | docker exec -i paperless-ngx-webserver-1 python3 -I /usr/src/paperless/scripts/alarm_sortierer.py \
+      --praefix '{{ paperless_alarm_praefix }}' --ordner '{{ paperless_alarm_ordner }}' \
+      --fingerprint '{{ paperless_alarm_fingerprint }}' "$@"

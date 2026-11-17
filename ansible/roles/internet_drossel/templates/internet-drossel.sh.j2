@@ -1,0 +1,10 @@
+#!/bin/sh
+# Verwaltet von Ansible (internet_drossel).
+# Bremst alles, was aus dem Internet ankommt (Downloads jedes Programms, auch
+# in Docker), auf {{ internet_drossel_rate }}. Absender im LAN bleiben ungebremst.
+set -e
+DEV={{ internet_drossel_dev }}
+tc qdisc del dev "$DEV" ingress 2>/dev/null || true
+tc qdisc add dev "$DEV" handle ffff: ingress
+tc filter add dev "$DEV" parent ffff: protocol ip prio 1 u32 match ip src {{ internet_drossel_lan }} action pass
+tc filter add dev "$DEV" parent ffff: protocol ip prio 2 u32 match u32 0 0 police rate {{ internet_drossel_rate }} burst {{ internet_drossel_burst }} drop
