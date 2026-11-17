@@ -125,6 +125,18 @@
     fail_msg: "loki-gateway-tls/tls.key oder tls.pem fehlt - siehe Kommentar oben"
     quiet: true
 
+# Nur root und der nginx-Benutzer im Container (gid 101) duerfen den Schluessel lesen
+- name: Rechte der TLS-Dateien des Loki-Waechters
+  file:
+    path: "{{ monitoring_install_path }}/loki-gateway-tls{{ item.pfad }}"
+    owner: root
+    group: '101'
+    mode: "{{ item.modus }}"
+  loop:
+    - { pfad: '', modus: '0750' }
+    - { pfad: /tls.key, modus: '0640' }
+    - { pfad: /tls.pem, modus: '0640' }
+
 - name: Homelab-CA fuer die Pruefung des Waechters
   copy:
     src: "{{ playbook_dir }}/files/vault-ca.pem"
