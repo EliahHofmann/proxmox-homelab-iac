@@ -69,7 +69,7 @@ def test_flusstabelle_beispiele():
     a = fw.render_guest(POLICY, "adguard")
     assert allows(a, "192.168.178.0/24", 53, "udp") and allows(a, "192.168.178.0/24", 53, "tcp")
     m = fw.render_guest(POLICY, "monitoring")
-    assert allows(m, "192.168.178.86", 3100) and allows(m, "192.168.178.33", 3100)
+    assert allows(m, "192.168.178.86", 3101) and allows(m, "192.168.178.33", 3101)
 
 
 def test_beobachten_blockt_nie():
@@ -318,7 +318,10 @@ def test_gaeste_liefern_logs_an_den_loki_waechter():
     assert allows(g, "192.168.178.86", 3101) and allows(g, "192.168.178.33", 3101)
 
 
-def test_besitzer_fragt_loki_direkt_ab():
+def test_loki_ist_von_aussen_nur_ueber_den_waechter_erreichbar():
     g = fw.render_guest(POLICY, "monitoring")
-    assert allows(g, "+owner", 3100)
-    assert allows(g, "192.168.178.86", 3100)
+    assert not allows(g, "+owner", 3100)
+    assert not allows(g, "192.168.178.86", 3100)
+    assert allows(g, "192.168.178.86", 3101)
+
+
