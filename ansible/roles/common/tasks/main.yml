@@ -33,7 +33,7 @@
     update_cache: true
     cache_valid_time: 86400
 
-#große Hilfe von Reddit: https://www.reddit.com/r/ansible/comments/163x5iy/installing_docker_on_debian_12/
+# große Hilfe von Reddit: https://www.reddit.com/r/ansible/comments/163x5iy/installing_docker_on_debian_12/
 
 - name: Alte Docker-Repository-Dateien und veraltete Einträge bereinigen
   block:
