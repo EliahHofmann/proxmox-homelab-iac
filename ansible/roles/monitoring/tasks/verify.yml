@@ -1,13 +1,13 @@
 ---
 # Pruefung nach dem Deploy, aufgerufen von verify.yml
 - name: Container pruefen
-  include_role:
+  ansible.builtin.include_role:
     name: container_health
   vars:
     container_health_dir: "{{ monitoring_install_path }}"
 
 - name: Grafana, Prometheus, Exporter antworten
-  uri:
+  ansible.builtin.uri:
     url: "http://localhost:{{ item }}"
   loop:
     - 3000/api/health
@@ -17,7 +17,7 @@
 
 # Loki braucht nach dem Start eine Weile bis ready
 - name: Loki ist bereit
-  uri:
+  ansible.builtin.uri:
     url: http://localhost:3100/ready
   register: loki_ready
   until: loki_ready.status == 200
@@ -26,7 +26,7 @@
 
 # Waechter: ohne Passwort keine Lieferung, Lesen von aussen gesperrt
 - name: Loki-Waechter ist bereit und sperrt ohne Passwort
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ ansible_host }}:{{ loki_gateway_port }}{{ item.pfad }}"
     ca_path: "{{ monitoring_install_path }}/loki-gateway-tls/ca.pem"
     method: "{{ item.methode }}"
@@ -43,7 +43,7 @@
 # curl statt uri: Loki verlangt den Zeitstempel als String, Ansible wuerde ihn
 # in eine Zahl umwandeln (-> 400). Zugangsdaten per stdin, nie in argv.
 - name: Loki-Waechter nimmt Logs mit Passwort an
-  shell: |
+  ansible.builtin.shell: |
     ts="$(date +%s)000000000"
     curl -sS -o /dev/null -w '%{http_code}' -K -       --cacert {{ monitoring_install_path }}/loki-gateway-tls/ca.pem       -H 'Content-Type: application/json'       -d "{\"streams\":[{\"stream\":{\"job\":\"verify\",\"source\":\"loki-gateway\"},\"values\":[[\"$ts\",\"verify: Waechter nimmt mit Passwort an\"]]}]}"       https://{{ ansible_host }}:{{ loki_gateway_port }}/loki/api/v1/push
   args:
@@ -58,7 +58,7 @@
 
 # Nach einem Neustart brauchen beide ein paar Sekunden
 - name: Alertmanager ist bereit
-  uri:
+  ansible.builtin.uri:
     url: http://localhost:9093/-/ready
   register: am_ready
   until: am_ready.status == 200
@@ -66,7 +66,7 @@
   delay: 5
 
 - name: Prometheus kennt den Alertmanager
-  uri:
+  ansible.builtin.uri:
     url: http://localhost:9090/api/v1/alertmanagers
     return_content: true
   register: prom_am

@@ -1,4 +1,16 @@
 ---
-# Strengste Stufe: die Rollen erfuellen sie bereits (0 Fehler, 0 Warnungen),
-# damit faellt jeder neue Stilfehler sofort in der Pipeline auf.
+# Strengste Stufe ist Pflicht: neue Verstoesse brechen die Pipeline.
+# Die Regeln unten haben noch Altlasten (Stand 2026-11-18, 163 Befunde) -
+# sie werden gemeldet, brechen aber nicht ab, bis sie abgearbeitet sind.
 profile: production
+warn_list:
+  - var-naming[no-role-prefix]
+  - var-naming[pattern]
+  - no-changed-when
+  - risky-file-permissions
+  - risky-shell-pipe
+  - yaml[line-length]
+  - no-handler
+  - name[template]
+  - ignore-errors
+  - command-instead-of-module

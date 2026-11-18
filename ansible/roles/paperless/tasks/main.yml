@@ -1,25 +1,25 @@
 ---
-- name: paperless-ngx Gruppe erstellen
-  group:
+- name: Paperless-ngx Gruppe erstellen
+  ansible.builtin.group:
     name: paperless-ngx
-    system: yes
+    system: true
     state: present
 
-- name: paperless-ngx Benutzer erstellen
-  user:
+- name: Paperless-ngx Benutzer erstellen
+  ansible.builtin.user:
     name: paperless-ngx
     group: paperless-ngx
-    system: yes
+    system: true
     shell: /bin/bash
-    create_home: yes
+    create_home: true
 
-- name: paperless-ngx Ordnerstruktur erstellen
-  file:
+- name: Paperless-ngx Ordnerstruktur erstellen
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: paperless-ngx
     group: paperless-ngx
-    mode: '0755'
+    mode: "0755"
   loop:
     - "{{ paperless_install_path }}"
     - "{{ paperless_install_path }}/scripts"
@@ -28,13 +28,13 @@
 # Paperless runs as uid/gid 1000 inside the container and must be able to
 # write these mounts (e.g. media/media.lock). The host user paperless-ngx has
 # a different uid, so owning them by it breaks every consume.
-- name: paperless-ngx beschreibbare Ordner fuer den Container-User
-  file:
+- name: Paperless-ngx beschreibbare Ordner fuer den Container-User
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "1000"
     group: "1000"
-    mode: '0755'
+    mode: "0755"
   loop:
     - "{{ paperless_install_path }}/data"
     - "{{ paperless_install_path }}/media"
@@ -42,40 +42,39 @@
     - "{{ paperless_install_path }}/consume"
 
 - name: Python Skript (ai_tagger.py) auf den Server kopieren
-  copy:
+  ansible.builtin.copy:
     src: ai_tagger.py
     dest: "{{ paperless_install_path }}/scripts/ai_tagger.py"
     owner: paperless-ngx
     group: paperless-ngx
-    mode: '0755'
+    mode: "0755"
 
-
-- name: proton-bridge Build-Context (Dockerfile) kopieren
-  copy:
+- name: Proton-bridge Build-Context (Dockerfile) kopieren
+  ansible.builtin.copy:
     src: proton-bridge
     dest: "{{ paperless_install_path }}/"
     owner: paperless-ngx
     group: paperless-ngx
-    mode: '0644'
+    mode: "0644"
 
-- name: paperless-ngx docker-compose.yml erstellen
-  template:
+- name: Paperless-ngx docker-compose.yml erstellen
+  ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: "{{ paperless_install_path }}/docker-compose.yml"
 
 # Vor compose up: sonst ist Port 1025 kurz fuer das ganze LAN offen.
 - name: Allow-List fuer das Bridge-SMTP bereitstellen
-  template:
+  ansible.builtin.template:
     src: bridge-smtp-allowlist.service.j2
     dest: /etc/systemd/system/bridge-smtp-allowlist.service
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   register: bridge_allowlist_unit
 
 # restarted statt started, damit neue IPs aus alert_smtp_allowed greifen
 - name: Allow-List fuer das Bridge-SMTP aktivieren
-  systemd:
+  ansible.builtin.systemd:
     name: bridge-smtp-allowlist
     daemon_reload: "{{ bridge_allowlist_unit.changed }}"
     enabled: true
@@ -85,54 +84,54 @@
 
 # Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
 - name: Neue Images gedrosselt laden
-  include_role:
+  ansible.builtin.include_role:
     name: throttled_pull
   vars:
     throttled_pull_dir: "{{ paperless_install_path }}"
 
-- name: paperless-ngx Container starten
-  command: docker compose up -d --pull never --build
+- name: Paperless-ngx Container starten
+  ansible.builtin.command: docker compose up -d --pull never --build
   args:
     chdir: "{{ paperless_install_path }}"
 
 # Proton-Filter greifen nicht bei Mails, die das Konto selbst verschickt -
 # Alertmanager sendet aber ueber die eigene Bridge. Darum sortiert ein Timer.
 - name: Fingerabdruck der Bridge fuer den Alarm-Sortierer vorhanden
-  assert:
+  ansible.builtin.assert:
     that:
       - (paperless_alarm_fingerprint | replace(':', '') | length) == 64
     fail_msg: "SMTP_FINGERPRINT fehlt (Vault secret/alerts smtp_fingerprint)"
 
 - name: Alarm-Sortierer (alarm_sortierer.py) auf den Server kopieren
-  copy:
+  ansible.builtin.copy:
     src: alarm_sortierer.py
     dest: "{{ paperless_install_path }}/scripts/alarm_sortierer.py"
     owner: paperless-ngx
     group: paperless-ngx
-    mode: '0644'
+    mode: "0644"
 
 - name: Alarm-Sortierer Aufruf bereitstellen
-  template:
+  ansible.builtin.template:
     src: alarm-sortierer.j2
     dest: /usr/local/sbin/alarm-sortierer
     owner: root
     group: root
-    mode: '0750'
+    mode: "0750"
 
 - name: Alarm-Sortierer systemd-Units bereitstellen
-  template:
+  ansible.builtin.template:
     src: "alarm-sortierer.{{ item }}.j2"
     dest: "/etc/systemd/system/alarm-sortierer.{{ item }}"
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   loop:
     - service
     - timer
   register: alarm_sortierer_units
 
 - name: Alarm-Sortierer Timer aktivieren
-  systemd:
+  ansible.builtin.systemd:
     name: alarm-sortierer.timer
     daemon_reload: "{{ alarm_sortierer_units.changed }}"
     enabled: true

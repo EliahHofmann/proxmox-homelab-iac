@@ -5,150 +5,150 @@
 
 - name: Pruefe vaultwarden
   hosts: tag_vaultwarden
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: vaultwarden pruefen
-      include_role:
+    - name: Vaultwarden pruefen
+      ansible.builtin.include_role:
         name: vaultwarden
         tasks_from: verify
 
 - name: Pruefe traefik
   hosts: tag_traefik
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: traefik pruefen
-      include_role:
+    - name: Traefik pruefen
+      ansible.builtin.include_role:
         name: traefik
         tasks_from: verify
 
 - name: Pruefe collabora
   hosts: tag_collabora
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: collabora pruefen
-      include_role:
+    - name: Collabora pruefen
+      ansible.builtin.include_role:
         name: collabora
         tasks_from: verify
 
 - name: Pruefe adguard
   hosts: tag_adguard
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: adguard pruefen
-      include_role:
+    - name: Adguard pruefen
+      ansible.builtin.include_role:
         name: adguard
         tasks_from: verify
 
 - name: Pruefe cloudflared
   hosts: tag_cloudflared
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: cloudflared pruefen
-      include_role:
+    - name: Cloudflared pruefen
+      ansible.builtin.include_role:
         name: cloudflared
         tasks_from: verify
 
 - name: Pruefe tailscale
   hosts: tag_tailscale
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: tailscale pruefen
-      include_role:
+    - name: Tailscale pruefen
+      ansible.builtin.include_role:
         name: tailscale
         tasks_from: verify
 
 - name: Pruefe monitoring
   hosts: tag_monitoring
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: monitoring pruefen
-      include_role:
+    - name: Monitoring pruefen
+      ansible.builtin.include_role:
         name: monitoring
         tasks_from: verify
 
 - name: Pruefe immich
   hosts: tag_immich
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: immich pruefen
-      include_role:
+    - name: Immich pruefen
+      ansible.builtin.include_role:
         name: immich
         tasks_from: verify
 
 - name: Pruefe paperless
   hosts: tag_paperless
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: paperless pruefen
-      include_role:
+    - name: Paperless pruefen
+      ansible.builtin.include_role:
         name: paperless
         tasks_from: verify
 
 - name: Pruefe finance
   hosts: tag_actualbudget
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: finance pruefen
-      include_role:
+    - name: Finance pruefen
+      ansible.builtin.include_role:
         name: finance
         tasks_from: verify
 
 - name: Pruefe jellyfin
   hosts: tag_jellyfin
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: jellyfin pruefen
-      include_role:
+    - name: Jellyfin pruefen
+      ansible.builtin.include_role:
         name: jellyfin
         tasks_from: verify
 
 - name: Pruefe Node-Exporter
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft, !tag_monitoring
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: node-exporter pruefen
-      include_role:
+    - name: Node-exporter pruefen
+      ansible.builtin.include_role:
         name: node_exporter
         tasks_from: verify
 
 - name: Pruefe SSH-Zugang
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: ssh_access pruefen
-      include_role:
+    - name: Ssh_access pruefen
+      ansible.builtin.include_role:
         name: ssh_access
         tasks_from: verify
 
 - name: Pruefe IPv6 aus
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: ipv6_off pruefen
-      include_role:
+    - name: Ipv6_off pruefen
+      ansible.builtin.include_role:
         name: ipv6_off
         tasks_from: verify
 
 - name: Pruefe Internet-Drossel
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft, !tag_tailscale, !tag_cloudflared
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
-    - name: internet_drossel pruefen
-      include_role:
+    - name: Internet_drossel pruefen
+      ansible.builtin.include_role:
         name: internet_drossel
         tasks_from: verify

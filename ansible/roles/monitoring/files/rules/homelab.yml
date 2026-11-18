@@ -1,3 +1,4 @@
+---
 # Alarmregeln fuer das Homelab. Getestet mit homelab.test.yml (promtool test rules),
 # der Deploy bricht ab, wenn Pruefung oder Tests rot sind.
 # severity: warning -> Mail, critical -> Mail + ntfy-Push.
@@ -47,7 +48,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: '{{ $labels.instance }}: {{ $labels.mountpoint }} hat nur noch {{ $value | humanizePercentage | reReplaceAll "\\.[0-9]+" "" | reReplaceAll "%" " %" }} frei'
+          summary: '{{ $labels.instance }}: {{ $labels.mountpoint }} hat nur noch {{ $value | humanizePercentage | reReplaceAll "\\.[0-9]+" "" | reReplaceAll "%"
+            " %" }} frei'
 
       - alert: DateisystemVoll
         expr: |
@@ -57,7 +59,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: '{{ $labels.instance }}: {{ $labels.mountpoint }} hat nur noch {{ $value | humanizePercentage | reReplaceAll "\\.[0-9]+" "" | reReplaceAll "%" " %" }} frei'
+          summary: '{{ $labels.instance }}: {{ $labels.mountpoint }} hat nur noch {{ $value | humanizePercentage | reReplaceAll "\\.[0-9]+" "" | reReplaceAll "%"
+            " %" }} frei'
 
   - name: erreichbarkeit
     rules:
@@ -67,7 +70,7 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: 'Proxmox {{ $labels.instance }} antwortet nicht'
+          summary: "Proxmox {{ $labels.instance }} antwortet nicht"
 
       - alert: ZielNichtErreichbar
         expr: up{job!="proxmox"} == 0
@@ -75,7 +78,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: '{{ $labels.instance }} ({{ $labels.job }}) antwortet nicht'
+          summary: "{{ $labels.instance }} ({{ $labels.job }}) antwortet nicht"
 
       # Nur Gaeste, die mit dem Knoten starten sollen (onboot). Beide Knoten
       # werden abgefragt, daher max by (id) gegen doppelte Reihen.
@@ -87,7 +90,7 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: 'Gast {{ $labels.id }} ist gestoppt, soll aber laufen'
+          summary: "Gast {{ $labels.id }} ist gestoppt, soll aber laufen"
 
   - name: finance
     rules:
@@ -101,4 +104,4 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: 'Finance-Job {{ $labels.finance_job }} lief seit ueber 26 Stunden nicht erfolgreich'
+          summary: "Finance-Job {{ $labels.finance_job }} lief seit ueber 26 Stunden nicht erfolgreich"

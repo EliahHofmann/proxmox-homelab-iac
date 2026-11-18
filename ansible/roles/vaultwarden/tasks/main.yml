@@ -1,59 +1,58 @@
 ---
-  - name: Installation von den Paketen
-    apt:
-      name:
-        - docker-ce
-        - docker-compose-plugin
-        - curl
-      state: present
-      update_cache: yes
+- name: Installation von den Paketen
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-compose-plugin
+      - curl
+    state: present
+    update_cache: true
 
-  - name: Hauptordner für vaultwarden
-    file:
-      path: '{{ vault_install_path }}'
-      state: directory
-      mode: '0755'
+- name: Hauptordner für vaultwarden
+  ansible.builtin.file:
+    path: "{{ vault_install_path }}"
+    state: directory
+    mode: "0755"
 
-  - name: docker-compose.yml erstellen
-    template:
-      src: docker-compose.yml.j2
-      dest: "{{ vault_install_path }}/docker-compose.yml"
-      mode: '0644'
-        
+- name: Docker-compose.yml erstellen
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ vault_install_path }}/docker-compose.yml"
+    mode: "0644"
 
-  # Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
-  - name: Neue Images gedrosselt laden
-    include_role:
-      name: throttled_pull
-    vars:
-      throttled_pull_dir: "{{ vault_install_path }}"
+# Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
+- name: Neue Images gedrosselt laden
+  ansible.builtin.include_role:
+    name: throttled_pull
+  vars:
+    throttled_pull_dir: "{{ vault_install_path }}"
 
-  - name: Container starten
-    command: docker compose up -d --pull never
-    args:
-      chdir: '{{ vault_install_path }}'
+- name: Container starten
+  ansible.builtin.command: docker compose up -d --pull never
+  args:
+    chdir: "{{ vault_install_path }}"
 
 # Das woechentliche Mail-Backup ist ersetzt durch das naechtliche PBS-Backup
 # von CT 202. Reste davon auf dem Host entfernen.
-  - name: Alten Backup-Cronjob entfernen
-    cron:
-      name: "Wöchentliches Vaultwarden Backup"
-      state: absent
+- name: Alten Backup-Cronjob entfernen
+  ansible.builtin.cron:
+    name: "Wöchentliches Vaultwarden Backup"
+    state: absent
 
-  - name: Backup-Skript und MSMTP-Konfiguration entfernen
-    file:
-      path: "{{ item }}"
-      state: absent
-    loop:
-      - /usr/local/bin/vaultwarden_backup.sh
-      - /etc/msmtprc
-      - /var/log/msmtp.log
+- name: Backup-Skript und MSMTP-Konfiguration entfernen
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /usr/local/bin/vaultwarden_backup.sh
+    - /etc/msmtprc
+    - /var/log/msmtp.log
 
-  - name: Pakete des Mail-Backups entfernen
-    apt:
-      name:
-        - zip
-        - msmtp
-        - msmtp-mta
-        - mpack
-      state: absent
+- name: Pakete des Mail-Backups entfernen
+  ansible.builtin.apt:
+    name:
+      - zip
+      - msmtp
+      - msmtp-mta
+      - mpack
+    state: absent

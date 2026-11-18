@@ -1,5 +1,5 @@
 ---
-#Docker-Compose
+# Docker-Compose
 CF_DNS_API_TOKEN: "{{ lookup('env', 'CF_DNS_API_TOKEN') }}"
 CF_API_TOKEN: "{{ lookup('env', 'CF_API_TOKEN') }}"
 subdomain: "{{ lookup('env', 'SUBDOMAIN') }}"
@@ -47,7 +47,7 @@ halcyon_internal_port: "1420"
 
 #Finance (Firefly III)
 finance_subdomain: "finanzen"
-importer_subdomain: "importer"   # nur LAN, siehe finance.yml.j2
+importer_subdomain: "importer" # nur LAN, siehe finance.yml.j2
 # ntfy muss oeffentlich erreichbar sein, damit der Bericht auch unterwegs
 # ankommt. Schutz uebernimmt ntfy selbst (deny-all + Anmeldung).
 ntfy_subdomain: "ntfy"

@@ -1,25 +1,25 @@
 ---
-- name: finance-stack Gruppe erstellen
-  group:
+- name: Finance-stack Gruppe erstellen
+  ansible.builtin.group:
     name: finance-stack
-    system: yes
+    system: true
     state: present
 
-- name: finance-stack Benutzer erstellen
-  user:
+- name: Finance-stack Benutzer erstellen
+  ansible.builtin.user:
     name: finance-stack
     group: finance-stack
-    system: yes
+    system: true
     shell: /bin/bash
-    create_home: yes
+    create_home: true
 
-- name: finance-stack Ordnerstruktur erstellen
-  file:
+- name: Finance-stack Ordnerstruktur erstellen
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: finance-stack
     group: finance-stack
-    mode: '0755'
+    mode: "0755"
   loop:
     - "{{ finance_install_path }}"
     - "{{ finance_db_data }}"
@@ -31,135 +31,135 @@
 # Firefly schreibt Anhaenge als www-data (uid 33 im Container). Mit dem
 # Host-Benutzer finance-stack als Besitzer scheiterten Uploads still.
 - name: Firefly-Upload-Verzeichnis fuer www-data
-  file:
+  ansible.builtin.file:
     path: "{{ finance_firefly_data }}"
     state: directory
     owner: "33"
     group: "33"
-    mode: '0750'
+    mode: "0750"
 
 - name: Webhook Source-Code kopieren
-  copy:
+  ansible.builtin.copy:
     src: webhook-src
     dest: "{{ finance_install_path }}/"
     owner: finance-stack
     group: finance-stack
-    mode: '0644'
+    mode: "0644"
 
 - name: Secrets-Verzeichnis erstellen
-  file:
+  ansible.builtin.file:
     path: "{{ finance_install_path }}/secrets"
     state: directory
     owner: root
-    group: "33"          # www-data im Importer-Container
-    mode: '0750'
+    group: "33" # www-data im Importer-Container
+    mode: "0750"
 
 # Muss VOR "docker compose up" laufen: fehlt die Datei beim Bind-Mount,
 # legt Docker an ihrer Stelle ein Verzeichnis an.
 - name: Enable-Banking Private Key ablegen
-  copy:
+  ansible.builtin.copy:
     content: "{{ enable_banking_private_key_b64 | b64decode }}"
     dest: "{{ finance_install_path }}/secrets/enable_banking.pem"
     owner: root
     group: "33"
-    mode: '0640'         # nur root + Container-User, nicht world-readable
+    mode: "0640" # nur root + Container-User, nicht world-readable
   no_log: true
 
 # Rest des PHP2Shell-Workarounds (2026-10-21), seit Firefly 6.7.9 /
 # Importer 2.3.5 mit PHP 8.5.12 ueberfluessig
 - name: Alte PHP-Haertung entfernen
-  file:
+  ansible.builtin.file:
     path: "{{ finance_install_path }}/php-hardening"
     state: absent
 
-- name: ntfy-Serverkonfiguration generieren
-  template:
+- name: Ntfy-Serverkonfiguration generieren
+  ansible.builtin.template:
     src: ntfy-server.yml.j2
     dest: "{{ finance_install_path }}/ntfy-config/server.yml"
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: Docker Compose generieren
-  template:
+  ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: "{{ finance_install_path }}/docker-compose.yml"
     owner: finance-stack
     group: finance-stack
-    mode: '0640'
+    mode: "0640"
 
 # --remove-orphans raeumt die Container des alten Stacks ab (actual-budget,
 # proton-bridge). Ohne das liefen sie mitsamt offener Ports weiter.
 # Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
 - name: Neue Images gedrosselt laden
-  include_role:
+  ansible.builtin.include_role:
     name: throttled_pull
   vars:
     throttled_pull_dir: "{{ finance_install_path }}"
 
 - name: Docker Compose starten
-  command: docker compose up -d --pull never --build --remove-orphans
+  ansible.builtin.command: docker compose up -d --pull never --build --remove-orphans
   args:
     chdir: "{{ finance_install_path }}"
 
 - name: Autoimport curl-config bereitstellen (Secret, 0600)
-  template:
+  ansible.builtin.template:
     src: import.curlcfg.j2
     dest: "{{ finance_install_path }}/import.curlcfg"
     owner: finance-stack
     group: finance-stack
-    mode: '0600'
+    mode: "0600"
   no_log: true
 
 - name: Bank-Import Wrapper-Skript bereitstellen
-  template:
+  ansible.builtin.template:
     src: bank-import.sh.j2
     dest: "{{ finance_install_path }}/bank-import.sh"
     owner: finance-stack
     group: finance-stack
-    mode: '0750'
+    mode: "0750"
 
 # Fireflys eigener Wartungs-Cron: verarbeitet Daueraufträge (Recurring),
 # Rechnungen und Auto-Budgets. Ohne diesen Aufruf zeigt die UI den blauen
 # "cron job has never run"-Hinweis und Daueraufträge werden nie gebucht.
 # Muss genau einmal pro Tag laufen; das artisan-Kommando drosselt sich selbst.
 - name: Taeglicher Firefly-Wartungs-Cron (Daueraufträge, Rechnungen, Auto-Budgets)
-  cron:
+  ansible.builtin.cron:
     name: "firefly-cron"
     hour: "3"
     minute: "0"
     job: "docker exec firefly-iii php artisan firefly-iii:cron"
 
 - name: Taeglicher Bank-Autoimport (Sparkasse via Enable Banking)
-  cron:
+  ansible.builtin.cron:
     name: "firefly-bank-import"
     hour: "6"
     minute: "30"
     job: "{{ finance_install_path }}/bank-import.sh"
 
 - name: Bank-Buchungen nach Empfaenger kategorisieren
-  cron:
+  ansible.builtin.cron:
     name: "firefly-categorize"
     hour: "6"
     minute: "45"
     job: "docker exec finance-webhook python /app/categorize.py"
 
 - name: Dedup-Matching nach Bank-Import
-  cron:
+  ansible.builtin.cron:
     name: "firefly-matching-job"
     hour: "7"
     minute: "0"
     job: "docker exec finance-webhook python /app/matching_job.py"
 
 - name: Taegliche Pruefung auf auffaellige Buchungen
-  cron:
+  ansible.builtin.cron:
     name: "finance-alarme"
     minute: "0"
     hour: "7"
     job: "docker exec finance-webhook python /app/alarme.py >> /var/log/finance-alarme.log 2>&1"
 
 - name: Monatlicher KI-Finanzbericht
-  cron:
+  ansible.builtin.cron:
     name: "firefly-advisor"
     day: "1"
     hour: "8"
@@ -169,9 +169,9 @@
 # ntfy haelt seine Benutzer in einer eigenen Datenbank, nicht in der Config.
 # "user add" meldet bei vorhandenem Benutzer einen Fehler - das ist der
 # Normalfall bei jedem weiteren Lauf und wird abgefangen.
-- name: ntfy-Benutzer anlegen
+- name: Ntfy-Benutzer anlegen
   # Passwort nur ueber die Umgebung, nicht als Argument (sonst in ps sichtbar)
-  command: docker exec -e NTFY_PASSWORD ntfy ntfy user add --role=user {{ item.name | quote }}
+  ansible.builtin.command: docker exec -e NTFY_PASSWORD ntfy ntfy user add --role=user {{ item.name | quote }}
   environment:
     NTFY_PASSWORD: "{{ item.password }}"
   register: ntfy_user_add
@@ -187,9 +187,9 @@
 
 # Vault ist die Quelle: bestehende Benutzer bekommen bei jedem Lauf das
 # Passwort aus Vault, sonst kaeme ein rotiertes Passwort nie an.
-- name: ntfy-Passwoerter aus Vault setzen
+- name: Ntfy-Passwoerter aus Vault setzen
   # Passwort nur ueber die Umgebung, nicht als Argument (sonst in ps sichtbar)
-  command: docker exec -e NTFY_PASSWORD ntfy ntfy user change-pass {{ item.name | quote }}
+  ansible.builtin.command: docker exec -e NTFY_PASSWORD ntfy ntfy user change-pass {{ item.name | quote }}
   environment:
     NTFY_PASSWORD: "{{ item.password }}"
   changed_when: false
@@ -199,8 +199,8 @@
     - { name: "publisher", password: "{{ ntfy_publisher_password }}" }
     - { name: "{{ ntfy_reader_user }}", password: "{{ ntfy_reader_password }}" }
 
-- name: ntfy-Zugriffsrechte auf das Finanz-Topic setzen
-  command: docker exec ntfy ntfy access {{ item.name | quote }} finanzen {{ item.recht }}
+- name: Ntfy-Zugriffsrechte auf das Finanz-Topic setzen
+  ansible.builtin.command: docker exec ntfy ntfy access {{ item.name | quote }} finanzen {{ item.recht }}
   register: ntfy_access
   changed_when: ntfy_access.rc == 0
   when: item.password | length > 0
@@ -210,8 +210,8 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: ntfy-Zugriffsrechte auf das Kommando-Topic setzen
-  command: docker exec ntfy ntfy access {{ item.name | quote }} {{ ntfy_cmd_topic }} {{ item.recht }}
+- name: Ntfy-Zugriffsrechte auf das Kommando-Topic setzen
+  ansible.builtin.command: docker exec ntfy ntfy access {{ item.name | quote }} {{ ntfy_cmd_topic }} {{ item.recht }}
   register: ntfy_access_cmd
   changed_when: ntfy_access_cmd.rc == 0
   when: item.password | length > 0
@@ -224,8 +224,8 @@
     label: "{{ item.name }}"
 
 # Homelab-Alarme vom Alertmanager (Monitoring-VM): Publisher schreibt, die App liest.
-- name: ntfy-Zugriffsrechte auf das Alarm-Topic setzen
-  command: docker exec ntfy ntfy access {{ item.name | quote }} homelab-alarme {{ item.recht }}
+- name: Ntfy-Zugriffsrechte auf das Alarm-Topic setzen
+  ansible.builtin.command: docker exec ntfy ntfy access {{ item.name | quote }} homelab-alarme {{ item.recht }}
   register: ntfy_access_alarm
   changed_when: ntfy_access_alarm.rc == 0
   when: item.password | length > 0

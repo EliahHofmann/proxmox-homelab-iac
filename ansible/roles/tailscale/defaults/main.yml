@@ -1,5 +1,5 @@
 ---
-tailscale_install_path: '/opt/tailscale'
+tailscale_install_path: "/opt/tailscale"
 # Einmal-Schluessel (vorab freigegeben, mit Tag) aus Vault secret/tailscale.
 # Wird nur fuer die erste Anmeldung gebraucht, danach reicht der Zustand.
 tailscale_authkey: "{{ lookup('env', 'TAILSCALE_AUTHKEY') }}"

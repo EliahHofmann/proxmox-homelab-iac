@@ -1,13 +1,13 @@
 ---
 # Pruefung nach dem Deploy, aufgerufen von verify.yml
 - name: Container pruefen
-  include_role:
+  ansible.builtin.include_role:
     name: container_health
   vars:
     container_health_dir: "{{ jellyfin_install_path }}"
 
 - name: Jellyfin antwortet mit Version
-  uri:
+  ansible.builtin.uri:
     url: http://localhost:8096/System/Info/Public
     return_content: true
   register: jellyfin_info

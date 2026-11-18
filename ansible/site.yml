@@ -4,26 +4,26 @@
 # ueber sie kommen die Zugriffe des Besitzers von unterwegs herein.
 - name: Internet-Drossel
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft, !tag_tailscale, !tag_cloudflared
-  become: yes
+  become: true
   roles:
     - internet_drossel
 
 - name: Basis-Konfiguration für alle Server
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax, !Sandbox, !Minecraft
-  become: yes
+  become: true
   roles:
     - common
 
 # Wer sich per SSH anmelden darf, fuer jeden erreichbaren Server (Nextcloud dabei)
 - name: SSH-Zugang
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft
-  become: yes
+  become: true
   roles:
     - ssh_access
 
 - name: IPv6 aus (Voraussetzung fuer den Absender-Filter der Firewall)
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft
-  become: yes
+  become: true
   roles:
     - ipv6_off
 
@@ -31,73 +31,73 @@
 # ausserhalb von site.yml); die Monitoring-VM hat ihren eigenen Exporter-Container.
 - name: Node-Exporter
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Kali-Linux-Prax, !Sandbox, !Minecraft, !tag_monitoring
-  become: yes
+  become: true
   roles:
     - node_exporter
 
 - name: Setup Vaultwarden Dienst
   hosts: tag_vaultwarden
-  become: yes
+  become: true
   roles:
     - vaultwarden
 
 - name: Setup Traefik Config Dienst
   hosts: tag_traefik
-  become: yes
+  become: true
   roles:
     - traefik
 
 - name: Setup Collabora Dienst
   hosts: tag_collabora
-  become: yes
+  become: true
   roles:
     - collabora
 
 - name: Setup Adguard Dienst
   hosts: tag_adguard
-  become: yes
+  become: true
   roles:
     - adguard
 
 - name: Setup Cloudflared Dienst
   hosts: tag_cloudflared
-  become: yes
+  become: true
   roles:
     - cloudflared
 
 - name: Setup Tailscale Subnet-Router
   hosts: tag_tailscale
-  become: yes
+  become: true
   roles:
     - tailscale
 
 - name: Setup Monitoring Dienst
   hosts: tag_monitoring
-  become: yes
+  become: true
   roles:
     - monitoring
 
 - name: Setup Immich Dienst
   hosts: tag_immich
-  become: yes
+  become: true
   roles:
     - immich
 
 - name: Setup Paperless Dienst
   hosts: tag_paperless
-  become: yes
+  become: true
   roles:
     - paperless
 
 - name: Setup Firefly III (Finance) Dienst
   hosts: tag_actualbudget
-  become: yes
+  become: true
   roles:
     - finance
 
 - name: Setup Jellyfin Dienst
   hosts: tag_jellyfin
-  become: yes
+  become: true
   roles:
     - jellyfin
 
