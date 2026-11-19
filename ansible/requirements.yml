@@ -1,9 +1,10 @@
 ---
 # Collections fuer Inventory (community.proxmox) und Module (community.general:
 # ufw, timezone). Liegen im Home des Runners (~/.ansible/collections); ein
-# vorhandener, passender Stand wird nicht neu geladen.
+# vorhandener, passender Stand wird nicht neu geladen. Exakt gepinnt, Updates
+# kommen gezielt per Renovate-PR.
 collections:
   - name: community.proxmox
-    version: ">=2.1.0,<3.0.0"
+    version: "2.1.0"
   - name: community.general
-    version: ">=14.0.0,<15.0.0"
+    version: "14.0.1"

@@ -15,8 +15,8 @@ runs:
         echo "PYTHONUSERBASE=$PYTHONUSERBASE" >> "$GITHUB_ENV"
         echo "$PYTHONUSERBASE/bin" >> "$GITHUB_PATH"
         pip3 install --user --upgrade ansible-core --break-system-packages
-        # proxmoxer fuer das Proxmox-Inventory; kein Download, wenn schon da
-        pip3 install --user proxmoxer --break-system-packages -q
+        # proxmoxer (Proxmox-Inventory) kommt aus dem Debian-Paket python3-proxmoxer
+        python3 -c "import proxmoxer" || { echo "python3-proxmoxer fehlt auf dem Runner (apt install python3-proxmoxer)"; exit 1; }
 
     # Nur die genutzten Collections statt des kompletten ansible-Pakets
     - name: Install Ansible Collections
