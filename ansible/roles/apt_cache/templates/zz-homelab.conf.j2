@@ -1,5 +1,9 @@
 # Verwaltet von Ansible (apt_cache)
 Port: {{ apt_cache_port }}
 BindAddress: 0.0.0.0
-# Nur Debian-Quellen ueber http; https (z. B. Docker) laeuft an apt-cacher-ng vorbei
+# Kein offener Proxy: nur die eingebauten Remap-Ziele (Debian-Archiv und
+# security.debian.org) und nur Port 80. https-Quellen (z. B. Docker) laufen
+# ohnehin an apt-cacher-ng vorbei.
+ForceManaged: 1
+AllowUserPorts: 80
 ExThreshold: 28
