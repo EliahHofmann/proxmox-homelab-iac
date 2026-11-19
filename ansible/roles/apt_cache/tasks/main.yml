@@ -1,0 +1,22 @@
+---
+- name: Paket-Zwischenspeicher installieren
+  ansible.builtin.apt:
+    name: apt-cacher-ng
+    state: present
+
+- name: Paket-Zwischenspeicher konfigurieren
+  ansible.builtin.template:
+    src: zz-homelab.conf.j2
+    dest: /etc/apt-cacher-ng/zz-homelab.conf
+    owner: root
+    group: root
+    mode: "0644"
+  register: apt_cache_conf
+
+- name: Paket-Zwischenspeicher laeuft
+  ansible.builtin.systemd:
+    name: apt-cacher-ng
+    enabled: true
+    state: "{{ 'restarted' if apt_cache_conf.changed else 'started' }}"
+  # Im --check der PR-Pipeline ist das Paket beim ersten Mal noch nicht da
+  ignore_errors: "{{ ansible_check_mode }}"

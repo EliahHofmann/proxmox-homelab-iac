@@ -58,6 +58,8 @@ in:
     # Logs nur ueber den Loki-Waechter (HTTPS + Passwort); Loki selbst ist
     # nur auf der VM erreichbar (Grafana, Pruefungen, Fehlersuche per SSH)
     - {port: 3101, from: [guests]}
+    # Paket-Zwischenspeicher (apt-cacher-ng)
+    - {port: 3142, from: [guests]}
     - {port: "3000,9090", from: [owner]}
   vault:
     - {port: 8200, from: [owner, runner]}

@@ -318,6 +318,11 @@ def test_gaeste_liefern_logs_an_den_loki_waechter():
     assert allows(g, "192.168.178.86", 3101) and allows(g, "192.168.178.33", 3101)
 
 
+def test_gaeste_erreichen_den_paket_zwischenspeicher():
+    g = fw.render_guest(POLICY, "monitoring")
+    assert allows(g, "192.168.178.86", 3142) and allows(g, "192.168.178.88", 3142)
+
+
 def test_loki_ist_von_aussen_nur_ueber_den_waechter_erreichbar():
     g = fw.render_guest(POLICY, "monitoring")
     assert not allows(g, "+owner", 3100)

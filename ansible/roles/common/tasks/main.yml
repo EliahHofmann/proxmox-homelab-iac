@@ -23,6 +23,26 @@
     group: root
     mode: "0644"
 
+# Paket-Zwischenspeicher (apt_cache auf der Monitoring-VM): apt fragt ihn nur,
+# wenn er erreichbar ist - sonst direkt ins Internet wie bisher
+- name: Erkennung des Paket-Zwischenspeichers bereitstellen
+  ansible.builtin.copy:
+    src: apt-proxy-detect
+    dest: /usr/local/bin/apt-proxy-detect
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Apt nutzt den Paket-Zwischenspeicher, wenn erreichbar
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/02homelab-proxy
+    content: |
+      // Verwaltet von Ansible (common)
+      Acquire::http::Proxy-Auto-Detect "/usr/local/bin/apt-proxy-detect";
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Voraussetzungen für das moderne Docker-Setup installieren
   ansible.builtin.apt:
     name:
