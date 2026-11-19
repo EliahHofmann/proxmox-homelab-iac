@@ -18,3 +18,23 @@
 - name: IPv6 sofort abschalten
   ansible.builtin.command: sysctl -p /etc/sysctl.d/60-ipv6-aus.conf
   when: ipv6_off_conf.changed and not ansible_check_mode
+
+# exim lauscht ab Werk auch auf ::1 - ohne IPv6 startet er dann nicht
+- name: Exim-Konfiguration suchen
+  ansible.builtin.stat:
+    path: /etc/exim4/update-exim4.conf.conf
+  register: ipv6_off_exim
+
+- name: Exim nur auf IPv4 lauschen lassen
+  ansible.builtin.lineinfile:
+    path: /etc/exim4/update-exim4.conf.conf
+    regexp: "^dc_local_interfaces="
+    line: "dc_local_interfaces='127.0.0.1'"
+    backup: true
+  register: ipv6_off_exim_conf
+  when: ipv6_off_exim.stat.exists
+
+- name: Exim-Konfiguration neu erzeugen und Exim neu starten
+  ansible.builtin.shell: update-exim4.conf && systemctl restart exim4
+  changed_when: true
+  when: ipv6_off_exim_conf is changed and not ansible_check_mode

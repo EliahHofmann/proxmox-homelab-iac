@@ -235,6 +235,27 @@
 - name: Installierte Pakete ermitteln
   ansible.builtin.package_facts:
 
+# openipmi kommt als Empfehlung des node-exporters mit; ein Gast ohne IPMI-Geraet
+# hat nichts zu verwalten, der Dienst scheitert dann bei jedem Start
+- name: IPMI-Geraet suchen
+  ansible.builtin.stat:
+    path: /dev/ipmi0
+  register: common_ipmi_dev
+
+- name: Openipmi ohne IPMI-Geraet abschalten
+  ansible.builtin.systemd_service:
+    name: openipmi
+    state: stopped
+    masked: true
+  register: common_openipmi
+  when: "'openipmi' in ansible_facts.packages and not common_ipmi_dev.stat.exists"
+
+- name: Fehlerzustand von openipmi zuruecksetzen
+  ansible.builtin.command: systemctl reset-failed openipmi.service
+  changed_when: true
+  failed_when: false
+  when: common_openipmi is changed and not ansible_check_mode
+
 # Ein Vault-Upgrade startet den Dienst neu -> versiegelt -> kein Deploy mehr.
 # Debian-Security fasst das HashiCorp-Repo zwar nicht an; der Hold sichert
 # auch gegen ein versehentliches apt upgrade.

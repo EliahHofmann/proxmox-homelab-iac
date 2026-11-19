@@ -1,0 +1,10 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml.
+# Rot, sobald systemctl einen fehlgeschlagenen Dienst meldet; die Liste steht
+# dann unveraendert in der Ausgabe des Tasks (wird nicht in Vorlagen eingesetzt).
+- name: Kein Systemdienst ist fehlgeschlagen
+  ansible.builtin.command: systemctl --failed --no-legend --plain
+  register: common_failed_units
+  changed_when: false
+  failed_when: common_failed_units.rc != 0 or (common_failed_units.stdout | trim | length > 0)
+  check_mode: false
