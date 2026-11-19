@@ -1,0 +1,11 @@
+#!/bin/bash
+# Fuer apt (Acquire::http::Proxy-Auto-Detect): nennt den Paket-Zwischenspeicher,
+# wenn er erreichbar ist, sonst DIRECT - ein Ausfall blockiert keine Updates.
+# Verwaltet von Ansible (common).
+host="${APT_PROXY_HOST:-192.168.178.60}"
+port="${APT_PROXY_PORT:-3142}"
+if timeout 1 bash -c "exec 3<>/dev/tcp/$host/$port" 2>/dev/null; then
+    echo "http://$host:$port"
+else
+    echo "DIRECT"
+fi

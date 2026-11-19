@@ -1,0 +1,9 @@
+---
+# Pruefung nach dem Deploy, aufgerufen von verify.yml
+- name: Paket-Zwischenspeicher antwortet
+  ansible.builtin.uri:
+    url: "http://localhost:{{ apt_cache_port }}/acng-report.html"
+  register: apt_cache_report
+  until: apt_cache_report.status == 200
+  retries: 6
+  delay: 5

@@ -8,6 +8,13 @@
   roles:
     - internet_drossel
 
+# Vor der Basis-Konfiguration: dort stellen alle Gaeste apt auf ihn um
+- name: Paket-Zwischenspeicher
+  hosts: tag_monitoring
+  become: true
+  roles:
+    - apt_cache
+
 - name: Basis-Konfiguration für alle Server
   hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax, !Sandbox, !Minecraft
   become: true

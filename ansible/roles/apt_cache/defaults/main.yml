@@ -1,0 +1,4 @@
+---
+# Paket-Zwischenspeicher fuer alle Gaeste: jedes Debian-Paket kommt nur einmal
+# ueber die schmale Leitung, die anderen Gaeste holen es im LAN.
+apt_cache_port: 3142

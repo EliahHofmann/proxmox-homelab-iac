@@ -73,6 +73,16 @@
         name: monitoring
         tasks_from: verify
 
+- name: Pruefe Paket-Zwischenspeicher
+  hosts: tag_monitoring
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Paket-Zwischenspeicher pruefen
+      ansible.builtin.include_role:
+        name: apt_cache
+        tasks_from: verify
+
 - name: Pruefe immich
   hosts: tag_immich
   become: true

@@ -1,0 +1,5 @@
+# Verwaltet von Ansible (apt_cache)
+Port: {{ apt_cache_port }}
+BindAddress: 0.0.0.0
+# Nur Debian-Quellen ueber http; https (z. B. Docker) laeuft an apt-cacher-ng vorbei
+ExThreshold: 28
