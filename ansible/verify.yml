@@ -162,3 +162,13 @@
       ansible.builtin.include_role:
         name: internet_drossel
         tasks_from: verify
+
+- name: Pruefe Basis-Konfiguration
+  hosts: proxmox_all_lxc, proxmox_all_qemu, !Nextcloud, !Kali-Linux-Prax, !Sandbox, !Minecraft
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Common pruefen
+      ansible.builtin.include_role:
+        name: common
+        tasks_from: verify
