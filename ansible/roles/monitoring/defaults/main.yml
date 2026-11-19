@@ -1,17 +1,17 @@
 ---
 # Beide Proxmox-Knoten werden vom pve-exporter abgefragt
-proxmox_node_ips: ['192.168.178.10', '192.168.178.11']
+proxmox_node_ips: ["192.168.178.10", "192.168.178.11"]
 # Gestoppte Test-/Spiel-Gaeste: nicht scrapen, nicht alarmieren
-monitoring_excluded_hosts: ['Kali-Linux-Prax', 'Sandbox', 'Minecraft']
-monitoring_install_path: '/opt/monitoring'
+monitoring_excluded_hosts: ["Kali-Linux-Prax", "Sandbox", "Minecraft"]
+monitoring_install_path: "/opt/monitoring"
 grafana_admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PASSWORD') }}"
-grafana_port: '3000'
-loki_port: '3100'
-loki_gateway_port: '3101'
-loki_push_user: 'homelab'
+grafana_port: "3000"
+loki_port: "3100"
+loki_gateway_port: "3101"
+loki_push_user: "homelab"
 loki_push_password: "{{ lookup('env', 'LOKI_PUSH_PASSWORD') }}"
-prometheus_port: '9090'
-proxmox_api_token: "{{ lookup('env', 'PROXMOX_API_TOKEN') }}"# Alarm-Mail (Vault secret/alerts) und ntfy-Publisher (Vault secret/finance)
+prometheus_port: "9090"
+proxmox_api_token: "{{ lookup('env', 'PROXMOX_API_TOKEN') }}" # Alarm-Mail (Vault secret/alerts) und ntfy-Publisher (Vault secret/finance)
 alert_smtp_user: "{{ lookup('env', 'SMTP_USER') }}"
 alert_smtp_password: "{{ lookup('env', 'SMTP_PASSWORD') }}"
 alert_mail_to: "{{ lookup('env', 'MAIL_TO') }}"

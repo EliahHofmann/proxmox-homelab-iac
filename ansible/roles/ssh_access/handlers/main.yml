@@ -1,5 +1,5 @@
 ---
-- name: sshd neu laden
-  service:
+- name: Sshd neu laden
+  ansible.builtin.service:
     name: ssh
     state: reloaded

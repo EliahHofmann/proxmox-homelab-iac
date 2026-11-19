@@ -4,7 +4,7 @@
 # (ipfilter) - das wechselnde IPv6-Praefix des Anbieters liesse sich dort
 # nicht eintragen.
 - name: IPv6 abschalten (dauerhaft)
-  copy:
+  ansible.builtin.copy:
     dest: /etc/sysctl.d/60-ipv6-aus.conf
     content: |
       # Verwaltet von Ansible (ipv6_off)
@@ -12,9 +12,9 @@
       net.ipv6.conf.default.disable_ipv6 = 1
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   register: ipv6_off_conf
 
 - name: IPv6 sofort abschalten
-  command: sysctl -p /etc/sysctl.d/60-ipv6-aus.conf
+  ansible.builtin.command: sysctl -p /etc/sysctl.d/60-ipv6-aus.conf
   when: ipv6_off_conf.changed and not ansible_check_mode

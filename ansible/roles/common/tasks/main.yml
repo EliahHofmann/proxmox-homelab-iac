@@ -1,6 +1,6 @@
 ---
 - name: NOTFALL-FIX - Alte fehlerhafte .sources Datei entfernen
-  file:
+  ansible.builtin.file:
     path: /etc/apt/sources.list.d/docker.sources
     state: absent
 
@@ -11,8 +11,8 @@
 # Muss vor dem ersten apt-Aufruf liegen, sonst laedt der Lauf ungebremst.
 # Queue-Mode access: eine Verbindung statt einer pro Server, sonst gilt
 # das Limit pro Verbindung und die Summe liegt hoeher.
-- name: apt-Downloads auf 300 KB/s drosseln
-  copy:
+- name: Apt-Downloads auf 300 KB/s drosseln
+  ansible.builtin.copy:
     dest: /etc/apt/apt.conf.d/75-dl-limit
     content: |
       // Download-Drossel 300 KB/s, verwaltet von Ansible (common)
@@ -21,19 +21,19 @@
       Acquire::Queue-Mode "access";
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: Voraussetzungen für das moderne Docker-Setup installieren
-  apt:
+  ansible.builtin.apt:
     name:
       - ca-certificates
       - curl
       - gnupg
     state: present
-    update_cache: yes
+    update_cache: true
     cache_valid_time: 86400
 
-#große Hilfe von Reddit: https://www.reddit.com/r/ansible/comments/163x5iy/installing_docker_on_debian_12/
+# große Hilfe von Reddit: https://www.reddit.com/r/ansible/comments/163x5iy/installing_docker_on_debian_12/
 
 - name: Alte Docker-Repository-Dateien und veraltete Einträge bereinigen
   block:
@@ -41,10 +41,11 @@
     # Frueher wurde sie hier jedes Mal geloescht und samt apt-Listen neu
     # geladen - bei naechtlichen Deploys unnoetiger Download.
     - name: Remove all old Docker lines from any sources file
-      shell: find /etc/apt \( -name "*.list" -o -name "*.sources" \) ! -path /etc/apt/sources.list.d/docker.list | xargs sed -i '/download\.docker\.com/d' || true
+      ansible.builtin.shell: find /etc/apt \( -name "*.list" -o -name "*.sources" \) ! -path /etc/apt/sources.list.d/docker.list | xargs sed -i
+        '/download\.docker\.com/d' || true
       changed_when: false
     - name: Remove old Docker repo files
-      file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: absent
       loop:
@@ -52,47 +53,48 @@
         - /etc/apt/sources.list.d/docker
 
 - name: Prüfen, ob der Docker-Schlüssel bereits existiert
-  stat:
+  ansible.builtin.stat:
     path: /etc/apt/keyrings/docker.asc
   register: docker_gpg
 
 - name: APT-Keyring-Verzeichnis erstellen
-  file:
+  ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
-    mode: '0755'
+    mode: "0755"
     owner: root
     group: root
 
 - name: Docker GPG-Schlüssel (.asc) herunterladen
-  get_url:
+  ansible.builtin.get_url:
     url: https://download.docker.com/linux/debian/gpg
     dest: /etc/apt/keyrings/docker.asc
-    mode: '0644'
+    mode: "0644"
   when: not docker_gpg.stat.exists
 
 - name: Berechtigungen für den Docker-Schlüssel setzen
-  file:
+  ansible.builtin.file:
     path: /etc/apt/keyrings/docker.asc
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
   when: not docker_gpg.stat.exists
 
 - name: Alte fehlerhafte .sources Datei entfernen
-  file:
+  ansible.builtin.file:
     path: /etc/apt/sources.list.d/docker.sources
     state: absent
 
 - name: Docker APT-Repository hinzufügen (klassisches .list Format)
-  copy:
+  ansible.builtin.copy:
     dest: /etc/apt/sources.list.d/docker.list
-    content: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable\n"
-    mode: '0644'
+    content: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release
+      }} stable\n"
+    mode: "0644"
   register: docker_repo
 
 - name: Installiere Docker, Compose und Basis
-  apt:
+  ansible.builtin.apt:
     name:
       - docker-ce
       - docker-ce-cli
@@ -100,21 +102,21 @@
       - docker-buildx-plugin
       - docker-compose-plugin
     state: present
-    update_cache: yes
+    update_cache: true
     # Neues Repo -> Listen sofort neu laden, sonst reicht einmal am Tag
     cache_valid_time: "{{ 0 if docker_repo.changed else 86400 }}"
 
 - name: Prüfen, ob das Loki Docker Plugin bereits installiert ist
-  command: docker plugin ls
+  ansible.builtin.command: docker plugin ls
   register: docker_plugins
   changed_when: false
 
 - name: Loki Docker Plugin installieren
-  command: docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+  ansible.builtin.command: docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
   when: "'loki' not in docker_plugins.stdout"
 
 - name: Loki-Passwort aus Vault vorhanden
-  assert:
+  ansible.builtin.assert:
     that:
       - loki_push_password is match('^[A-Za-z0-9]{20,}$')
     fail_msg: "LOKI_PUSH_PASSWORD fehlt, ist zu kurz oder enthaelt Sonderzeichen (Vault secret/monitoring)"
@@ -124,7 +126,7 @@
 # Die Homelab-CA muss deshalb dort liegen; nach einem Plugin-Update (neue ID)
 # legt dieser Schritt sie wieder ab.
 - name: ID des Loki-Plugins ermitteln
-  command: docker plugin inspect loki -f '{{ '{{' }}.Id{{ '}}' }}'
+  ansible.builtin.command: docker plugin inspect loki -f '{{ '{{' }}.Id{{ '}}' }}'
   register: loki_plugin_id
   changed_when: false
   check_mode: false
@@ -133,21 +135,21 @@
   failed_when: loki_plugin_id.rc != 0 or loki_plugin_id.stdout is not match('^[0-9a-f]{64}$')
 
 - name: Homelab-CA ins Loki-Plugin legen
-  copy:
+  ansible.builtin.copy:
     src: "{{ playbook_dir }}/files/vault-ca.pem"
     dest: "/var/lib/docker/plugins/{{ loki_plugin_id.stdout }}/rootfs/etc/homelab-ca.pem"
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   register: loki_plugin_ca
 
 # Enthaelt das Loki-Passwort -> nur root, nie im Log
 - name: Docker daemon.json für globales Loki-Logging erstellen
-  copy:
+  ansible.builtin.copy:
     dest: /etc/docker/daemon.json
     owner: root
     group: root
-    mode: '0600'
+    mode: "0600"
     content: |
       {
         "log-driver": "loki",
@@ -162,22 +164,22 @@
   no_log: true
 
 - name: Docker Dienst neu starten
-  service:
+  ansible.builtin.service:
     name: docker
     state: restarted
   when: docker_daemon_config.changed
 
 # Laufende Container behalten ihr altes Log-Ziel bis zur Neuerstellung
 - name: Umstell-Skript fuer das Loki-Ziel bereitstellen
-  copy:
+  ansible.builtin.copy:
     src: loki-umstellen.sh
     dest: /usr/local/sbin/loki-umstellen
     owner: root
     group: root
-    mode: '0750'
+    mode: "0750"
 
 - name: Container mit altem Loki-Ziel neu erstellen
-  command: /usr/local/sbin/loki-umstellen
+  ansible.builtin.command: /usr/local/sbin/loki-umstellen
   register: loki_umstellen
   changed_when: "'neu erstellt' in loki_umstellen.stdout"
   when: not ansible_check_mode
@@ -186,24 +188,24 @@
 # kein Auto-Reboot). Frueher machte jeder Deploy dist-upgrade + Reboot - mit
 # naechtlichen Auto-Deploys haette das z.B. Vault neu gestartet (= versiegelt,
 # danach scheitert jeder Deploy).
-- name: unattended-upgrades installieren
-  apt:
+- name: Unattended-upgrades installieren
+  ansible.builtin.apt:
     name: unattended-upgrades
     state: present
 
-- name: unattended-upgrades konfigurieren
-  template:
+- name: Unattended-upgrades konfigurieren
+  ansible.builtin.template:
     src: "{{ item }}.j2"
     dest: "/etc/apt/apt.conf.d/{{ item }}"
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   loop:
     - 20auto-upgrades
     - 52unattended-upgrades-local
 
-- name: unattended-upgrades aktivieren
-  service:
+- name: Unattended-upgrades aktivieren
+  ansible.builtin.service:
     name: unattended-upgrades
     enabled: true
     state: started
@@ -211,13 +213,13 @@
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Installierte Pakete ermitteln
-  package_facts:
+  ansible.builtin.package_facts:
 
 # Ein Vault-Upgrade startet den Dienst neu -> versiegelt -> kein Deploy mehr.
 # Debian-Security fasst das HashiCorp-Repo zwar nicht an; der Hold sichert
 # auch gegen ein versehentliches apt upgrade.
 - name: Vault-Paket festhalten
-  dpkg_selections:
+  ansible.builtin.dpkg_selections:
     name: vault
     selection: hold
   when: "'vault' in ansible_facts.packages"

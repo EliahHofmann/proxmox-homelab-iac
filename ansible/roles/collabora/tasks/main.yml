@@ -1,25 +1,24 @@
 ---
 - name: Erstelle den Ordner für Collabora
-  file:
-    path: '{{ collabora_install_path }}'
+  ansible.builtin.file:
+    path: "{{ collabora_install_path }}"
     state: directory
-    mode: '0755'
+    mode: "0755"
 
-- name: docker-compose.yml erstellen
-  template:
+- name: Docker-compose.yml erstellen
+  ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: "{{ collabora_install_path }}/docker-compose.yml"
-    mode: '0644'
-      
+    mode: "0644"
 
 # Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
 - name: Neue Images gedrosselt laden
-  include_role:
+  ansible.builtin.include_role:
     name: throttled_pull
   vars:
     throttled_pull_dir: "{{ collabora_install_path }}"
 
 - name: Container starten
-  command: docker compose up -d --pull never
+  ansible.builtin.command: docker compose up -d --pull never
   args:
-    chdir: '{{ collabora_install_path }}'
+    chdir: "{{ collabora_install_path }}"

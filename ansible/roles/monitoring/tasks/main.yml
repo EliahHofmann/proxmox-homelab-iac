@@ -1,48 +1,48 @@
 ---
 - name: Konfliktvermeidung - alten nativen Node-Exporter restlos deinstallieren
-  apt:
+  ansible.builtin.apt:
     name: prometheus-node-exporter
     state: absent
-    purge: yes
-    autoremove: yes
-  become: yes
-  ignore_errors: yes
-  
+    purge: true
+    autoremove: true
+  become: true
+  ignore_errors: true
+
 - name: Monitoring Hauptordner erstellen
-  file:
+  ansible.builtin.file:
     path: "{{ monitoring_install_path }}"
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Daten-Ordner mit korrekten Rechten für Container-Nutzer erstellen
-  file:
+  ansible.builtin.file:
     path: "{{ monitoring_install_path }}/{{ item.dir }}"
     state: directory
     owner: "{{ item.uid }}"
     group: "{{ item.uid }}"
-    mode: '0755'
+    mode: "0755"
   loop:
-    - { dir: 'grafana-data', uid: '472' }
-    - { dir: 'loki-data', uid: '10001' }
-    - { dir: 'prometheus-data', uid: '65534' }
-    - { dir: 'rules', uid: '65534' }
-    - { dir: 'alertmanager-data', uid: '65534' }
+    - { dir: "grafana-data", uid: "472" }
+    - { dir: "loki-data", uid: "10001" }
+    - { dir: "prometheus-data", uid: "65534" }
+    - { dir: "rules", uid: "65534" }
+    - { dir: "alertmanager-data", uid: "65534" }
 
 - name: Prometheus Konfiguration generieren
-  template:
+  ansible.builtin.template:
     src: prometheus.yml.j2
     dest: "{{ monitoring_install_path }}/prometheus.yml"
   register: prometheus_config
 
 - name: Proxmox Exporter Konfiguration (API Token) generieren
-  template:
+  ansible.builtin.template:
     src: pve.yml.j2
     dest: "{{ monitoring_install_path }}/pve.yml"
   register: pve_config
 
 # Fehlen die Alarm-Zugangsdaten, bricht nur dieser Host ab - mit klarer Meldung
 - name: Alarm-Zugangsdaten sind vorhanden
-  assert:
+  ansible.builtin.assert:
     that:
       - alert_smtp_user | length > 0
       - alert_smtp_password | length > 0
@@ -53,39 +53,39 @@
   no_log: true
 
 - name: Alertmanager-Ordner (Container laeuft als nobody/65534)
-  file:
+  ansible.builtin.file:
     path: "{{ monitoring_install_path }}/{{ item }}"
     state: directory
-    owner: '65534'
-    group: '65534'
-    mode: '0750'
+    owner: "65534"
+    group: "65534"
+    mode: "0750"
   loop:
     - alertmanager
     - alertmanager/secrets
 
 - name: Alertmanager-Konfiguration
-  template:
+  ansible.builtin.template:
     src: alertmanager.yml.j2
     dest: "{{ monitoring_install_path }}/alertmanager/alertmanager.yml"
-    owner: '65534'
-    group: '65534'
-    mode: '0640'
+    owner: "65534"
+    group: "65534"
+    mode: "0640"
   register: alertmanager_config
 
 - name: Bridge-Zertifikat fuer Alertmanager
-  copy:
+  ansible.builtin.copy:
     src: proton-bridge-ca.pem
     dest: "{{ monitoring_install_path }}/alertmanager/proton-bridge-ca.pem"
-    mode: '0644'
+    mode: "0644"
   register: alertmanager_ca
 
 - name: Alertmanager-Passwoerter
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.wert }}"
     dest: "{{ monitoring_install_path }}/alertmanager/secrets/{{ item.datei }}"
-    owner: '65534'
-    group: '65534'
-    mode: '0600'
+    owner: "65534"
+    group: "65534"
+    mode: "0600"
   loop:
     - { datei: smtp_password, wert: "{{ alert_smtp_password }}" }
     - { datei: ntfy_password, wert: "{{ alert_ntfy_password }}" }
@@ -95,13 +95,13 @@
   register: alertmanager_secrets
 
 - name: Grafana-Provisioning + Dashboards (Datasources, Finance-Dashboard) bereitstellen
-  copy:
+  ansible.builtin.copy:
     src: grafana/
     dest: "{{ monitoring_install_path }}/grafana/"
-    mode: '0644'
+    mode: "0644"
 
 - name: Loki-Passwort aus Vault vorhanden
-  assert:
+  ansible.builtin.assert:
     that:
       - loki_push_password is match('^[A-Za-z0-9]{20,}$')
     fail_msg: "LOKI_PUSH_PASSWORD fehlt, ist zu kurz oder enthaelt Sonderzeichen/Leerzeichen (Vault secret/monitoring loki_push_password, nur A-Za-z0-9)"
@@ -113,50 +113,50 @@
 #   openssl req -new -key loki-gateway-tls/tls.key -subj /CN=loki-gateway  -> auf Vault:
 #   openssl x509 -req -CA ca.pem -CAkey ca.key -days 1825 (SAN IP der Monitoring-VM)
 - name: TLS-Schluessel und -Zertifikat des Loki-Waechters vorhanden
-  stat:
+  ansible.builtin.stat:
     path: "{{ monitoring_install_path }}/loki-gateway-tls/{{ item }}"
   loop: [tls.key, tls.pem]
   register: loki_gateway_tls
   check_mode: false
 
 - name: Ohne TLS-Dateien kein Waechter
-  assert:
+  ansible.builtin.assert:
     that: loki_gateway_tls.results | map(attribute='stat.exists') | min
     fail_msg: "loki-gateway-tls/tls.key oder tls.pem fehlt - siehe Kommentar oben"
     quiet: true
 
 # Nur root und der nginx-Benutzer im Container (gid 101) duerfen den Schluessel lesen
 - name: Rechte der TLS-Dateien des Loki-Waechters
-  file:
+  ansible.builtin.file:
     path: "{{ monitoring_install_path }}/loki-gateway-tls{{ item.pfad }}"
     owner: root
-    group: '101'
+    group: "101"
     mode: "{{ item.modus }}"
   loop:
-    - { pfad: '', modus: '0750' }
-    - { pfad: /tls.key, modus: '0640' }
-    - { pfad: /tls.pem, modus: '0640' }
+    - { pfad: "", modus: "0750" }
+    - { pfad: /tls.key, modus: "0640" }
+    - { pfad: /tls.pem, modus: "0640" }
 
 - name: Homelab-CA fuer die Pruefung des Waechters
-  copy:
+  ansible.builtin.copy:
     src: "{{ playbook_dir }}/files/vault-ca.pem"
     dest: "{{ monitoring_install_path }}/loki-gateway-tls/ca.pem"
     owner: root
-    group: '101'
-    mode: '0640'
+    group: "101"
+    mode: "0640"
 
 - name: Ordner fuer den Loki-Waechter
-  file:
+  ansible.builtin.file:
     path: "{{ monitoring_install_path }}/loki-gateway"
     state: directory
     owner: root
-    group: '101'
-    mode: '0750'
+    group: "101"
+    mode: "0750"
 
 # Fester Salt je Host, damit der Hash nur bei neuem Passwort wechselt.
 # Passwort ueber stdin, nie in der Prozessliste.
 - name: Passwort-Hash fuer den Loki-Waechter berechnen
-  command: openssl passwd -6 -salt {{ 'loki' ~ (inventory_hostname | hash('md5'))[:12] }} -stdin
+  ansible.builtin.command: openssl passwd -6 -salt {{ 'loki' ~ (inventory_hostname | hash('md5'))[:12] }} -stdin
   args:
     stdin: "{{ loki_push_password }}"
   register: loki_push_hash
@@ -165,12 +165,12 @@
   no_log: true
 
 - name: Loki-Waechter Konfiguration und Zugangsdaten
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.inhalt }}"
     dest: "{{ monitoring_install_path }}/loki-gateway/{{ item.datei }}"
     owner: root
-    group: '101'
-    mode: '0640'
+    group: "101"
+    mode: "0640"
   loop:
     - { datei: nginx.conf, inhalt: "{{ lookup('template', 'loki-gateway.conf.j2') }}" }
     - { datei: htpasswd, inhalt: "{{ loki_push_user }}:{{ loki_push_hash.stdout }}\n" }
@@ -180,13 +180,13 @@
   register: loki_gateway_config
 
 - name: Monitoring docker-compose.yml generieren
-  template:
+  ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: "{{ monitoring_install_path }}/docker-compose.yml"
 
 # Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
 - name: Neue Images gedrosselt laden
-  include_role:
+  ansible.builtin.include_role:
     name: throttled_pull
   vars:
     throttled_pull_dir: "{{ monitoring_install_path }}"
@@ -195,14 +195,14 @@
 # compose-Datei. Laeuft auch im --check (eigener Pruefordner), damit kaputte
 # Regeln schon im PR auffallen.
 - name: Alarmregeln in den Pruefordner kopieren
-  copy:
+  ansible.builtin.copy:
     src: rules/
     dest: "{{ monitoring_install_path }}/rules-check/"
-    mode: '0644'
+    mode: "0644"
   check_mode: false
 
 - name: Alarmregeln pruefen und testen (promtool)
-  shell: |
+  ansible.builtin.shell: |
     set -e
     img=$(grep -oE 'prom/prometheus:[^ "]+' docker-compose.yml | head -1)
     docker run --rm --log-driver none --entrypoint promtool -v {{ monitoring_install_path }}/rules-check:/r:ro "$img" check rules /r/homelab.yml
@@ -214,14 +214,14 @@
   check_mode: false
 
 - name: Alarmregeln fuer Prometheus bereitstellen
-  copy:
+  ansible.builtin.copy:
     src: rules/homelab.yml
     dest: "{{ monitoring_install_path }}/rules/homelab.yml"
-    mode: '0644'
+    mode: "0644"
   register: prometheus_rules
 
 - name: Alertmanager-Konfiguration pruefen (amtool)
-  shell: |
+  ansible.builtin.shell: |
     set -e
     img=$(grep -oE 'prom/alertmanager:[^ "]+' docker-compose.yml | head -1)
     docker run --rm --log-driver none --entrypoint amtool -v {{ monitoring_install_path }}/alertmanager:/etc/alertmanager:ro "$img" check-config /etc/alertmanager/alertmanager.yml
@@ -232,7 +232,7 @@
   when: not ansible_check_mode
 
 - name: Monitoring Stack (Grafana, Loki, Prometheus, Node-Exporter) starten
-  command: docker compose up -d --pull never
+  ansible.builtin.command: docker compose up -d --pull never
   args:
     chdir: "{{ monitoring_install_path }}"
 
@@ -242,26 +242,26 @@
 # die alte Config neu laden. Daher den Container neu starten -> re-bindet den
 # aktuellen Host-Inode UND laedt die Config neu. Nur wenn sich die Config aenderte.
 - name: Prometheus neu starten, wenn sich Scrape-Config oder Regeln geaendert haben
-  command: docker restart prometheus
+  ansible.builtin.command: docker restart prometheus
   when: prometheus_config is changed or prometheus_rules is changed
 
 - name: Alertmanager neu starten, wenn sich Konfiguration oder Passwoerter geaendert haben
-  command: docker restart alertmanager
+  ansible.builtin.command: docker restart alertmanager
   when: alertmanager_config is changed or alertmanager_ca is changed or alertmanager_secrets is changed
 
 # Gleiches Inode-Problem: ohne Neustart liest der Exporter weiter den alten Token
 - name: Proxmox-Exporter neu starten, wenn sich seine Config geaendert hat
-  command: docker restart pve-exporter
+  ansible.builtin.command: docker restart pve-exporter
   when: pve_config is changed
 
 - name: Loki-Waechter neu starten, wenn sich Konfiguration oder Passwort geaendert haben
-  command: docker restart loki-gateway
+  ansible.builtin.command: docker restart loki-gateway
   when: loki_gateway_config is changed and not ansible_check_mode
 
 # GF_SECURITY_ADMIN_PASSWORD gilt nur beim ersten Start. Damit ein rotiertes
 # Passwort aus Vault ankommt, wird es bei jedem Lauf gesetzt (ueber stdin).
 - name: Grafana-Admin-Passwort aus Vault setzen
-  command: docker exec -i grafana grafana cli admin reset-admin-password --password-from-stdin
+  ansible.builtin.command: docker exec -i grafana grafana cli admin reset-admin-password --password-from-stdin
   args:
     stdin: "{{ grafana_admin_password }}"
   changed_when: false

@@ -10,7 +10,7 @@
 
 - name: Update apt cache
   ansible.builtin.apt:
-    update_cache: yes
+    update_cache: true
     cache_valid_time: 3600
   when: not ansible_check_mode or node_exporter_python_apt.rc == 0
 

@@ -1,26 +1,26 @@
 ---
 - name: Immich Unterordner für Volumes erstellen
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    mode: '0755'
+    mode: "0755"
   loop:
     - "{{ immich_install_path }}"
-    - "{{ immich_upload_dir}}"
+    - "{{ immich_upload_dir }}"
 
 - name: Immich docker-compose.yml erstellen
-  template:
+  ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: "{{ immich_install_path }}/docker-compose.yml"
 
 # Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
 - name: Neue Images gedrosselt laden
-  include_role:
+  ansible.builtin.include_role:
     name: throttled_pull
   vars:
     throttled_pull_dir: "{{ immich_install_path }}"
 
 - name: Immich Container starten
-  command: docker compose up -d --pull never
+  ansible.builtin.command: docker compose up -d --pull never
   args:
     chdir: "{{ immich_install_path }}"

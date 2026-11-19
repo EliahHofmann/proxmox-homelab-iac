@@ -1,52 +1,52 @@
 ---
 - name: Hauptordner für traefik
-  file:
-    path: '{{ docker_dest }}'
+  ansible.builtin.file:
+    path: "{{ docker_dest }}"
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Hauptordner für traefik-config
-  file:
-    path: '{{ config_dest }}'
+  ansible.builtin.file:
+    path: "{{ config_dest }}"
     state: directory
-    mode: '0755'
-    
+    mode: "0755"
+
 - name: Erstelle leere acme.json mit richtigen Rechten (600)
-  file:
-    path: '{{ docker_dest }}/acme.json'
+  ansible.builtin.file:
+    path: "{{ docker_dest }}/acme.json"
     state: touch
-    mode: '0600'
+    mode: "0600"
 
 - name: Erstelle Traefik Dynamic Configs
-  template:
+  ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ config_dest }}/{{ item.dest }}"
   loop:
-    - { src: 'vaultwarden.yml.j2', dest: 'vaultwarden.yml' }
-    - { src: 'nextcloud.yml.j2', dest: 'nextcloud.yml' }
-    - { src: 'office-nextcloud.yml.j2', dest: 'office.yml' }
-    - { src: 'immich.yml.j2', dest: 'immich.yml' }
-    - { src: 'paperless.j2', dest: 'paperless.yml' }
-    - { src: 'finance.yml.j2', dest: 'finance.yml' }
-    - { src: 'jellyfin.yml.j2', dest: 'jellyfin.yml' }
-    - { src: 'ntfy.yml.j2', dest: 'ntfy.yml' }
+    - { src: "vaultwarden.yml.j2", dest: "vaultwarden.yml" }
+    - { src: "nextcloud.yml.j2", dest: "nextcloud.yml" }
+    - { src: "office-nextcloud.yml.j2", dest: "office.yml" }
+    - { src: "immich.yml.j2", dest: "immich.yml" }
+    - { src: "paperless.j2", dest: "paperless.yml" }
+    - { src: "finance.yml.j2", dest: "finance.yml" }
+    - { src: "jellyfin.yml.j2", dest: "jellyfin.yml" }
+    - { src: "ntfy.yml.j2", dest: "ntfy.yml" }
 
 - name: Traefik Haupt-Konfigurationen erstellen
-  template:
+  ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ docker_dest }}/{{ item.dest }}"
   loop:
-    - { src: 'docker_compose.yml.j2', dest: 'docker-compose.yml' }
-    - { src: 'traefik.yml.j2', dest: 'traefik.yml' } 
+    - { src: "docker_compose.yml.j2", dest: "docker-compose.yml" }
+    - { src: "traefik.yml.j2", dest: "traefik.yml" }
 
 # Neue Images nur gedrosselt laden; compose up zieht danach nichts mehr
 - name: Neue Images gedrosselt laden
-  include_role:
+  ansible.builtin.include_role:
     name: throttled_pull
   vars:
     throttled_pull_dir: "{{ docker_dest }}"
 
 - name: Container starten
-  command: docker compose up -d --pull never
+  ansible.builtin.command: docker compose up -d --pull never
   args:
-    chdir: '{{ docker_dest }}'
+    chdir: "{{ docker_dest }}"

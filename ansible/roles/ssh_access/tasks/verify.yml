@@ -1,13 +1,13 @@
 ---
 # Pruefung nach dem Deploy, aufgerufen von verify.yml
 - name: Wirksame sshd-Einstellungen lesen
-  command: /usr/sbin/sshd -T
+  ansible.builtin.command: /usr/sbin/sshd -T
   register: ssh_access_effective
   changed_when: false
   check_mode: false
 
 - name: SSH nur mit Schluessel
-  assert:
+  ansible.builtin.assert:
     that:
       - "'passwordauthentication no' in ssh_access_effective.stdout_lines"
       - "'kbdinteractiveauthentication no' in ssh_access_effective.stdout_lines"

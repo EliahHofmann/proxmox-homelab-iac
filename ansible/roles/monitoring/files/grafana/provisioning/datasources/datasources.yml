@@ -1,3 +1,4 @@
+---
 # Von Ansible bereitgestellt (monitoring-Rolle). Grafana laeuft im selben
 # Docker-Netz wie Prometheus/Loki -> Ansprache ueber die Container-Namen.
 apiVersion: 1
