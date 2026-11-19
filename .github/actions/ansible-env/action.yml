@@ -15,10 +15,13 @@ runs:
         echo "PYTHONUSERBASE=$PYTHONUSERBASE" >> "$GITHUB_ENV"
         echo "$PYTHONUSERBASE/bin" >> "$GITHUB_PATH"
         pip3 install --user --upgrade ansible-core --break-system-packages
+        # proxmoxer (Proxmox-Inventory) kommt aus dem Debian-Paket python3-proxmoxer
+        python3 -c "import proxmoxer" || { echo "python3-proxmoxer fehlt auf dem Runner (apt install python3-proxmoxer)"; exit 1; }
 
-    - name: Install Ansible Proxmox Collection
+    # Nur die genutzten Collections statt des kompletten ansible-Pakets
+    - name: Install Ansible Collections
       shell: bash
-      run: ansible-galaxy collection install community.proxmox
+      run: ansible-galaxy collection install -r "$GITHUB_WORKSPACE/ansible/requirements.yml"
 
     - name: Lade Runner Systemvariablen in GitHub ENV
       shell: bash
