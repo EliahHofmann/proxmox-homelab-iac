@@ -15,10 +15,13 @@ runs:
         echo "PYTHONUSERBASE=$PYTHONUSERBASE" >> "$GITHUB_ENV"
         echo "$PYTHONUSERBASE/bin" >> "$GITHUB_PATH"
         pip3 install --user --upgrade ansible-core --break-system-packages
+        # proxmoxer fuer das Proxmox-Inventory; kein Download, wenn schon da
+        pip3 install --user proxmoxer --break-system-packages -q
 
-    - name: Install Ansible Proxmox Collection
+    # Nur die genutzten Collections statt des kompletten ansible-Pakets
+    - name: Install Ansible Collections
       shell: bash
-      run: ansible-galaxy collection install community.proxmox
+      run: ansible-galaxy collection install -r "$GITHUB_WORKSPACE/ansible/requirements.yml"
 
     - name: Lade Runner Systemvariablen in GitHub ENV
       shell: bash

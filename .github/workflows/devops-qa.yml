@@ -47,14 +47,14 @@ jobs:
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
-      # ansible-lint laeuft in eigener pipx-Umgebung und sieht die systemweit
-      # installierten Collections (community.general) sonst nicht.
+      # ansible-lint laeuft in eigener pipx-Umgebung; die Collections liegen im
+      # Home des Runners (requirements.yml), nicht mehr im systemweiten Paket.
       - name: Install & Run Ansible Lint
         working-directory: ./ansible
         run: |
           pipx install ansible-lint
-          SYS=$(python3 -c "import ansible_collections, os; print(os.path.dirname(list(ansible_collections.__path__)[0]))")
-          ANSIBLE_COLLECTIONS_PATH="$HOME/.ansible/collections:$SYS" ~/.local/bin/ansible-lint .
+          ~/.local/bin/ansible-galaxy collection install -r requirements.yml
+          ANSIBLE_COLLECTIONS_PATH="$HOME/.ansible/collections" ~/.local/bin/ansible-lint .
 
       # pytest kommt aus dem Debian-Paket des Runners, kein Download
       - name: Unit Tests (tools)
