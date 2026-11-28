@@ -4,7 +4,7 @@ networks:
 
 services:
   loki:
-    image: grafana/loki:3.7.9
+    image: grafana/loki:3.7.11
     container_name: loki
     # Nur lokal: von aussen kommen Logs ausschliesslich ueber loki-gateway
     ports:
@@ -18,7 +18,7 @@ services:
 
   # Waechter vor Loki: Log-Lieferung nur mit Passwort, Lesen nur intern
   loki-gateway:
-    image: nginx:1.28.0-alpine
+    image: nginx:1.28.3-alpine
     container_name: loki-gateway
     restart: unless-stopped
     ports:
@@ -71,7 +71,7 @@ services:
 
 
   alertmanager:
-    image: prom/alertmanager:v0.34.1
+    image: prom/alertmanager:v0.34.2
     container_name: alertmanager
     restart: unless-stopped
     # Nur lokal: Alertmanager hat keine Anmeldung. Prometheus erreicht ihn im Docker-Netz.
@@ -87,7 +87,7 @@ services:
       - monitoring
 
   pve-exporter:
-    image: prompve/prometheus-pve-exporter:3.10.1
+    image: prompve/prometheus-pve-exporter:3.10.2
     container_name: pve-exporter
     restart: unless-stopped
     ports:
@@ -99,7 +99,7 @@ services:
 
 
   grafana:
-    image: grafana/grafana:13.2.4
+    image: grafana/grafana:13.2.7
     container_name: grafana
     ports:
       - "{{ grafana_port }}:3000"
